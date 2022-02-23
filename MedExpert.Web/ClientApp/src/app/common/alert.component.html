@@ -1,0 +1,12 @@
+﻿<h2 mat-dialog-title class="text-center">
+  <ng-container *ngIf="title">{{title}}</ng-container>
+  <ng-container *ngIf="!title">Подтвердите действие</ng-container>
+</h2>
+<mat-dialog-content>
+  <p class="text-center">
+    {{content}}
+  </p>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button class="btn btn-success" autofocus (keyup.enter)="ok()" (keyup.escape)="ok()" (click)="ok()">ОК</button>
+</mat-dialog-actions>

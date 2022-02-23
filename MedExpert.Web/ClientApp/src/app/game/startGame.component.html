@@ -1,0 +1,23 @@
+<div *ngIf="!totalLevels" class="loading-overlay">
+</div>
+<ng-container *ngIf="totalLevels">
+  <div class="text-center" style="margin-bottom: 15px;">
+    Посмотреть <a [routerLink]="['/about']">обучающее видео</a>
+  </div>
+  <div class="text-center">
+    <span style="margin-right: 10px;">Обучение: {{totalLevels}} уровней, {{totalTasks}} простых заданий, 10 минут</span>
+    <button class="btn btn-primary"
+            [ngClass]="tutorialPassed ? '' : 'highlighted-control'"
+            (click)="navigateTutorial()">
+      Пройти обучение
+    </button><br />
+    <br />
+  </div>
+  <div class="text-center">
+    <span>&nbsp;&nbsp;&nbsp;Или выберите уровень сложности:</span>
+    <select [(ngModel)]="difficultyLevel" style="margin: 0 10px; background: none;">
+      <option *ngFor="let dl of difficultyLevels" [value]="dl.type">{{dl.label}}</option>
+    </select>
+    <button class="btn btn-success" (click)="navigateStart()">Начать игру</button><br />
+  </div>
+</ng-container>

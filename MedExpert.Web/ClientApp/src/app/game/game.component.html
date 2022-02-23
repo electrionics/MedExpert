@@ -1,0 +1,222 @@
+<div *ngIf="difficultyLevel == 0 && game && tasks && currentTaskIndex < tasks.length" class="tutorial-overlay">
+</div>
+<div *ngIf="requestProgress" class="loading-overlay">
+</div>
+<table class='table table-striped game-table' aria-labelledby="tableLabel" *ngIf="number" style="margin-bottom: 0;">
+  <tbody>
+    <tr *ngIf="difficultyLevel == 0 && currentLevel">
+      <td [colSpan]="number.length + 1">
+        <h2>Обучение. Уровень {{currentLevel.Level}}. {{currentLevel.Title}}</h2>
+        <p><b>Задание уровня</b>: {{currentLevel.Text}}</p>
+        <p>*Уровень содержит закономерности только тех типов, которые указаны в названии.</p>
+        <p>**Ниже расположены две полоски - прогресс прохождения уровней и выполнения задач:
+          <span class="tutorial-progress complete">&nbsp;&nbsp;&nbsp;</span> - пройден(а)
+          <span class="tutorial-progress current">&nbsp;&nbsp;&nbsp;</span> - текущий(ая)
+          <span class="tutorial-progress incomplete">&nbsp;&nbsp;&nbsp;</span> - непройден(а)</p>
+        <div class="text-center"><b>Прогресс прохождения уровней:</b></div>
+        <table class='table table-striped progress-table'>
+          <tbody>
+          <tr>
+            <td *ngFor="let level of range(currentLevel.Level - 1)" class="tutorial-progress complete"></td>
+            <td class="tutorial-progress" [ngClass]="(currentTaskIndex == tasks.length - 1) ? 'complete' : 'current'"></td>
+            <td *ngFor="let level of range(countLevels - currentLevel.Level)" class="tutorial-progress incomplete"></td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="text-center"><b>Прогресс выполнения задач:</b></div>
+        <table class='table table-striped progress-table'>
+          <tbody>
+          <tr>
+            <td *ngFor="let level of range(currentTaskIndex)" class="tutorial-progress complete"></td>
+            <td class="tutorial-progress current" *ngIf="currentTaskIndex < tasks.length - 1"></td>
+            <td *ngFor="let level of range(tasks.length - currentTaskIndex - 2)" class="tutorial-progress incomplete"></td>
+          </tr>
+          </tbody>
+        </table>
+        <button *ngIf="currentTaskIndex < tasks.length"
+                (click)="showCurrentTask()"
+                class="btn btn-info text-center over-tutorial-overlay">Текущее задание</button>
+        <button *ngIf="currentLevel.Level < countLevels"
+                (click)="start()"
+                class="btn btn-primary text-center"
+                [ngClass]="getTutorialClass('nextLevel') ||
+                           'over-tutorial-overlay'">Следующий уровень</button>
+        <button *ngIf="currentLevel.Level == countLevels"
+                (click)="endSession()"
+                class="btn btn-primary text-center"
+                [ngClass]="getTutorialClass('endTutorial') ||
+                           'over-tutorial-overlay'">Завершить обучение</button>
+      </td>
+    </tr>
+    <tr>
+      <td rowspan="2" style="width: 170px; vertical-align: middle;" class="text-center game-progress">
+        <div>
+          <span class="score">{{game.Score}}</span> очков
+        </div>
+        <div style="margin-top: 5px;">
+          Осталось <span class="timer">{{game.TimerSeconds * 1000 | date:'mm:ss'}}</span>
+        </div>
+        <div style="margin-top: 5px;">
+          <b>Число:</b>
+        </div>
+      </td>
+      <td [colSpan]="number.length">
+        <div style="margin: 10px auto;">
+          <button *ngIf="!endGame"
+                  (click)="end(true)"
+                  class="btn btn-primary text-center"
+                  [ngClass]="getTutorialClass('endGame')">Завершить игру</button>
+          <button *ngIf="!endGame"
+                  (click)="toggleHints()"
+                  [ngClass]="
+                    getTutorialClass('toggleHints')"
+                  class="btn btn-info text-center">{{hintsEnabled ? 'Убрать кнопки-подсказки' : 'Вернуть кнопки-подсказки'}}</button>
+          <button *ngIf="!endGame && hintsEnabled"
+                  [disabled]="getAnyDisabled(regularityTypes)"
+                  (click)="startHintMode(null, null, false)"
+                  [ngClass]="getTutorialClass('hintRandom')"
+                  class="btn btn-hint text-center">Подсказать</button>
+          <button *ngIf="endGame" (click)="newGame()" class="btn btn-primary text-center">Новая игра</button>
+          <button *ngIf="endGame && !endGame.HintsIterated"
+                  (click)="showNotFound()"
+                  [ngClass]="getTutorialClass('showNotFound')"
+                  class="btn btn-info text-center">Показать не найденные</button>
+        </div>
+      </td>
+    </tr>
+    <tr class="digits">
+      <td *ngFor="let digit of number; let i = index;" class="vertical-center">
+        <button (click)="toggleSelected(digit, i)"
+                [disabled]="digit.disabled"
+                [ngClass]="getTutorialClass('digit', i) ||
+                           getTutorialClass('digitsAndBtnCheckSuccess')"
+                class="btn text-center {{digit.selected ? 'btn-selected' : 'btn-deselected'}}"><span class="digit">{{ digit.value }}</span></button>
+      </td>
+    </tr>
+    <tr *ngIf="game && !endGame"><td [colSpan]="number.length + 1">
+      <table id="checks">
+        <tbody>
+        <tr>
+          <ng-container *ngFor="let regType of regularityTypes">
+            <ng-container *ngIf="startGame.ExistRegularityTypeCounts[regType.type]">
+              <td class="reg-type-name text-center">
+                {{regType.label}}
+              </td>
+            </ng-container>
+          </ng-container>
+        </tr>
+        <tr>
+          <ng-container *ngFor="let regType of regularityTypes">
+            <ng-container *ngIf="startGame.ExistRegularityTypeCounts[regType.type]">
+              <td class="text-center">
+                <button [disabled]="!regType.enabled || filterByFound(game.ProgressRegularityInfos, regType.type).length == startGame.ExistRegularityTypeCounts[regType.type]"
+                        class="btn btn-info check{{regType.enabled ? '' : ' disabled'}}"
+                        [ngClass]="getTutorialClass('btnCheckSuccess', 0, regType.type) ||
+                                   getTutorialClass('digitsAndBtnCheckSuccess', 0, regType.type) ||
+                                   getTutorialClass('btnCheckAutoHint', 0, regType.type)"
+                        (click)="check(regType.type);">Проверить</button>
+              </td>
+            </ng-container>
+          </ng-container>
+        </tr>
+        <tr>
+          <ng-container *ngFor="let regType of regularityTypes">
+            <ng-container *ngIf="startGame.ExistRegularityTypeCounts[regType.type]">
+              <td class="text-center">
+                <button [disabled]="getAnyDisabled(regularityTypes) || filterByFound(game.ProgressRegularityInfos, regType.type).length == startGame.ExistRegularityTypeCounts[regType.type]"
+                        style="margin-top: 5px;"
+                        class="btn btn-hint text-center"
+                        [ngClass]="getTutorialClass('hintRegType', 0, regType.type)"
+                        (click)="startHintMode(regType.type, null, false)"
+                        *ngIf="hintsEnabled">Подсказать</button>
+              </td>
+            </ng-container>
+          </ng-container>
+          </tr>
+        </tbody>
+      </table>
+    </td></tr>
+    <tr class="result-progress"
+        *ngIf="!understandDescription"
+        [ngClass]="getOverOverlayClass('understand')">
+      <td [colSpan]="number.length + 1">
+        <ul style="margin-top: 1rem;">
+          <li>Нажмите на знак вопроса <i class="bi bi-question-circle"></i> в таблице, чтобы узнать, что означает число-посказка для выбранного типа закономерности.</li>
+          <ng-container *ngIf="!endGame">
+            <li class="digits">Нажимайте на цифры в строке числа, чтобы выделить <button disabled="disabled" style="width: 62px;" class="btn btn-selected text-center">{{number[0].value}}</button> или убрать выделение <button disabled="disabled" style="width: 62px;" class="btn btn-deselected text-center">{{number[0].value}}</button></li>
+            <li>После того, как цифры выделены, нажмите кнопку <button disabled="disabled" class="btn btn-info check">Проверить</button> нужного типа.</li>
+            <li>Если вам необходима помощь, воспользуйтесь кнопкой подсказки. Подсказки — кнопки оранжевого цвета — бывают 3-х видов: полностью случайная, случайная для выбранного типа закономерности и с фиксированным числом-подсказкой <button disabled="disabled" class="btn btn-hint btn-small">?</button>
+              За подсказанную закономерность очки не начисляются</li>
+            <li>Если вам мешают кнопки-подсказки, нажмите кнопку <button disabled="disabled" class="btn btn-info text-center">Убрать кнопки-подсказки</button> над строкой числа. Их можно будет вернуть в любое время в течение игры.</li>
+            <li>После завершения игры, по истечению времени либо нажатием кнопки <button disabled="disabled" class="btn btn-primary text-center">Завершить игру</button>, вы сможете просмотреть все ненайденные вами закономерности.</li>
+            <li>Нажмите кнопку <button class="btn btn-info"
+                                       [ngClass]="getTutorialClass('understand') ||
+                                                  'over-tutorial-overlay'"
+                                       (click)="understand()">Понятно</button> чтобы скрыть описание.</li>
+          </ng-container>
+        </ul>
+      </td>
+    </tr>
+    <tr class="result-progress number">
+      <td [colSpan]="positions.length + 1" style="padding: 10px 0!important;">
+        <b>Тип закономерности</b><br/>Число-подсказка</td>
+    </tr>
+    <ng-container *ngFor="let regType of filterByExists(regularityTypes); let i = index;">
+      <ng-container *ngIf="startGame.ExistRegularityTypeCounts[regType.type]">
+        <tr class="result-progress reg-type-summary">
+          <td [colSpan]="positions.length + 1"
+              (click)="rowClick(regType.type)"
+              [ngClass]="getTutorialClass('row', 0, regType.type)">
+            <b> {{regType.label}}</b> (найдено: {{filterByFound(game.ProgressRegularityInfos, regType.type).length}}/{{startGame.ExistRegularityTypeCounts[regType.type]}}),
+            <span class="reg-tooltip-container"
+                  [ngClass]="getTutorialClass('tooltip', i) ||
+                             (difficultyLevel == 0 ? 'over-tutorial-overlay' : null)"
+                  *ngIf="regType.regularityNumberHint">
+              <i #tooltip="matTooltip"
+                 matTooltip="Число-подсказка - {{regType.regularityNumberHint}}"
+                 matTooltipClass="tooltip-regularity-type"
+                 (click)="toggleTooltip(tooltip, i)"
+                 class="bi bi-question-circle"></i>
+            </span><b> числа-подсказки:</b>
+            <span *ngFor="let regularity of game.ProgressRegularityInfos[regType.type]">
+              <button *ngIf="!endGame && !getHintDisabled(regularity.FoundStatus) && hintsEnabled"
+                      class="btn btn-hint btn-small"
+                      [disabled]="getAnyDisabled(regularityTypes) ||
+                                  isTutorialActiveElement('row', 0, regType.type)"
+                      [ngClass]="getTutorialClass('hintRegNum', 0, regType.type)"
+                      (click)="startHintMode(regType.type, regularity.RegularityNumber, true)">?</button>
+              {{regularity.ReverseRegularityNumber ? '1/' + regularity.ReverseRegularityNumber : regularity.RegularityNumber}}
+              <span class="{{getHintClass(regularity.FoundStatus)}}">
+                  {{getHintChar(regularity.FoundStatus)}}
+              </span>&nbsp;&nbsp;
+            </span>
+          </td>
+        </tr>
+        <tr class="result-progress not-found-regs"
+            *ngIf="!filterByFound(game.ProgressRegularityInfos, regType.type).length">
+          <td [colSpan]="positions.length + 1">&nbsp;</td>
+        </tr>
+        <tr *ngFor="let regularity of filterByFound(game.ProgressRegularityInfos, regType.type)"
+            class="result-progress regularity{{regularity.FoundStatus == 2 ? ' hinted' : ' found'}}">
+          <td class="text-center vertical-center">
+            <span *ngIf="regType.regularityNumberHint">{{regularity.RegularityNumber}}</span>
+          </td>
+          <ng-container *ngFor="let position of positions">
+            <ng-container *ngFor="let length of [getCurrentLength(regularity.Numbers, position.value)]">
+              <td class="text-center"
+                  *ngIf="length.value"
+                  [colSpan]="length.value">
+                  <span *ngIf="length.exist"
+                        class="btn btn-deselected text-center">
+                    <span *ngFor="let increment of range(length.value)"
+                          class="found-digit">{{number[position.value + increment].value}}</span>
+                  </span>
+                <span *ngIf="!length.exist">&nbsp;</span>
+              </td>
+            </ng-container>
+          </ng-container>
+        </tr>
+      </ng-container>
+    </ng-container>
+  </tbody>
+</table>

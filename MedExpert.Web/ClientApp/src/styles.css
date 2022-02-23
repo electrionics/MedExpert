@@ -1,0 +1,232 @@
+@import "~bootstrap-icons/font/bootstrap-icons.css";
+
+/* You can add global styles to this file, and also import other style files */
+
+/* Provide sufficient contrast against white background */
+a {
+  color: #0366d6;
+}
+
+code {
+  color: #e01a76;
+}
+
+.text-center {
+  text-align: center!important;
+}
+
+.vertical-center{
+  vertical-align: middle!important;
+}
+
+.btn{
+  box-shadow: 1px 1px 12px 5px #313155!important;
+}
+.btn.disabled, .btn:disabled{
+  opacity: 0.55!important;
+}
+
+.btn-info {
+  color: #fff;
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+}
+
+.btn-hint {
+  color: #fff;
+  background-color: orange;
+  border-color: orange;
+}
+
+.btn-hint:hover {
+  color: #fff;
+  background-color: darkorange;
+  border-color: darkorange;
+}
+
+.btn-hint[disabled]:hover{
+  background-color: orange;
+  border-color: orange;
+}
+
+.btn-hint.btn-small{
+  width: 16px;
+  height: 25px;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background: linear-gradient(90deg, #8a8a8a7d, #91acbf) no-repeat fixed;
+}
+
+body.mat-typography{
+  font-size: 16px;
+}
+
+.table td, .table th{
+  padding: 0!important;
+  border-top: none;
+}
+
+header {
+  background: linear-gradient(#ffce75,#683c3c);
+}
+
+
+
+.update-record-dialog mat-dialog-container, .start-game-dialog mat-dialog-container {
+  background: linear-gradient(#ffce75,#683c3c);
+}
+
+.update-record-dialog .btn, .start-game-dialog .btn {
+  margin: 0 auto;
+}
+
+.confirm-dialog mat-dialog-container, .alert-dialog mat-dialog-container {
+  background: linear-gradient(#ffce75,#683c3c);
+}
+
+.confirm-dialog .btn, .alert-dialog .btn{
+  margin: 0 auto;
+}
+
+.alert-dialog.points-added-dialog mat-dialog-container{
+  background: linear-gradient(90deg, #fef99c, #9CF87A);
+}
+
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0);
+  background-image: url("loading.gif");
+  background-size: 48px 48px;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: 5s loader;
+}
+
+@keyframes loader {
+  0% {
+    background-image: none;
+  }
+
+  10% {
+    background-image: url("loading.gif");
+  }
+
+  100% {
+    background-image: url("loading.gif");
+  }
+}
+@-moz-keyframes loader {
+  0% {
+    background-image: none;
+  }
+
+  10% {
+    background-image: url("loading.gif");
+  }
+
+  100% {
+    background-image: url("loading.gif");
+  }
+}
+@-webkit-keyframes loader {
+  0% {
+    background-image: none;
+  }
+
+  10% {
+    background-image: url("loading.gif");
+  }
+
+  100% {
+    background-image: url("loading.gif");
+  }
+}
+
+
+/* *** animation for tutorial *** */
+
+.alert-dialog.current-task-dialog mat-dialog-container{
+  background: linear-gradient(90deg, #fef99c, #9CF87A);
+}
+
+
+.tutorial-overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 900;
+  background: rgba(0,0,0,.32);
+}
+
+.over-tutorial-overlay{
+  z-index: 901;
+  position: relative;
+}
+
+
+.highlighted-control {
+  cursor: pointer;
+  position: relative;
+  z-index: 901;
+}
+
+.highlighted-control:before {
+  content: '';
+  background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+  position: absolute;
+  top: -5px;
+  left:-5px;
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(5px);
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
+  animation: glowing 20s linear infinite;
+  -moz-animation: glowing 20s linear infinite;
+  -webkit-animation: glowing 20s linear infinite;
+  opacity: 1;
+  transition: opacity .3s ease-in-out;
+}
+
+.highlighted-control:after {
+  z-index: -1;
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border-radius: inherit;
+  background: inherit;
+}
+
+@keyframes glowing {
+  0% { background-position: 0 0; }
+  50% { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
+@-moz-keyframes glowing {
+  0% { background-position: 0 0; }
+  50% { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
+@-webkit-keyframes glowing {
+  0% { background-position: 0 0; }
+  50% { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
