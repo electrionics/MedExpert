@@ -230,3 +230,11 @@ header {
   50% { background-position: 400% 0; }
   100% { background-position: 0 0; }
 }
+
+
+.expand-button{
+  height: 20px;
+  padding: 0 3px;
+  font-size: 13px;
+  border-radius: 8px;
+}
