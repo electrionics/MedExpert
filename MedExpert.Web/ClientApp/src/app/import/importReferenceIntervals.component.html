@@ -3,12 +3,11 @@
 <h1>Импорт показателей</h1>
 
 <div class="form-group">
-  <label for="file">Выберите файл</label>
   <input type="file"
          id="file"
          (change)="changeFile($event.target.files)">
   <br/>
-  <button (click)="upload()" class="btn btn-success">Импортировать</button>
+  <button (click)="upload()" [disabled]="!fileToUpload" class="btn btn-success">Импортировать</button>
 </div>
 
 <h1>Отчёт импорта</h1>
@@ -19,7 +18,7 @@
     <li class="text-success" *ngIf="Report.headerValid">Заголовок в порядке.</li>
     <li class="text-success">{{Report.totalRowsFound}} строк найдено.</li>
     <li class="text-success">{{Report.totalRowsReady}} строк готово к импорту.</li>
-    <li class="text-danger">{{Report.countInvalidRows}} строк не годны. <span *ngIf="Report.countInvalidRows">Смотрите отчёт ниже.</span></li>
+    <li class="text-danger">{{Report.countInvalidRows}} строк не годны. <span *ngIf="Report.countInvalidRows">Смотрите ошибки ниже.</span></li>
     <li class="text-success">{{Report.totalInsertedRows}} суммарно добавлено.</li>
     <li class="text-success">{{Report.totalUpdatedRows}} суммарно обновлено.</li>
     <li class="text-danger" *ngIf="Report.totalInsertedErrorsCount">{{Report.totalInsertedErrorsCount}} ошибок при добавлении.</li>

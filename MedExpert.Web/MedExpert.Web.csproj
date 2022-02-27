@@ -36,6 +36,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MedExpert.Core\MedExpert.Core.csproj" />
+      <ProjectReference Include="..\MedExpert.Excel\MedExpert.Excel.csproj" />
       <ProjectReference Include="..\MedExpert.Services\MedExpert.Services.csproj" />
     </ItemGroup>
 
@@ -44,6 +45,8 @@
       <TypeScriptCompile Remove="ClientApp\src\app\game\updateRecordDialog.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\records\records.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\game\tutorial.component.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\import\importBase.component.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\import\importReport.component.ts" />
     </ItemGroup>
 
     <ItemGroup>

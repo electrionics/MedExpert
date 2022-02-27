@@ -11,8 +11,8 @@ export class ImportReferenceIntervalsComponent {
 
   private readonly http: HttpClient;
   private readonly baseUrl: string;
-  private fileToUpload: File;
 
+  public fileToUpload: File;
   public requestProgress: boolean;
 
   constructor(http: HttpClient, @Inject('BASE_API_URL') baseUrl: string) {
@@ -27,24 +27,26 @@ export class ImportReferenceIntervalsComponent {
   }
 
   public upload(){
-    let formData = new FormData();
-    formData.append('import', this.fileToUpload, this.fileToUpload.name);
-    this.requestProgress = true;
-    this.http.post<ImportReport>(this.baseUrl + 'Import/ReferenceInterval', formData).subscribe(result => {
-      this.Report = result;
+    if (this.fileToUpload){
+      let formData = new FormData();
+      formData.append('import', this.fileToUpload, this.fileToUpload.name);
+      this.requestProgress = true;
+      this.http.post<ImportReport>(this.baseUrl + 'Import/ReferenceInterval', formData).subscribe(result => {
+        this.Report = result;
 
-      this.Options = new ImportOptions();
-      this.Options.showErrorsByColumns = false;
-      this.Options.errorsExpanded = false;
-      this.Options.expandedColumns = {};
-      this.Options.expandedRows = {};
-      for (let column in this.Report.errorsByColumns){
-        this.Options.expandedColumns[column] = false;
-      }
-      for (let row in this.Report.errorsByRows){
-        this.Options.expandedRows[row] = false;
-      }
-    }, error => console.error(error), () => this.requestProgress = false );
+        this.Options = new ImportOptions();
+        this.Options.showErrorsByColumns = false;
+        this.Options.errorsExpanded = false;
+        this.Options.expandedColumns = {};
+        this.Options.expandedRows = {};
+        for (let column in this.Report.errorsByColumns){
+          this.Options.expandedColumns[column] = false;
+        }
+        for (let row in this.Report.errorsByRows){
+          this.Options.expandedRows[row] = false;
+        }
+      }, error => console.error(error), () => this.requestProgress = false );
+    }
   }
 
   public toggleErrorsByColumns(){

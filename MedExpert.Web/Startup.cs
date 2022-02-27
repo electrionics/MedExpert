@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MedExpert.Domain;
+using MedExpert.Excel;
 using MedExpert.Web.Configuration;
 using MedExpert.Web.Validators;
 using MedExpert.Web.ViewModels;
@@ -51,6 +52,8 @@ namespace MedExpert.Web
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
 
             services.AddScoped<IReferenceIntervalService, ReferenceIntervalService>();
+
+            services.AddScoped<ExcelParser, ExcelParser>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

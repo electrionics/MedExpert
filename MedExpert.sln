@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedExpert.Domain", "MedExpe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedExpert.Core", "MedExpert.Core\MedExpert.Core.csproj", "{225C482C-1110-43DE-A53F-2CBD94834C58}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedExpert.Excel", "MedExpert.Excel\MedExpert.Excel.csproj", "{AE3AD767-AD5A-4078-85C0-F66E90A2F818}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{225C482C-1110-43DE-A53F-2CBD94834C58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{225C482C-1110-43DE-A53F-2CBD94834C58}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{225C482C-1110-43DE-A53F-2CBD94834C58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE3AD767-AD5A-4078-85C0-F66E90A2F818}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE3AD767-AD5A-4078-85C0-F66E90A2F818}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE3AD767-AD5A-4078-85C0-F66E90A2F818}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE3AD767-AD5A-4078-85C0-F66E90A2F818}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

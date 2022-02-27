@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using MedExpert.Domain.Entities;
+using MedExpert.Domain.Enums;
+using MedExpert.Excel;
 using Microsoft.AspNetCore.Mvc;
 using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
@@ -11,11 +15,12 @@ namespace MedExpert.Web.Controllers
     public class ImportController:ControllerBase
     {
         private readonly IReferenceIntervalService _referenceIntervalService;
+        private readonly ExcelParser _excelParser;
 
-
-        public ImportController(IReferenceIntervalService referenceIntervalService)
+        public ImportController(IReferenceIntervalService referenceIntervalService, ExcelParser excelParser)
         {
             _referenceIntervalService = referenceIntervalService;
+            _excelParser = excelParser;
         }
 
         #region ReferenceInterval
@@ -24,6 +29,23 @@ namespace MedExpert.Web.Controllers
         [ApiRoute("Import/ReferenceInterval")]
         public Task<ImportReport> ImportReferenceInterval()
         {
+            var file = Request.Form.Files.FirstOrDefault();
+            if (file != null)
+            {
+                using var stream = file.OpenReadStream();
+                var result = _excelParser.Parse(stream);
+            }
+            
+            var indicators = new List<Indicator>();
+
+            foreach (var indicator in indicators)
+            {
+                if (Enum.TryParse<FormulaType>(indicator.ShortName, out var value))
+                {
+                    indicator.FormulaType = value;
+                }
+            }
+            
             return Task.FromResult(FakeData());
         }
 
