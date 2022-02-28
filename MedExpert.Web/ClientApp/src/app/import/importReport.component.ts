@@ -1,6 +1,5 @@
 import {Component, Inject, Input} from '@angular/core';
-import {HttpClient} from "@angular/common/http";
-import {ImportOptions, ImportReport} from "./importBase.component";
+import {ImportOptions, ImportReport} from "./importBase";
 
 @Component({
   selector: 'app-import-report',

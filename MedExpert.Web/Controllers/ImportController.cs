@@ -22,12 +22,12 @@ namespace MedExpert.Web.Controllers
             _referenceIntervalService = referenceIntervalService;
             _excelParser = excelParser;
         }
-
-        #region ReferenceInterval
         
+        #region Indicators
+
         [HttpPost]
-        [ApiRoute("Import/ReferenceInterval")]
-        public Task<ImportReport> ImportReferenceInterval()
+        [ApiRoute("Import/Indicators")]
+        public Task<ImportReport> ImportIndicators()
         {
             var file = Request.Form.Files.FirstOrDefault();
             if (file != null)
@@ -48,6 +48,44 @@ namespace MedExpert.Web.Controllers
             
             return Task.FromResult(FakeData());
         }
+        
+        #endregion
+
+        #region ReferenceIntervals
+        
+        [HttpPost]
+        [ApiRoute("Import/ReferenceIntervals")]
+        public Task<ImportReport> ImportReferenceIntervals()
+        {
+            var file = Request.Form.Files.FirstOrDefault();
+            if (file != null)
+            {
+                using var stream = file.OpenReadStream();
+                var result = _excelParser.Parse(stream);
+            }
+            
+            return Task.FromResult(FakeData());
+        }
+
+        #endregion
+        
+        #region Symptoms
+        
+        [HttpPost]
+        [ApiRoute("Import/Symptoms")]
+        public Task<ImportReport> ImportSymptoms()
+        {
+            var file = Request.Form.Files.FirstOrDefault();
+            if (file != null)
+            {
+                using var stream = file.OpenReadStream();
+                var result = _excelParser.Parse(stream);
+            }
+            
+            return Task.FromResult(FakeData());
+        }
+
+        #endregion
 
         private static ImportReport FakeData()
         {
@@ -113,7 +151,5 @@ namespace MedExpert.Web.Controllers
                 }
             };
         }
-
-        #endregion
     }
 }

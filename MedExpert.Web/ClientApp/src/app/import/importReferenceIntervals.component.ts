@@ -1,6 +1,6 @@
 import {Component, Inject} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {ImportBaseComponent, ImportOptions, ImportReport} from "./importBase.component";
+import {ImportBaseComponent, ImportReport} from "./importBase";
 
 @Component({
   selector: 'app-import-reference-intervals',
@@ -22,7 +22,7 @@ export class ImportReferenceIntervalsComponent extends ImportBaseComponent{
       let formData = new FormData();
       formData.append('import', this.fileToUpload, this.fileToUpload.name);
       this.requestProgress = true;
-      this.http.post<ImportReport>(this.baseUrl + 'Import/ReferenceInterval', formData).subscribe(result => {
+      this.http.post<ImportReport>(this.baseUrl + 'Import/ReferenceIntervals', formData).subscribe(result => {
         this.setupReportAndOptions(result);
       }, error => console.error(error), () => this.requestProgress = false );
     }
