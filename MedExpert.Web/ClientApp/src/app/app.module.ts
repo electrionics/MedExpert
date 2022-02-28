@@ -9,6 +9,9 @@ import { NavMenuComponent } from './nav-menu/nav-menu.component';
 import { FooterComponent } from './footer/footer.component';
 import { HomeComponent } from './home/home.component';
 import { AboutComponent } from './about/about.component';
+
+import { ImportReportComponent } from './import/importReport.component';
+
 import { ImportReferenceIntervalsComponent } from './import/importReferenceIntervals.component';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -33,6 +36,7 @@ import { PassGameParametersService } from "./game/passGameParametersService";
     FooterComponent,
     HomeComponent,
     AboutComponent,
+    ImportReportComponent,
     ImportReferenceIntervalsComponent,
 
     //TODO: delete
