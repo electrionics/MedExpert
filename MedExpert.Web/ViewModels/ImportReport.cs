@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MedExpert.Web.ViewModels
 {
@@ -18,6 +20,30 @@ namespace MedExpert.Web.ViewModels
         public Dictionary<int, List<ColumnError>> ErrorsByRows { get; set; }
         public Dictionary<string, List<RowError>> ErrorsByColumns { get; set; }
         public Dictionary<string, string> ColumnNames { get; set; }
+
+        public void CalculateReport()
+        {
+            TotalRowsReady = TotalRowsFound - ErrorsByRows.Count;
+            CountInvalidRows = ErrorsByRows.Count;
+            CountErrors = ErrorsByRows.Sum(x => x.Value.Count);
+        }
+        
+        public void BuildErrorsByColumns()
+        {
+            ErrorsByColumns = ErrorsByRows.SelectMany(x => x.Value
+                    .Select(y => Tuple.Create(y.Column, new RowError
+                    {
+                        Row = x.Key,
+                        ErrorMessage = y.ErrorMessage
+                    }))
+                    .ToList()
+                )
+                .GroupBy(x => x.Item1)
+                .ToDictionary(x => x.Key, x => x
+                    .Select(y => y.Item2)
+                    .ToList()
+                );
+        }
     }
 
     public class RowError

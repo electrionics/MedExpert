@@ -57,29 +57,33 @@ namespace MedExpert.Excel
                     }
 
                     var commentsPart = worksheetPart.WorksheetCommentsPart;
-                    var comments = commentsPart.Comments.CommentList;
+                    var comments = commentsPart?.Comments.CommentList;
 
-                    foreach (Comment comment in comments)
+                    if (comments != null)
                     {
-                        var cellName = comment.Reference.Value;
-                        
-                        var groups = CellNameSplitter.Match(cellName).Groups;
-                        var columnName = groups[1].Value;
-                        var rowNumber = int.Parse(groups[2].Value);
-                        
-                        var cellComment = comment.InnerText;
+                        foreach (Comment comment in comments)
+                        {
+                            var cellName = comment.Reference.Value;
 
-                        if (!result.ContainsKey(rowNumber))
-                        {
-                            result[rowNumber] = new Dictionary<string, Tuple<string, string>>();
+                            var groups = CellNameSplitter.Match(cellName).Groups;
+                            var columnName = groups[1].Value;
+                            var rowNumber = int.Parse(groups[2].Value);
+
+                            var cellComment = comment.InnerText;
+
+                            if (!result.ContainsKey(rowNumber))
+                            {
+                                result[rowNumber] = new Dictionary<string, Tuple<string, string>>();
+                            }
+
+                            if (!result[rowNumber].ContainsKey(columnName))
+                            {
+                                result[rowNumber][columnName] = new Tuple<string, string>(null, null);
+                            }
+
+                            var cellText = result[rowNumber][columnName].Item1;
+                            result[rowNumber][columnName] = new Tuple<string, string>(cellText, cellComment);
                         }
-                        if (!result[rowNumber].ContainsKey(columnName))
-                        {
-                            result[rowNumber][columnName] = new Tuple<string, string>(null, null);
-                        }
-                        
-                        var cellText = result[rowNumber][columnName].Item1;
-                        result[rowNumber][columnName] = new Tuple<string, string>(cellText, cellComment);
                     }
                 }
                 catch (Exception e)

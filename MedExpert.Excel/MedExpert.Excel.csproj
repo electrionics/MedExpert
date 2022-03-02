@@ -6,6 +6,11 @@
 
     <ItemGroup>
       <PackageReference Include="DocumentFormat.OpenXml" Version="2.15.0" />
+      <PackageReference Include="FluentValidation" Version="10.3.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\MedExpert.Domain\MedExpert.Domain.csproj" />
     </ItemGroup>
 
 </Project>

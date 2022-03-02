@@ -13,7 +13,7 @@ namespace MedExpert.Domain.Entities
         
         public bool InAnalysis { get; set; }
         
-        public FormulaType FormulaType { get; set; }
+        public FormulaType? FormulaType { get; set; }
         
         
         public List<AnalysisIndicator> AnalysisIndicators { get; set; }
