@@ -1,9 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using FluentValidation;
+using FluentValidation.Results;
+using MedExpert.Domain.Enums;
+using MedExpert.Excel.Model;
 
 // ReSharper disable StringLiteralTypo
 
@@ -20,7 +26,9 @@ namespace MedExpert.Excel.Metadata
 
         private Dictionary<string, PropertyInfo> CellValues { get; }
         private Dictionary<string, PropertyInfo> CellComments { get; }
+        private PropertyInfo CellDictionary { get; set; }
         private AbstractValidator<TImport> Validator { get; set; }
+        private AbstractValidator<List<string>> DynamicHeaderValidator { get; set; }
 
         private Dictionary<string, string> PropertyCellValues => CellValues.ToDictionary(
             x => x.Value.Name,
@@ -39,6 +47,24 @@ namespace MedExpert.Excel.Metadata
         protected void CellComment<TProperty>(Expression<Func<TImport, TProperty>> propertyExpression, string columnName)
         {
             CellItem(propertyExpression, columnName, false);
+        }
+
+        protected void CellsDictionary<TProperty>(
+            Expression<Func<TImport, Dictionary<string, TProperty>>> dictionaryExpression)
+        {
+            if (dictionaryExpression.Body is MemberExpression memberSelectorExpression)
+            {
+                var property = memberSelectorExpression.Member as PropertyInfo;
+                if (property != null)
+                {
+                    CellDictionary = property;
+                }
+            }
+        }
+
+        protected void HeaderValidator(AbstractValidator<List<string>> validator)
+        {
+            DynamicHeaderValidator = validator;
         }
 
         protected void EntityValidator(AbstractValidator<TImport> validator)
@@ -80,8 +106,11 @@ namespace MedExpert.Excel.Metadata
         public bool ValidateHeader(Dictionary<string, string> header)
         {
             var configurationKeys = CellValues.Keys.Union(CellComments.Keys).ToList();
+            var dynamicHeaderKeys = header.Keys.Where(key => !configurationKeys.Contains(key)).ToList();
             return configurationKeys.All(key => header.Keys.Contains(key)) && 
-                   configurationKeys.Count == header.Keys.Count;
+                   (configurationKeys.Count == header.Keys.Count || 
+                    DynamicHeaderValidator != null && 
+                    DynamicHeaderValidator.Validate(dynamicHeaderKeys).IsValid);
         }
 
         #endregion
@@ -102,8 +131,20 @@ namespace MedExpert.Excel.Metadata
                 result[header[key]] = ValidateStringComment(property.PropertyType, columnCells.GetValueOrDefault(header[key]) ?? Tuple.Create("",""));
             }
 
+            if (CellDictionary != null)
+            {
+                var configurationKeys = CellValues.Keys.Union(CellComments.Keys);
+                foreach (var (key, column) in header.Where(x => !configurationKeys.Contains(x.Key)))
+                {
+                    result[header[key]] = ValidateStringValue(CellDictionary.PropertyType.GenericTypeArguments[1],
+                        columnCells.GetValueOrDefault(header[key]) ?? Tuple.Create("", ""));
+                }
+            }
+
             return result;
         }
+
+        private static readonly Regex IntervalRegex = new("(\\d+(,?\\d+)?)-(\\d+(,?\\d+)?)");
 
         private static string ValidateString(Type propertyType, string value)
         {
@@ -115,6 +156,22 @@ namespace MedExpert.Excel.Metadata
             if (propertyType == typeof(string))
             {
                 return null;
+            }
+
+            if (propertyType == typeof(Sex))
+            {
+                return value == "М" || value == "Ж"
+                    ? null
+                    : "Значение должно быть равно 'М' или 'Ж'.";
+            }
+
+            if (propertyType == typeof(IntervalModel))
+            {
+                return string.IsNullOrEmpty(value)
+                    ? "Значение не должно быть пустым"
+                    : !IntervalRegex.IsMatch(value)
+                        ? "Некорректный формат интервала (пример: '0,1-0,3')"
+                        : null;
             }
 
             throw new NotImplementedException();
@@ -144,13 +201,20 @@ namespace MedExpert.Excel.Metadata
             var result = new Dictionary<string, List<string>>();
             foreach (var error in validationResult.Errors)
             {
-                if (propertyCellValues.ContainsKey(error.PropertyName))
+                var cellErrorPropertyName = error.PropertyName.Split('.')[0];
+                var dictionaryErrorPropertyName = error.FormattedMessagePlaceholderValues["PropertyName"]?.ToString();
+                
+                if (propertyCellValues.ContainsKey(cellErrorPropertyName))
                 {
-                    AddDictionaryListItem(result, propertyCellValues[error.PropertyName], error.ErrorMessage);
+                    AddDictionaryListItem(result, header[propertyCellValues[cellErrorPropertyName]], error.ErrorMessage);
                 }
-                else if (propertyCellComments.ContainsKey(error.PropertyName))
+                else if (propertyCellComments.ContainsKey(cellErrorPropertyName))
                 {
-                    AddDictionaryListItem(result, propertyCellComments[error.PropertyName], error.ErrorMessage);
+                    AddDictionaryListItem(result, header[propertyCellComments[cellErrorPropertyName]], error.ErrorMessage);
+                }
+                else if (CellDictionary != null && header.ContainsKey(dictionaryErrorPropertyName!))
+                {
+                    AddDictionaryListItem(result, header[dictionaryErrorPropertyName], error.ErrorMessage);
                 }
                 else
                 {
@@ -189,6 +253,17 @@ namespace MedExpert.Excel.Metadata
                 SetComment(key, entity, columnCells[header[key]]);
             }
 
+            if (CellDictionary != null)
+            {
+                var configurationKeys = CellValues.Keys.Union(CellComments.Keys).ToList();
+                var dynamicHeaderKeys = header.Keys.Where(key => !configurationKeys.Contains(key)).ToList();
+
+                foreach (var key in dynamicHeaderKeys)
+                {
+                    SetDictionaryItem(key, entity, columnCells[header[key]]);
+                }
+            }
+
             return entity;
         }
 
@@ -209,7 +284,20 @@ namespace MedExpert.Excel.Metadata
             
             property.SetValue(entity, valueObj, null);
         }
-        
+
+        private void SetDictionaryItem(string key, TImport entity, Tuple<string, string> cell)
+        {
+            var property = CellDictionary;
+
+            var valueObj = ConvertStringValue(property.PropertyType.GenericTypeArguments[1], cell.Item1);
+
+            var indexerPropertyInfo = property.PropertyType.GetProperty("Item");
+
+            var dictionary = property.GetValue(entity);
+
+            indexerPropertyInfo.SetValue(dictionary, valueObj, new[] { key });
+        }
+
         private static object ConvertStringValue(Type propertyType, string value)
         {
             if (propertyType == typeof(bool))
@@ -220,6 +308,21 @@ namespace MedExpert.Excel.Metadata
             if (propertyType == typeof(string))
             {
                 return value;
+            }
+            
+            if (propertyType == typeof(Sex))
+            {
+                return value == "М" ? Sex.Male : Sex.Female;
+            }
+
+            if (propertyType == typeof(IntervalModel))
+            {
+                var groups = IntervalRegex.Match(value).Groups;
+                return new IntervalModel
+                {
+                    ValueMin = decimal.Parse(groups[1].Value.Replace(",", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)),
+                    ValueMax = decimal.Parse(groups[3].Value.Replace(",", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator))
+                };
             }
 
             throw new NotImplementedException();

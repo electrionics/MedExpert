@@ -10,22 +10,24 @@ export class ImportBaseComponent {
   }
 
   public changeFile(files: FileList){
-    this.fileToUpload = files.item(0);
+    this.fileToUpload = files?.item(0);
   }
 
   protected setupReportAndOptions(result){
     this.Report = result;
 
-    this.Options = new ImportOptions();
-    this.Options.showErrorsByColumns = false;
-    this.Options.errorsExpanded = false;
-    this.Options.expandedColumns = {};
-    this.Options.expandedRows = {};
-    for (let column in this.Report.errorsByColumns){
-      this.Options.expandedColumns[column] = false;
-    }
-    for (let row in this.Report.errorsByRows){
-      this.Options.expandedRows[row] = false;
+    if (result){
+      this.Options = new ImportOptions();
+      this.Options.showErrorsByColumns = false;
+      this.Options.errorsExpanded = false;
+      this.Options.expandedColumns = {};
+      this.Options.expandedRows = {};
+      for (let column in this.Report.errorsByColumns){
+        this.Options.expandedColumns[column] = false;
+      }
+      for (let row in this.Report.errorsByRows){
+        this.Options.expandedRows[row] = false;
+      }
     }
   }
 }
@@ -47,6 +49,7 @@ export class ImportReport{
   totalInsertedErrorsCount: number;
   totalUpdatedErrorsCount: number;
   totalExecutionTimeSeconds: number;
+  error: string;
 
   countErrors: number;
   errorsByRows: { [row: number]: ColumnError[] };

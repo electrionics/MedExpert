@@ -1,6 +1,7 @@
 <div class="form-group" *ngIf="Report">
   <h1>Отчёт импорта</h1>
   <ul>
+    <li class="text-danger" *ngIf="Report.error">Ошибка: {{Report.error}}.</li>
     <li class="text-danger" *ngIf="!Report.headerValid">Заголовок содержит ошибки.</li>
     <li class="text-success" *ngIf="Report.headerValid">Заголовок в порядке.</li>
     <li class="text-success">{{Report.totalRowsFound}} строк найдено.</li>

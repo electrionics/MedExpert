@@ -22,6 +22,16 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<Indicator>().Where(x => shortNames.Contains(x.ShortName)).ToListAsync();
         }
 
+        public async Task<bool> AllShortNamesExists(List<string> shortNames)
+        {
+            var shortNamesDistinct = shortNames.Distinct();
+            return await _dataContext.Set<Indicator>()
+                .Where(x => shortNames.Contains(x.ShortName))
+                .Select(x => x.ShortName)
+                .Distinct()
+                .CountAsync() == shortNamesDistinct.Count();
+        }
+
         public async Task UpdateBulk(List<Indicator> indicators)
         {
             await _dataContext.SaveChangesAsync();

@@ -15,6 +15,8 @@ namespace MedExpert.Web.ViewModels
         public int TotalInsertedErrorsCount { get; set; }
         public int TotalUpdatedErrorsCount { get; set; }
         public decimal TotalExecutionTimeSeconds { get; set; }
+        
+        public string Error { get; set; }
 
         public int CountErrors { get; set; }
         public Dictionary<int, List<ColumnError>> ErrorsByRows { get; set; }
@@ -23,14 +25,14 @@ namespace MedExpert.Web.ViewModels
 
         public void CalculateReport()
         {
-            TotalRowsReady = TotalRowsFound - ErrorsByRows.Count;
-            CountInvalidRows = ErrorsByRows.Count;
-            CountErrors = ErrorsByRows.Sum(x => x.Value.Count);
+            TotalRowsReady = TotalRowsFound - ErrorsByRows?.Count ?? 0;
+            CountInvalidRows = ErrorsByRows?.Count ?? 0;
+            CountErrors = ErrorsByRows?.Sum(x => x.Value.Count) ?? 0;
         }
         
         public void BuildErrorsByColumns()
         {
-            ErrorsByColumns = ErrorsByRows.SelectMany(x => x.Value
+            ErrorsByColumns = ErrorsByRows?.SelectMany(x => x.Value
                     .Select(y => Tuple.Create(y.Column, new RowError
                     {
                         Row = x.Key,

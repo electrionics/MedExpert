@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using MedExpert.Domain.Entities;
 using MedExpert.Domain.Enums;
 using MedExpert.Excel;
@@ -11,7 +12,6 @@ using MedExpert.Excel.Model;
 using Microsoft.AspNetCore.Mvc;
 using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
-using MedExpert.Web.Validators;
 
 // ReSharper disable StringLiteralTypo
 
@@ -126,16 +126,76 @@ namespace MedExpert.Web.Controllers
         
         [HttpPost]
         [ApiRoute("Import/ReferenceIntervals")]
-        public Task<ImportReport> ImportReferenceIntervals()
+        public async Task<ImportReport> ImportReferenceIntervals()
         {
             var file = Request.Form.Files.FirstOrDefault();
             if (file != null)
             {
-                using var stream = file.OpenReadStream();
-                var result = _excelParser.Parse(stream);
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                
+                var report = new ImportReport();
+                const int headerRow = 1;
+                var metadataObject = new ImportReferenceIntervalMetadata(_indicatorService);
+                
+                try
+                {
+                    await using var stream = file.OpenReadStream();
+                    var parseResult = _excelParser.Parse(stream);
+                    var entityRows = parseResult
+                        .Where(x => x.Key > headerRow)
+                        .ToDictionary(x => x.Key, x => x.Value);
+
+                    var header = CreateAndValidateHeaderAndInitializeReport(metadataObject, parseResult, headerRow, entityRows.Count, report);
+
+                    if (report.HeaderValid)
+                    {
+                        FillEmptyCells(header, entityRows);
+                        ValidateCellsAndSetReportErrors(metadataObject, header, entityRows, report);
+
+                        var importCandidates = CreateImportCandidates(metadataObject, header, entityRows, report);
+
+                        ValidateEntitiesAndAddErrorsToReport(metadataObject, header, importCandidates, report);
+                        
+                        if (!report.ErrorsByRows.Any())
+                        {
+                            var firstRowKeys = importCandidates[headerRow + 1].Values.Keys
+                                .ToList();
+                            
+                            var indicators = await _indicatorService.GetIndicators(firstRowKeys);
+                            var indicatorsDict = indicators.ToDictionary(x => x.ShortName, x => x, StringComparer.OrdinalIgnoreCase);
+                            
+                            var toInserts = importCandidates.Values
+                                .Select(x => x.CreateEntity(indicatorsDict))
+                                .ToList();
+
+                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            
+                            await _referenceIntervalService.DeleteAllReferenceIntervalValues();
+                            await _referenceIntervalService.DeleteAllReferenceIntervalApplyCriteria();
+                            
+                            await SingleBulkInsertAndSetReport(_referenceIntervalService, toInserts, report);
+                            
+                            transaction.Complete();
+                        }
+                    }
+
+                    stopwatch.Stop();
+
+                    report.TotalExecutionTimeSeconds = stopwatch.ElapsedMilliseconds / 1000m;
+
+                    report.CalculateReport();
+                    report.BuildErrorsByColumns();
+                }
+                catch (Exception e)
+                {
+                    report.Error = e.Message + e.StackTrace;
+                }
+                
+                return await Task.FromResult(report);
             }
             
-            return Task.FromResult(FakeData());
+            return null;
         }
 
         #endregion
@@ -242,11 +302,11 @@ namespace MedExpert.Web.Controllers
             try
             {
                 await importService.UpdateBulk(toUpdates);
-                report.TotalUpdatedRows = toUpdates.Count;
+                report.TotalUpdatedRows += toUpdates.Count;
             }
             catch (Exception)
             {
-                report.TotalUpdatedErrorsCount = toUpdates.Count;
+                report.TotalUpdatedErrorsCount += toUpdates.Count;
             }
         }
         
@@ -268,7 +328,7 @@ namespace MedExpert.Web.Controllers
 
         private static ImportReport FakeData()
         {
-            return new ImportReport
+            var result = new ImportReport
             {
                 HeaderValid = true,
                 TotalRowsFound = 33,
@@ -308,27 +368,11 @@ namespace MedExpert.Web.Controllers
                             new() { Column = "B", ErrorMessage = "QQQ B B B B"}
                         }
                     },
-                },
-                ErrorsByColumns = new Dictionary<string, List<RowError>>
-                {
-                    {
-                        "A", new List<RowError>
-                        {
-                            new() { Row = 1, ErrorMessage = "AAAAAAAAAAAAAAA"},
-                            new() { Row = 2, ErrorMessage = "QQQQQQQ"},
-                            new() { Row = 3, ErrorMessage = "TTTTT"}
-                        }
-                    },
-                    {
-                        "B", new List<RowError>
-                        {
-                            new() { Row = 1, ErrorMessage = "B B B B B B B B"},
-                            new() { Row = 2, ErrorMessage = "QQQ B B B B"},
-                            new() { Row = 3, ErrorMessage = "QQQ B B B B"}
-                        }
-                    }
                 }
             };
+            
+            result.BuildErrorsByColumns();
+            return result;
         }
     }
 }

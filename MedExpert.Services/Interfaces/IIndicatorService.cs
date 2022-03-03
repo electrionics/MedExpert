@@ -7,5 +7,7 @@ namespace MedExpert.Services.Interfaces
     public interface IIndicatorService:IImportService<Indicator>
     {
         Task<List<Indicator>> GetIndicators(List<string> shortNames);
+
+        Task<bool> AllShortNamesExists(List<string> shortNames);
     }
 }

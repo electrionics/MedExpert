@@ -11,6 +11,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\MedExpert.Domain\MedExpert.Domain.csproj" />
+      <ProjectReference Include="..\MedExpert.Services\MedExpert.Services.csproj" />
     </ItemGroup>
 
 </Project>
