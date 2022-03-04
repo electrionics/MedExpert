@@ -97,13 +97,13 @@ namespace MedExpert.Web.Controllers
 
                     report.CalculateReport();
                     report.BuildErrorsByColumns();
-
-                    return await Task.FromResult(report);
                 }
                 catch (Exception e)
                 {
-                    return null;
+                    report.Error = e.Message;
                 }
+                
+                return await Task.FromResult(report);
             }
             
             return null;
@@ -156,6 +156,11 @@ namespace MedExpert.Web.Controllers
                         var importCandidates = CreateImportCandidates(metadataObject, header, entityRows, report);
 
                         ValidateEntitiesAndAddErrorsToReport(metadataObject, header, importCandidates, report);
+
+                        if (!report.ErrorsByRows.Any())
+                        {
+                            ValidateReferenceIntervalsListAndAddErrorsToReport(header, importCandidates, report);
+                        }
                         
                         if (!report.ErrorsByRows.Any())
                         {
@@ -189,13 +194,47 @@ namespace MedExpert.Web.Controllers
                 }
                 catch (Exception e)
                 {
-                    report.Error = e.Message + e.StackTrace;
+                    report.Error = e.Message;
                 }
                 
                 return await Task.FromResult(report);
             }
             
             return null;
+        }
+
+        private static void ValidateReferenceIntervalsListAndAddErrorsToReport(Dictionary<string, string> header, Dictionary<int, ImportReferenceIntervalModel> imports, ImportReport report)
+        {
+            var entitiesGrouped = imports
+                .GroupBy(x => x.Value.Sex);
+            foreach (var group in entitiesGrouped)
+            {
+                var entities = group
+                    .OrderBy(x => x.Value.AgeInterval.ValueMin)
+                    .ToList();
+                for (var i = 0; i < entities.Count - 1; i++)
+                {
+                    var currEntityPair = entities[i];
+                    string message = null;
+                    if (currEntityPair.Value.AgeInterval.ValueMax != entities[i + 1].Value.AgeInterval.ValueMin)
+                    {
+                        var sexStr = currEntityPair.Value.Sex == Sex.Male ? "М" : "Ж";
+                        message =
+                            $"Пол '{sexStr}': верхняя граница ({entities[i].Value.AgeInterval.ValueMax}) возрастного интервала не совпадает " +
+                            $"с нижней границей ({entities[i + 1].Value.AgeInterval.ValueMin}) следующего интервала. Все интервалы должны составлять целый интекрвал без пропусков и пересечений.";
+                    }
+
+                    if (message != null)
+                    {
+                        if (!report.ErrorsByRows.ContainsKey(currEntityPair.Key))
+                        {
+                            report.ErrorsByRows[currEntityPair.Key] = new List<ColumnError>();
+                        }
+                        
+                        report.ErrorsByRows[currEntityPair.Key].Add(new ColumnError{ Column = header["Возраст"], ErrorMessage = message });
+                    }
+                }
+            }
         }
 
         #endregion
