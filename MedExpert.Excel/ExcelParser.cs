@@ -86,7 +86,7 @@ namespace MedExpert.Excel
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     
                 }
