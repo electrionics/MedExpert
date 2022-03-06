@@ -9,6 +9,7 @@ namespace MedExpert.Web.ViewModels
         public ImportReport()
         {
             HeaderErrors = new List<string>();
+            ErrorsByRows = new Dictionary<int, List<ColumnError>>();
         }
 
         public bool HeaderValid => !HeaderErrors.Any();
@@ -31,14 +32,14 @@ namespace MedExpert.Web.ViewModels
 
         public void CalculateReport()
         {
-            TotalRowsReady = TotalRowsFound - ErrorsByRows?.Count ?? 0;
-            CountInvalidRows = ErrorsByRows?.Count ?? 0;
-            CountErrors = ErrorsByRows?.Sum(x => x.Value.Count) ?? 0;
+            TotalRowsReady = TotalRowsFound - ErrorsByRows.Count;
+            CountInvalidRows = ErrorsByRows.Count;
+            CountErrors = ErrorsByRows.Sum(x => x.Value.Count);
         }
         
         public void BuildErrorsByColumns()
         {
-            ErrorsByColumns = ErrorsByRows?.SelectMany(x => x.Value
+            ErrorsByColumns = ErrorsByRows.SelectMany(x => x.Value
                     .Select(y => Tuple.Create(y.Column, new RowError
                     {
                         Row = x.Key,

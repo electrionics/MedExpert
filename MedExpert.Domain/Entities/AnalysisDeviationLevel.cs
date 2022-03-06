@@ -6,9 +6,9 @@
         
         public int DeviationLevelId { get; set; }
         
-        public int MinPercentFromCenter { get; set; }
+        public int? MinPercentFromCenter { get; set; }
         
-        public int MaxPercentFromCenter { get; set; }
+        public int? MaxPercentFromCenter { get; set; }
         
         
         public Analysis Analysis { get; set; }

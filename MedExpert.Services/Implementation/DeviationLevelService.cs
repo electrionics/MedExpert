@@ -22,5 +22,21 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<DeviationLevel>()
                 .ToListAsync();
         }
+
+        public Task UpdateBulk(List<AnalysisDeviationLevel> entities)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public async Task InsertBulk(List<AnalysisDeviationLevel> entities)
+        {
+            await _dataContext.Set<AnalysisDeviationLevel>().AddRangeAsync(entities);
+            await _dataContext.SaveChangesAsync();
+        }
+
+        public Task Insert(AnalysisDeviationLevel entity)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

@@ -39,5 +39,10 @@ namespace MedExpert.Services.Implementation
             await _dataContext.Set<ReferenceIntervalApplyCriteria>().AddRangeAsync(entities);
             await _dataContext.SaveChangesAsync();
         }
+
+        public Task Insert(ReferenceIntervalApplyCriteria entity)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

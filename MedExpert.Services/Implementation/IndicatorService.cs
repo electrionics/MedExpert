@@ -23,6 +23,11 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<Indicator>().Where(x => shortNames.Contains(x.ShortName)).ToListAsync();
         }
 
+        public async Task<List<Indicator>> GetAnalysisIndicators()
+        {
+            return await _dataContext.Set<Indicator>().Where(x => x.InAnalysis).ToListAsync();
+        }
+
         public async Task<List<string>> GetShortNamesNotExists(List<string> shortNames)
         {
             var existingShortNames = await _dataContext.Set<Indicator>()
@@ -43,6 +48,11 @@ namespace MedExpert.Services.Implementation
         {
             await _dataContext.Set<Indicator>().AddRangeAsync(indicators);
             await _dataContext.SaveChangesAsync();
+        }
+
+        public Task Insert(Indicator entity)
+        {
+            throw new NotImplementedException();
         }
     }
 }

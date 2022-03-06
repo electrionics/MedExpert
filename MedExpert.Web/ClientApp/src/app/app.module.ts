@@ -16,6 +16,7 @@ import { ImportReportComponent } from './import/importReport.component';
 import { ImportIndicatorsComponent } from './import/importIndicators.component';
 import { ImportReferenceIntervalsComponent } from './import/importReferenceIntervals.component';
 import { ImportSymptomsComponent } from "./import/importSymptoms.component";
+import { ImportAnalysisComponent } from "./import/importAnalysis.component";
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatTooltipModule } from "@angular/material/tooltip";
@@ -43,6 +44,7 @@ import { PassGameParametersService } from "./game/passGameParametersService";
     ImportReferenceIntervalsComponent,
     ImportIndicatorsComponent,
     ImportSymptomsComponent,
+    ImportAnalysisComponent,
 
     //TODO: delete
     StartGameComponent,
@@ -64,7 +66,8 @@ import { PassGameParametersService } from "./game/passGameParametersService";
       {path: 'about', component: AboutComponent},
       {path: 'import/reference-intervals', component: ImportReferenceIntervalsComponent},
       {path: 'import/indicators', component: ImportIndicatorsComponent},
-      {path: 'import/symptoms', component: ImportSymptomsComponent}
+      {path: 'import/symptoms', component: ImportSymptomsComponent},
+      {path: 'import/analysis', component: ImportAnalysisComponent}
     ]),
     BrowserAnimationsModule,
     MatTooltipModule,

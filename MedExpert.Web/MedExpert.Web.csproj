@@ -45,6 +45,7 @@
       <TypeScriptCompile Remove="ClientApp\src\app\game\updateRecordDialog.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\records\records.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\game\tutorial.component.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\import\importAnalysis.component.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\import\importBase.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\import\importIndicators.component.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\import\importReport.component.ts" />

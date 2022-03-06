@@ -210,20 +210,36 @@ namespace MedExpert.Excel.Metadata
                 return null;
             }
 
-            if (propertyType == typeof(Sex))
+            if (propertyType == typeof(Sex) || propertyType == typeof(Sex?))
             {
-                return value is "М" or "Ж"
+                return value is "М" or "Ж" || propertyType == typeof(Sex?) && string.IsNullOrEmpty(value)
                     ? null
                     : "Значение должно быть равно 'М' или 'Ж'.";
             }
 
             if (propertyType == typeof(IntervalModel))
             {
-                return string.IsNullOrEmpty(value)
-                    ? "Значение не должно быть пустым"
-                    : !IntervalRegex.IsMatch(value)
-                        ? "Некорректный формат интервала (пример: '0,1-0,3')"
-                        : null;
+                return !string.IsNullOrEmpty(value) && !IntervalRegex.IsMatch(value)
+                    ? "Некорректный формат интервала (пример: '0,1-0,3')"
+                    : null;
+            }
+
+            if (propertyType == typeof(int) || propertyType == typeof(int?))
+            {
+                return propertyType == typeof(int?) && string.IsNullOrEmpty(value)
+                    ? null
+                    : int.TryParse(value, out _)
+                        ? null
+                        : "Значение должно быть целым.";
+            }
+            
+            if (propertyType == typeof(decimal) || propertyType == typeof(decimal?))
+            {
+                return propertyType == typeof(decimal?) && string.IsNullOrEmpty(value)
+                    ? null
+                    : decimal.TryParse(value?.Replace(",", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator), out _)
+                        ? null
+                        : "Значение должно быть целым.";
             }
 
             throw new ArgumentException("Validation not implemented", nameof(propertyType));
@@ -428,14 +444,51 @@ namespace MedExpert.Excel.Metadata
             {
                 return value == string.Empty ? null : value;
             }
-            
-            if (propertyType == typeof(Sex))
+
+            if (propertyType == typeof(decimal) || propertyType == typeof(decimal?))
             {
-                return value == "М" ? Sex.Male : Sex.Female;
+                if (decimal.TryParse(value, out var decimalValue))
+                {
+                    return decimalValue;
+                }
+
+                return propertyType == typeof(decimal?) ? null : 0;
+            }
+            
+            if (propertyType == typeof(int) || propertyType == typeof(int?))
+            {
+                if (int.TryParse(value, out var intValue))
+                {
+                    return intValue;
+                }
+
+                return propertyType == typeof(int?) ? null : 0;
+            }
+            
+            if (propertyType == typeof(Sex) || propertyType == typeof(Sex?))
+            {
+                var sexValue = value switch
+                {
+                    "М" => Sex.Male,
+                    "Ж" => Sex.Female,
+                    _ => (Sex?)null
+                };
+
+                if (propertyType == typeof(Sex) && sexValue == null)
+                {
+                    sexValue = Sex.Male;
+                }
+
+                return sexValue;
             }
 
             if (propertyType == typeof(IntervalModel))
             {
+                if (string.IsNullOrEmpty(value))
+                {
+                    return null;
+                }
+                
                 var groups = IntervalRegex.Match(value).Groups;
                 return new IntervalModel
                 {

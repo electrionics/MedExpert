@@ -29,6 +29,11 @@ namespace MedExpert.Services.Implementation
             await _dataContext.SaveChangesAsync();
         }
 
+        public Task Insert(Symptom entity)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task DeleteAllSymptomIndicatorDeviationLevels(int specialistId)
         {
             var entities = _dataContext.Set<SymptomIndicatorDeviationLevel>()

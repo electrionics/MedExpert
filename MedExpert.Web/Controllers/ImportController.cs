@@ -26,9 +26,11 @@ namespace MedExpert.Web.Controllers
         private readonly IIndicatorService _indicatorService;
         private readonly IDeviationLevelService _deviationLevelService;
         private readonly ISymptomService _symptomService;
+        private readonly IAnalysisService _analysisService;
+        private readonly IAnalysisIndicatorService _analysisIndicatorService;
         private readonly ExcelParser _excelParser;
 
-        public ImportController(IReferenceIntervalService referenceIntervalService, ExcelParser excelParser, IIndicatorService indicatorService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, ISymptomService symptomService)
+        public ImportController(IReferenceIntervalService referenceIntervalService, ExcelParser excelParser, IIndicatorService indicatorService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, ISymptomService symptomService, IAnalysisService analysisService, IAnalysisIndicatorService analysisIndicatorService)
         {
             _referenceIntervalService = referenceIntervalService;
             _excelParser = excelParser;
@@ -36,6 +38,8 @@ namespace MedExpert.Web.Controllers
             _specialistService = specialistService;
             _deviationLevelService = deviationLevelService;
             _symptomService = symptomService;
+            _analysisService = analysisService;
+            _analysisIndicatorService = analysisIndicatorService;
         }
         
         
@@ -497,7 +501,227 @@ namespace MedExpert.Web.Controllers
         }
 
         #endregion
+
+
+        #region Analysis
+
+        [HttpPost]
+        [ApiRoute("Import/Analysis")]
+        public async Task<ImportReport> ImportAnalysis([FromQuery] int? specialistId)
+        {
+            var file = Request.Form.Files.FirstOrDefault();
+            if (file != null)
+            {
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                
+                var report = new ImportReport();
+                const int headerRow = 1;
+                var metadataObjectAnalysis = new ImportAnalysisMetadata();
+                var metadataObjectIndicator = new ImportAnalysisIndicatorMetadata();
+                var metadataObjectDeviationLevel = new ImportAnalysisDeviationLevelMetadata();
+                
+                try
+                {
+                    await using var stream = file.OpenReadStream();
+                    var parseResult = _excelParser.Parse(stream);
+                    var entityRows = parseResult
+                        .Where(x => x.Key > headerRow)
+                        .ToDictionary(x => x.Key, x => x.Value);
+
+                    var header = CreateAndValidateHeaderAndInitializeReport(metadataObjectIndicator, parseResult, headerRow, entityRows.Count, report);
+                    CreateAndValidateHeaderAndInitializeReport(metadataObjectAnalysis, parseResult, headerRow, entityRows.Count, report);
+                    CreateAndValidateHeaderAndInitializeReport(metadataObjectDeviationLevel, parseResult, headerRow, entityRows.Count, report);
+
+                    if (report.HeaderValid)
+                    {
+                        FillEmptyCells(header, entityRows);
+                        
+                        ValidateCellsAndSetReportErrors(metadataObjectAnalysis, header, entityRows, report);
+                        ValidateCellsAndSetReportErrors(metadataObjectIndicator, header, entityRows, report);
+                        ValidateCellsAndSetReportErrors(metadataObjectDeviationLevel, header, entityRows, report);
+
+                        var importCandidatesAnalysis = CreateImportCandidates(metadataObjectAnalysis, header, entityRows, report)
+                            .Where(x => x.Value.Sex != null)
+                            .ToDictionary(x => x.Key, x => x.Value);
+                        var importCandidatesIndicator = CreateImportCandidates(metadataObjectIndicator, header, entityRows, report)
+                            .Where(x => x.Value.Value != null)
+                            .ToDictionary(x => x.Key, x => x.Value);
+                        var importCandidatesDeviationLevel = CreateImportCandidates(metadataObjectDeviationLevel, header, entityRows, report)
+                            .Where(x => x.Value.Alias != null)
+                            .ToDictionary(x => x.Key, x => x.Value);
+
+                        var indicators = await _indicatorService.GetAnalysisIndicators();
+                        var deviationLevels = await _deviationLevelService.GetAll();
+                        PrepareAnalysisIndicators(importCandidatesIndicator, indicators);
+                        PrepareAnalysisDeviationLevels(importCandidatesDeviationLevel, deviationLevels);
+                        
+                        ValidateEntitiesAndAddErrorsToReport(metadataObjectAnalysis, header, importCandidatesAnalysis, report);
+                        ValidateEntitiesAndAddErrorsToReport(metadataObjectIndicator, header, importCandidatesIndicator, report);
+                        ValidateEntitiesAndAddErrorsToReport(metadataObjectDeviationLevel, header, importCandidatesDeviationLevel, report);
+                        
+                        if (!report.ErrorsByRows.Any())
+                        {
+                            ValidateAnalysisDeviationLevelsListAndAddErrorsToReport(header, importCandidatesDeviationLevel, report);
+                            ValidateAnalysisListAndAddErrorsToReport(header, importCandidatesAnalysis, report);
+                        }
+                        
+                        if (!report.ErrorsByRows.Any())
+                        {
+                            var toInsertsAnalysis = importCandidatesAnalysis.Values
+                                .Select(x => x.CreateEntity())
+                                .First();
+                            var toInsertIndicators = importCandidatesIndicator.Values
+                                .Select(x => x.CreateEntity())
+                                .ToList();
+                            var toInsertDeviationLevels = importCandidatesDeviationLevel.Values
+                                .Select(x => x.CreateEntity(deviationLevels))
+                                .ToList();
+                            
+                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+                            await SingleInsertAndSetReport(_analysisService, toInsertsAnalysis, report);
+
+                            foreach (var indicator in toInsertIndicators)
+                            {
+                                indicator.Analysis = toInsertsAnalysis;
+                            }
+                            foreach (var deviationLevel in toInsertDeviationLevels)
+                            {
+                                deviationLevel.Analysis = toInsertsAnalysis;
+                            }
+                            
+                            await SingleBulkInsertAndSetReport(_analysisIndicatorService, toInsertIndicators, report);
+                            await SingleBulkInsertAndSetReport(_deviationLevelService, toInsertDeviationLevels, report);
+                            
+                            transaction.Complete();
+                        }
+                    }
+
+                    stopwatch.Stop();
+
+                    report.TotalExecutionTimeSeconds = stopwatch.ElapsedMilliseconds / 1000m;
+
+                    report.CalculateReport();
+                    report.BuildErrorsByColumns();
+                }
+                catch (Exception e)
+                {
+                    report.Error = e.Message;
+                }
+                
+                return await Task.FromResult(report);
+            }
+            
+            return null;
+        }
+
+        private static void PrepareAnalysisIndicators(Dictionary<int, ImportAnalysisIndicatorModel> importCandidates, List<Indicator> indicators)
+        {
+            var indicatorsDict = indicators.ToDictionary(x => x.ShortName, x => x);
+            
+            foreach (var (_, analysisIndicatorModel) in importCandidates)
+            {
+                
+                analysisIndicatorModel.AllowedIndicatorShortNames = indicatorsDict.Keys.ToList();
+                
+                if (indicatorsDict.TryGetValue(analysisIndicatorModel.Indicator, out var indicator))
+                {
+                    analysisIndicatorModel.IndicatorId = indicator.Id;
+                    analysisIndicatorModel.Calculated = indicator.FormulaType.HasValue;
+                }
+            }
+        }
+
+        private static void PrepareAnalysisDeviationLevels(Dictionary<int, ImportAnalysisDeviationLevelModel> importCandidates, List<DeviationLevel> deviationLevels)
+        {
+            var deviationLevelsDict = deviationLevels.ToDictionary(x => x.Alias, x => x);
+            
+            foreach (var (_, analysisDeviationLevelModel) in importCandidates)
+            {
+                analysisDeviationLevelModel.AllowedAliases = deviationLevelsDict.Keys.ToList();
+                analysisDeviationLevelModel.AllowedDeviationLevelIds = deviationLevels.Select(x => x.Id).ToList();
+                
+                if (deviationLevelsDict.TryGetValue(analysisDeviationLevelModel.Alias, out var deviationLevel))
+                {
+                    analysisDeviationLevelModel.DeviationLevelId = deviationLevel.Id;
+                }
+            }
+        }
+
+        private static void ValidateAnalysisDeviationLevelsListAndAddErrorsToReport(Dictionary<string, string> header, Dictionary<int, ImportAnalysisDeviationLevelModel> imports, ImportReport report)
+        {
+            var orderedImports = imports.OrderBy(x => x.Value.DeviationLevelId).ToList();
+            for (var i = 0; i < orderedImports.Count - 1; i++)
+            {
+                var (currKey, currValue) = orderedImports[i];
+                var (_, nextValue) = orderedImports[i + 1];
+
+                string message = null;
+                
+                if (currValue.MinPercentFromCenter != null &&
+                    nextValue.MinPercentFromCenter != null)
+                {
+                    if (currValue.MinPercentFromCenter <= nextValue.MinPercentFromCenter)
+                    {
+                        message =
+                            $"Значение вниз от центра ({currValue.MinPercentFromCenter}) для уровня отклонения '{currValue.Alias}'" +
+                            $" должно быть больше значения вниз от центра ({nextValue.MinPercentFromCenter}) для уровня отклонения '{nextValue.Alias}'";
+                    }
+                }
+
+                AddAnalysisDeviationLevelErrorByRow(header, currKey, message, "Вниз от центра%", report);
+
+                message = null;
+                
+                if (currValue.MaxPercentFromCenter != null &&
+                    nextValue.MaxPercentFromCenter != null)
+                {
+                    if (currValue.MaxPercentFromCenter >= nextValue.MaxPercentFromCenter)
+                    {
+                        message =
+                            $"Значение вверх от центра ({currValue.MaxPercentFromCenter}) для уровня отклонения '{currValue.Alias}'" +
+                            $" должно быть меньше значения вниз от центра ({nextValue.MaxPercentFromCenter}) для уровня отклонения '{nextValue.Alias}'";
+                    }
+                }
+                
+                AddAnalysisDeviationLevelErrorByRow(header, currKey, message, "Вверх от центра%", report);
+            }
+        }
         
+        private static void AddAnalysisDeviationLevelErrorByRow(Dictionary<string, string> header, int row, string message, string columnName, ImportReport report)
+        {
+            if (message != null)
+            {
+                if (!report.ErrorsByRows.ContainsKey(row))
+                {
+                    report.ErrorsByRows[row] = new List<ColumnError>();
+                }
+            
+                report.ErrorsByRows[row].Add(new ColumnError{ Column = header[columnName], ErrorMessage = message });
+            }
+        }
+
+        private static void ValidateAnalysisListAndAddErrorsToReport(Dictionary<string, string> header, Dictionary<int, ImportAnalysisModel> imports, ImportReport report)
+        {
+            foreach (var currEntityPair in imports.Where(x => x.Key > imports.Keys.Min()))
+            {
+                var message = $"Недопустимо больше одной строки данных анализа";
+                AddAnalysisErrorByRow(header, currEntityPair, message, report);
+            }
+        }
+        
+        private static void AddAnalysisErrorByRow(Dictionary<string, string> header, KeyValuePair<int, ImportAnalysisModel> currEntityPair, string message, ImportReport report)
+        {
+            if (!report.ErrorsByRows.ContainsKey(currEntityPair.Key))
+            {
+                report.ErrorsByRows[currEntityPair.Key] = new List<ColumnError>();
+            }
+            
+            report.ErrorsByRows[currEntityPair.Key].Add(new ColumnError{ Column = header["Пол"], ErrorMessage = message });
+        }
+
+        #endregion
         
         #region Common Methods
 
@@ -511,7 +735,7 @@ namespace MedExpert.Web.Controllers
             
             report.TotalRowsFound = entityRowsCount;
 
-            report.HeaderErrors = metadataObject.ValidateHeader(headerItems);
+            report.HeaderErrors.AddRange(metadataObject.ValidateHeader(headerItems));
             if (!report.HeaderValid) return null;
             
             var header = headerItems.ToDictionary(
@@ -538,7 +762,7 @@ namespace MedExpert.Web.Controllers
         private static void ValidateCellsAndSetReportErrors<TImport>(BaseMetadata<TImport> metadataObject, Dictionary<string, string> header, Dictionary<int, Dictionary<string, Tuple<string, string>>> entityRows, ImportReport report)
             where TImport: new()
         {
-            report.ErrorsByRows = entityRows
+            var errorsByRows = entityRows
                 .Select(x => Tuple.Create(
                     x.Key,
                     metadataObject
@@ -553,6 +777,16 @@ namespace MedExpert.Web.Controllers
                 )
                 .Where(x => x.Item2.Any())
                 .ToDictionary(x => x.Item1, x => x.Item2);
+
+            foreach (var (row, columnErrors) in errorsByRows)
+            {
+                if (!report.ErrorsByRows.ContainsKey(row))
+                {
+                    report.ErrorsByRows[row] = new List<ColumnError>();
+                }
+                
+                report.ErrorsByRows[row].AddRange(columnErrors);
+            }
         }
 
         private static Dictionary<int, TImport> CreateImportCandidates<TImport>(BaseMetadata<TImport> metadataObject, Dictionary<string, string> header, Dictionary<int, Dictionary<string, Tuple<string, string>>> entityRows, ImportReport report)
@@ -567,17 +801,17 @@ namespace MedExpert.Web.Controllers
         private static void ValidateEntitiesAndAddErrorsToReport<TImport>(BaseMetadata<TImport> metadataObject, Dictionary<string, string> header, Dictionary<int, TImport> imports, ImportReport report)
             where TImport: new()
         {
-            foreach (var importModel in imports)
+            foreach (var (row, importModel) in imports)
             {
-                var validationResult = metadataObject.ValidateEntity(header, importModel.Value);
+                var validationResult = metadataObject.ValidateEntity(header, importModel);
                 if (!validationResult.Any()) continue;
                 
-                if (!report.ErrorsByRows.ContainsKey(importModel.Key))
+                if (!report.ErrorsByRows.ContainsKey(row))
                 {
-                    report.ErrorsByRows[importModel.Key] = new List<ColumnError>();
+                    report.ErrorsByRows[row] = new List<ColumnError>();
                 }
 
-                report.ErrorsByRows[importModel.Key].AddRange(validationResult.SelectMany(x => x
+                report.ErrorsByRows[row].AddRange(validationResult.SelectMany(x => x
                     .Value.Select(y => new ColumnError
                     {
                         Column = x.Key,
@@ -604,11 +838,25 @@ namespace MedExpert.Web.Controllers
             try
             {
                 await importService.InsertBulk(toInserts);
-                report.TotalInsertedRows = toInserts.Count;
+                report.TotalInsertedRows += toInserts.Count;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                report.TotalInsertedErrorsCount = toInserts.Count;
+                report.TotalInsertedErrorsCount += toInserts.Count;
+            }
+        }
+
+        private static async Task SingleInsertAndSetReport<TImportEntity>(IImportService<TImportEntity> importService,
+            TImportEntity toInsert, ImportReport report)
+        {
+            try
+            {
+                await importService.Insert(toInsert);
+                report.TotalInsertedRows += 1;
+            }
+            catch (Exception e)
+            {
+                report.TotalInsertedErrorsCount += 1;
             }
         }
         

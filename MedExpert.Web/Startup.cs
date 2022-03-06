@@ -56,6 +56,8 @@ namespace MedExpert.Web
             services.AddScoped<IIndicatorService, IndicatorService>();
             services.AddScoped<IDeviationLevelService, DeviationLevelService>();
             services.AddScoped<ISymptomService, SymptomService>();
+            services.AddScoped<IAnalysisService, AnalysisService>();
+            services.AddScoped<IAnalysisIndicatorService, AnalysisIndicatorService>();
 
             services.AddScoped<ExcelParser, ExcelParser>();
         }

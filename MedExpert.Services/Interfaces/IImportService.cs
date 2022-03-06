@@ -8,5 +8,6 @@ namespace MedExpert.Services.Interfaces
     {
         Task UpdateBulk(List<TImportEntity> entities);
         Task InsertBulk(List<TImportEntity> entities);
+        Task Insert(TImportEntity entity);
     }
 }

@@ -4,7 +4,7 @@ using MedExpert.Domain.Entities;
 
 namespace MedExpert.Services.Interfaces
 {
-    public interface IDeviationLevelService
+    public interface IDeviationLevelService:IImportService<AnalysisDeviationLevel>
     {
         public Task<List<DeviationLevel>> GetAll();
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MedExpert.Domain.Enums;
 
 namespace MedExpert.Domain.Entities
 {
@@ -8,6 +9,10 @@ namespace MedExpert.Domain.Entities
         public int Id { get; set; }
         
         public int UserId { get; set; }
+        
+        public Sex Sex { get; set; }
+        
+        public int Age { get; set; }
         
         public DateTime CalculationTime { get; set; }
         

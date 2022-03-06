@@ -8,6 +8,8 @@ namespace MedExpert.Services.Interfaces
     {
         Task<List<Indicator>> GetIndicators(List<string> shortNames);
 
+        Task<List<Indicator>> GetAnalysisIndicators();
+
         Task<List<string>> GetShortNamesNotExists(List<string> shortNames);
     }
 }

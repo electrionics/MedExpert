@@ -6,13 +6,13 @@
         
         public int IndicatorId { get; set; }
         
-        public decimal Value { get; set; }
+        public decimal Value { get; set; }  
         
-        public decimal ReferenceIntervalValueMin { get; set; }
+        public decimal? ReferenceIntervalValueMin { get; set; }
         
-        public decimal ReferenceIntervalValueMax { get; set; }
+        public decimal? ReferenceIntervalValueMax { get; set; }
         
-        public int DeviationLevelId { get; set; }
+        public int DeviationLevelId { get; set; } 
         
         public Analysis Analysis { get; set; }
         
