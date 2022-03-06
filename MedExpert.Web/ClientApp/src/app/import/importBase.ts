@@ -41,6 +41,7 @@ export class ImportOptions{
 
 export class ImportReport{
   headerValid: boolean;
+  headerErrors: string[];
   totalRowsFound: number;
   totalRowsReady: number;
   countInvalidRows: number;

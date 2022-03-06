@@ -5,9 +5,14 @@
 <div class="form-group">
   <input type="file"
          id="file"
-         (change)="changeFile($event.target.files)">
-  <br/>
-  <button (click)="upload()" [disabled]="!fileToUpload" class="btn btn-success">Импортировать</button>
+         (change)="changeFile($event.target.files)"><br/>
+  <label>Специалист</label>
+  <select [(ngModel)]="specialistId">
+    <option *ngFor="let item of specialists" [value]="item.id">
+      {{item.name}}
+    </option>
+  </select><br/>
+  <button (click)="upload()" [disabled]="!fileToUpload || !specialistId" class="btn btn-success">Импортировать</button>
 </div>
 
 <app-import-report [Report]="Report" [Options]="Options"></app-import-report>

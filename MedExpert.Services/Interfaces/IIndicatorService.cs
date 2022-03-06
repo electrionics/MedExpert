@@ -8,6 +8,6 @@ namespace MedExpert.Services.Interfaces
     {
         Task<List<Indicator>> GetIndicators(List<string> shortNames);
 
-        Task<bool> AllShortNamesExists(List<string> shortNames);
+        Task<List<string>> GetShortNamesNotExists(List<string> shortNames);
     }
 }

@@ -14,6 +14,8 @@ namespace MedExpert.Domain.Entities
         
         public string Comment { get; set; }
         
+        public bool IsDeleted { get; set; }
+        
         
         public Symptom Parent { get; set; }
         

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using FluentValidation;
-using FluentValidation.Results;
 using MedExpert.Domain.Enums;
 using MedExpert.Excel.Model;
 
@@ -22,31 +20,41 @@ namespace MedExpert.Excel.Metadata
         {
             CellValues = new Dictionary<string, PropertyInfo>();
             CellComments = new Dictionary<string, PropertyInfo>();
+            CellValueHeaders = new Dictionary<string, PropertyInfo>();
+            CellCommentHeaders = new Dictionary<string, PropertyInfo>();
+            PropertyToColumnValueLastSet = new Dictionary<TImport, Dictionary<string, Tuple<int, string>>>();
+            PropertyToColumnCommentLastSet = new Dictionary<TImport, Dictionary<string, Tuple<int, string>>>();
         }
+        
+        private Dictionary<TImport, Dictionary<string, Tuple<int, string>>> PropertyToColumnValueLastSet { get; }
+        private Dictionary<TImport, Dictionary<string, Tuple<int, string>>> PropertyToColumnCommentLastSet { get; }
 
         private Dictionary<string, PropertyInfo> CellValues { get; }
         private Dictionary<string, PropertyInfo> CellComments { get; }
+        private Dictionary<string, PropertyInfo> CellValueHeaders { get; }
+        private Dictionary<string, PropertyInfo> CellCommentHeaders { get; }
         private PropertyInfo CellDictionary { get; set; }
         private AbstractValidator<TImport> Validator { get; set; }
         private AbstractValidator<List<string>> DynamicHeaderValidator { get; set; }
 
-        private Dictionary<string, string> PropertyCellValues => CellValues.ToDictionary(
-            x => x.Value.Name,
-            x => x.Key);
-        private Dictionary<string, string> PropertyCellComments => CellComments.ToDictionary(
-            x => x.Value.Name,
-            x => x.Key);
-
         #region Build Metadata
         
-        protected void CellValue<TProperty>(Expression<Func<TImport, TProperty>> propertyExpression, string columnName)
+        protected void CellValue<TProperty>(Expression<Func<TImport, TProperty>> propertyExpression, string columnName, Expression<Func<TImport, string>> headerPropertyExpression = null)
         {
             CellItem(propertyExpression, columnName, true);
+            if (headerPropertyExpression != null)
+            {
+                CellHeader(headerPropertyExpression, columnName, true);
+            }
         }
 
-        protected void CellComment<TProperty>(Expression<Func<TImport, TProperty>> propertyExpression, string columnName)
+        protected void CellComment<TProperty>(Expression<Func<TImport, TProperty>> propertyExpression, string columnName, Expression<Func<TImport, string>> headerPropertyExpression = null)
         {
             CellItem(propertyExpression, columnName, false);
+            if (headerPropertyExpression != null)
+            {
+                CellHeader(headerPropertyExpression, columnName, false);
+            }
         }
 
         protected void CellsDictionary<TProperty>(
@@ -70,6 +78,33 @@ namespace MedExpert.Excel.Metadata
         protected void EntityValidator(AbstractValidator<TImport> validator)
         {
             Validator = validator;
+        }
+
+        private void CellHeader(Expression<Func<TImport, string>> headerPropertyExpression, string columnName, bool isValue)
+        {
+            if (headerPropertyExpression.Body is MemberExpression memberSelectorExpression)
+            {
+                var property = memberSelectorExpression.Member as PropertyInfo;
+                if (property != null)
+                {
+                    if (isValue)
+                    {
+                        CellValueHeaders.Add(columnName, property);
+                    }
+                    else
+                    {
+                        CellCommentHeaders.Add(columnName, property);
+                    }
+                }
+                else
+                {
+                    throw new ArgumentException("Not property of instance", nameof(headerPropertyExpression));
+                }
+            }
+            else
+            {
+                throw new ArgumentException("Not property of instance", nameof(headerPropertyExpression));
+            }
         }
         
         private void CellItem<TProperty>(Expression<Func<TImport, TProperty>> propertyExpression, string columnName, bool isValue)
@@ -103,14 +138,32 @@ namespace MedExpert.Excel.Metadata
 
         #region Validate Header
 
-        public bool ValidateHeader(Dictionary<string, string> header)
+        public List<string> ValidateHeader(List<KeyValuePair<string, string>> headerItems)
         {
             var configurationKeys = CellValues.Keys.Union(CellComments.Keys).ToList();
-            var dynamicHeaderKeys = header.Keys.Where(key => !configurationKeys.Contains(key)).ToList();
-            return configurationKeys.All(key => header.Keys.Contains(key)) && 
-                   (configurationKeys.Count == header.Keys.Count || 
-                    DynamicHeaderValidator != null && 
-                    DynamicHeaderValidator.Validate(dynamicHeaderKeys).IsValid);
+            var headerKeys = headerItems.Select(pair => pair.Key).ToList();
+            var dynamicHeaderKeys = headerKeys.Where(key => !configurationKeys.Contains(key)).ToList();
+
+            var result = new List<string>();
+            if (!configurationKeys.All(key => headerKeys.Contains(key)))
+            {
+                result.Add("Не все обязательные столбцы содержатся в строке-заголовке файла: " +
+                           $"{string.Join(", ", configurationKeys.Where(key => headerKeys.Contains(key)).ToList())}.");
+            }
+
+            if (DynamicHeaderValidator == null && !headerKeys.All(key => configurationKeys.Contains(key)))
+            {
+                result.Add("Неоторые столбцы являются лишними в строке-заголовке файла: " +
+                           $"{string.Join(", ", headerKeys.Where(key => configurationKeys.Contains(key)).ToList())}.");
+            }
+
+            if (DynamicHeaderValidator != null)
+            {
+                var validationResult = DynamicHeaderValidator.Validate(dynamicHeaderKeys);
+                result.AddRange(validationResult.Errors.Select(error => error.ErrorMessage));
+            }
+
+            return result;
         }
 
         #endregion
@@ -131,14 +184,13 @@ namespace MedExpert.Excel.Metadata
                 result[header[key]] = ValidateStringComment(property.PropertyType, columnCells.GetValueOrDefault(header[key]) ?? Tuple.Create("",""));
             }
 
-            if (CellDictionary != null)
+            if (CellDictionary == null) return result;
+            
+            var configurationKeys = CellValues.Keys.Union(CellComments.Keys);
+            foreach (var (key, column) in header.Where(x => !configurationKeys.Contains(x.Key)))
             {
-                var configurationKeys = CellValues.Keys.Union(CellComments.Keys);
-                foreach (var (key, column) in header.Where(x => !configurationKeys.Contains(x.Key)))
-                {
-                    result[header[key]] = ValidateStringValue(CellDictionary.PropertyType.GenericTypeArguments[1],
-                        columnCells.GetValueOrDefault(header[key]) ?? Tuple.Create("", ""));
-                }
+                result[header[key]] = ValidateStringValue(CellDictionary.PropertyType.GenericTypeArguments[1],
+                    columnCells.GetValueOrDefault(header[key]) ?? Tuple.Create("", ""));
             }
 
             return result;
@@ -153,14 +205,14 @@ namespace MedExpert.Excel.Metadata
                 return value is "0" or "1" or "" ? null : "Значение должно быть равно '1', '0' или быть пустым.";
             }
 
-            if (propertyType == typeof(string))
+            if (propertyType == typeof(string) || propertyType == typeof(DeviationLevelModel))
             {
                 return null;
             }
 
             if (propertyType == typeof(Sex))
             {
-                return value == "М" || value == "Ж"
+                return value is "М" or "Ж"
                     ? null
                     : "Значение должно быть равно 'М' или 'Ж'.";
             }
@@ -174,7 +226,7 @@ namespace MedExpert.Excel.Metadata
                         : null;
             }
 
-            throw new NotImplementedException();
+            throw new ArgumentException("Validation not implemented", nameof(propertyType));
         }
 
         private static string ValidateStringValue(Type propertyType, Tuple<string, string> cell)
@@ -194,23 +246,20 @@ namespace MedExpert.Excel.Metadata
         public Dictionary<string, List<string>> ValidateEntity(Dictionary<string, string> header, TImport entity)
         {
             var validationResult = Validator.Validate(entity);
-            
-            var propertyCellValues = PropertyCellValues;
-            var propertyCellComments = PropertyCellComments;
 
             var result = new Dictionary<string, List<string>>();
             foreach (var error in validationResult.Errors)
             {
                 var cellErrorPropertyName = error.PropertyName.Split('.')[0];
                 var dictionaryErrorPropertyName = error.FormattedMessagePlaceholderValues["PropertyName"]?.ToString();
-                
-                if (propertyCellValues.ContainsKey(cellErrorPropertyName))
+
+                if (PropertyToColumnValueLastSet.ContainsKey(entity) && PropertyToColumnValueLastSet[entity].ContainsKey(cellErrorPropertyName))
                 {
-                    AddDictionaryListItem(result, header[propertyCellValues[cellErrorPropertyName]], error.ErrorMessage);
+                    AddDictionaryListItem(result, header[PropertyToColumnValueLastSet[entity][cellErrorPropertyName].Item2], error.ErrorMessage);
                 }
-                else if (propertyCellComments.ContainsKey(cellErrorPropertyName))
+                else if (PropertyToColumnCommentLastSet.ContainsKey(entity) && PropertyToColumnCommentLastSet[entity].ContainsKey(cellErrorPropertyName))
                 {
-                    AddDictionaryListItem(result, header[propertyCellComments[cellErrorPropertyName]], error.ErrorMessage);
+                    AddDictionaryListItem(result, header[PropertyToColumnCommentLastSet[entity][cellErrorPropertyName].Item2], error.ErrorMessage);
                 }
                 else if (CellDictionary != null && header.ContainsKey(dictionaryErrorPropertyName!))
                 {
@@ -219,6 +268,25 @@ namespace MedExpert.Excel.Metadata
                 else
                 {
                     AddDictionaryListItem(result, string.Empty, error.ErrorMessage);
+                }
+            }
+
+            if (PropertyToColumnValueLastSet.TryGetValue(entity, out var propertyToColumnValuePair))
+            {
+                foreach (var propertyToColumnPair in propertyToColumnValuePair.Where(pair => pair.Value.Item1 > 1))
+                {
+                    AddDictionaryListItem(result,
+                        header[PropertyToColumnValueLastSet[entity][propertyToColumnPair.Key].Item2],
+                        $"Значение ячейки для столбца с заголовком '{propertyToColumnPair.Value.Item2}' присутствует также и в других столбцах.");
+                }
+            }
+
+            if (PropertyToColumnCommentLastSet.TryGetValue(entity, out var propertyToColumnCommentPair))
+            {
+                foreach (var propertyToColumnPair in propertyToColumnCommentPair.Where(pair => pair.Value.Item1 > 1))
+                {
+                    AddDictionaryListItem(result, header[PropertyToColumnCommentLastSet[entity][propertyToColumnPair.Key].Item2], 
+                        $"Комментарий к ячейке для столбца с заголовком '{propertyToColumnPair.Value.Item2}' присутствует также и в других столбцах.");
                 }
             }
 
@@ -233,6 +301,23 @@ namespace MedExpert.Excel.Metadata
             }
             
             result[key].Add(value);
+        }
+
+        private static void AddDictionaryDictItem(IDictionary<TImport, Dictionary<string, Tuple<int, string>>> result, TImport key1,
+            string key2, string value)
+        {
+            if (!result.ContainsKey(key1))
+            {
+                result[key1] = new Dictionary<string, Tuple<int, string>>();
+            }
+
+            var setCount = 1;
+            if (result[key1].TryGetValue(key2, out var tuple))
+            {
+                setCount = tuple.Item1 + 1;
+            }
+            
+            result[key1][key2] = Tuple.Create(setCount, value);
         }
 
         #endregion
@@ -270,26 +355,60 @@ namespace MedExpert.Excel.Metadata
         private void SetValue(string columnName, TImport entity, Tuple<string, string> cell)
         {
             var property = CellValues[columnName];
+            var samePropertyCount = CellValues.Count(x => x.Value.Name == property.Name);
             
             var valueObj = ConvertStringValue(property.PropertyType, cell.Item1);
+
+            if (samePropertyCount > 1 && valueObj == null) return;
             
             property.SetValue(entity, valueObj, null);
+            
+            SetValueHeader(columnName, entity);
+
+            AddDictionaryDictItem(PropertyToColumnValueLastSet, entity, property.Name, columnName);
         }
         
         private void SetComment(string columnName, TImport entity, Tuple<string, string> cell)
         {
             var property = CellComments[columnName];
+            var samePropertyCount = CellComments.Count(x => x.Value.Name == property.Name);
             
             var valueObj = ConvertStringValue(property.PropertyType, cell.Item2);
+
+            if (samePropertyCount > 1 && valueObj == null) return;
             
             property.SetValue(entity, valueObj, null);
+            
+            SetCommentHeader(columnName, entity);
+
+            AddDictionaryDictItem(PropertyToColumnCommentLastSet, entity, property.Name, columnName);
+        }
+
+        private void SetValueHeader(string columnName, TImport entity)
+        {
+            if (CellValueHeaders.ContainsKey(columnName))
+            {
+                var property = CellValueHeaders[columnName];
+            
+                property.SetValue(entity, columnName, null);
+            }
+        }
+        
+        private void SetCommentHeader(string columnName, TImport entity)
+        {
+            if (CellCommentHeaders.ContainsKey(columnName))
+            {
+                var property = CellCommentHeaders[columnName];
+            
+                property.SetValue(entity, columnName, null);
+            }
         }
 
         private void SetDictionaryItem(string key, TImport entity, Tuple<string, string> cell)
         {
             var property = CellDictionary;
 
-            var valueObj = ConvertStringValue(property.PropertyType.GenericTypeArguments[1], cell.Item1);
+            var valueObj = ConvertStringValue(property.PropertyType.GenericTypeArguments[1], cell.Item1, cell.Item2);
 
             var indexerPropertyInfo = property.PropertyType.GetProperty("Item");
 
@@ -298,7 +417,7 @@ namespace MedExpert.Excel.Metadata
             indexerPropertyInfo.SetValue(dictionary, valueObj, new[] { key });
         }
 
-        private static object ConvertStringValue(Type propertyType, string value)
+        private static object ConvertStringValue(Type propertyType, string value, string additionalValue = null)
         {
             if (propertyType == typeof(bool))
             {
@@ -307,7 +426,7 @@ namespace MedExpert.Excel.Metadata
 
             if (propertyType == typeof(string))
             {
-                return value;
+                return value == string.Empty ? null : value;
             }
             
             if (propertyType == typeof(Sex))
@@ -325,7 +444,16 @@ namespace MedExpert.Excel.Metadata
                 };
             }
 
-            throw new NotImplementedException();
+            if (propertyType == typeof(DeviationLevelModel))
+            {
+                return new DeviationLevelModel
+                {
+                    Alias = value,
+                    Description = additionalValue
+                };
+            }
+
+            throw new ArgumentException("Conversion not implemented", nameof(propertyType));
         }
 
         #endregion

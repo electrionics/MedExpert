@@ -107,7 +107,8 @@ namespace MedExpert.Domain
                 entity.HasKey(x => x.Id);
                 entity.HasOne(x => x.Parent)
                     .WithMany(x => x.Children)
-                    .HasForeignKey(x => x.ParentSymptomId);
+                    .HasForeignKey(x => x.ParentSymptomId)
+                    .IsRequired(false);
             });
 
             modelBuilder.Entity<SymptomIndicatorDeviationLevel>(entity =>

@@ -51,9 +51,11 @@ namespace MedExpert.Web
             
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
 
+            services.AddScoped<ISpecialistService, SpecialistService>();
             services.AddScoped<IReferenceIntervalService, ReferenceIntervalService>();
             services.AddScoped<IIndicatorService, IndicatorService>();
-            
+            services.AddScoped<IDeviationLevelService, DeviationLevelService>();
+            services.AddScoped<ISymptomService, SymptomService>();
 
             services.AddScoped<ExcelParser, ExcelParser>();
         }

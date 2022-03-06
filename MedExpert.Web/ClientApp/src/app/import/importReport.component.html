@@ -2,7 +2,9 @@
   <h1>Отчёт импорта</h1>
   <ul>
     <li class="text-danger" *ngIf="Report.error">Ошибка: {{Report.error}}.</li>
-    <li class="text-danger" *ngIf="!Report.headerValid">Заголовок содержит ошибки.</li>
+    <li class="text-danger" *ngIf="!Report.headerValid">Заголовок содержит ошибки:<ul>
+      <li *ngFor="let error of Report.headerErrors">{{error}}</li>
+    </ul></li>
     <li class="text-success" *ngIf="Report.headerValid">Заголовок в порядке.</li>
     <li class="text-success">{{Report.totalRowsFound}} строк найдено.</li>
     <li class="text-success">{{Report.totalRowsReady}} строк готово к импорту.</li>

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MedExpert.Domain;
@@ -22,14 +23,15 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<Indicator>().Where(x => shortNames.Contains(x.ShortName)).ToListAsync();
         }
 
-        public async Task<bool> AllShortNamesExists(List<string> shortNames)
+        public async Task<List<string>> GetShortNamesNotExists(List<string> shortNames)
         {
-            var shortNamesDistinct = shortNames.Distinct();
-            return await _dataContext.Set<Indicator>()
-                .Where(x => shortNames.Contains(x.ShortName))
+            var existingShortNames = await _dataContext.Set<Indicator>()
                 .Select(x => x.ShortName)
+                .Where(x => shortNames.Contains(x))
                 .Distinct()
-                .CountAsync() == shortNamesDistinct.Count();
+                .ToListAsync();
+
+            return shortNames.Where(x => !existingShortNames.Contains(x, StringComparer.OrdinalIgnoreCase)).ToList();
         }
 
         public async Task UpdateBulk(List<Indicator> indicators)

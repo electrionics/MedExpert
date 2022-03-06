@@ -52,7 +52,7 @@ namespace MedExpert.Excel
                             }
 
                             var columnName = cell.CellReference.Value.Replace(rowNumber.ToString(), "");
-                            result[rowNumber].Add(columnName, new Tuple<string, string>(cellText, null));
+                            result[rowNumber].Add(columnName, new Tuple<string, string>(cellText?.Trim(), null));
                         }
                     }
 
@@ -69,7 +69,7 @@ namespace MedExpert.Excel
                             var columnName = groups[1].Value;
                             var rowNumber = int.Parse(groups[2].Value);
 
-                            var cellComment = comment.InnerText;
+                            var cellComment = comment.InnerText?.Trim();
 
                             if (!result.ContainsKey(rowNumber))
                             {
@@ -92,7 +92,12 @@ namespace MedExpert.Excel
                 }
             }
 
-            return result;
+            return result.Where(x => x.Value.Any(y => 
+                    !string.IsNullOrEmpty(y.Value.Item1) || 
+                    !string.IsNullOrEmpty(y.Value.Item2)))
+                .ToDictionary(
+                    x => x.Key, 
+                    x => x.Value);
         }
     }
 }

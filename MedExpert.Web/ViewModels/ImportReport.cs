@@ -6,7 +6,13 @@ namespace MedExpert.Web.ViewModels
 {
     public class ImportReport
     {
-        public bool HeaderValid { get; set; }
+        public ImportReport()
+        {
+            HeaderErrors = new List<string>();
+        }
+
+        public bool HeaderValid => !HeaderErrors.Any();
+        public List<string> HeaderErrors { get; set; }
         public int TotalRowsFound { get; set; }
         public int TotalRowsReady { get; set; }
         public int CountInvalidRows { get; set; }

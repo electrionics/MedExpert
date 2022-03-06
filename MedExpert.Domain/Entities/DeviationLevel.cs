@@ -8,9 +8,9 @@ namespace MedExpert.Domain.Entities
         
         public string Alias { get; set; }
         
-        public int MinPercentFromCenter { get; set; }
+        public int? MinPercentFromCenter { get; set; }
         
-        public int MaxPercentFromCenter { get; set; }
+        public int? MaxPercentFromCenter { get; set; }
         
         
         public List<AnalysisDeviationLevel> AnalysisDeviationLevels { get; set; }
