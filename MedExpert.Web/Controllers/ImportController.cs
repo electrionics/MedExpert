@@ -417,7 +417,7 @@ namespace MedExpert.Web.Controllers
             {
                 message = $"Первая строка должна быть диагнозом уровня 1. Текущий уровень: ({prevLevel}).";
             }
-            AddSymptomErrorByRow(header, currEntityPair, message, report);
+            AddErrorByRow(header, currEntityPair.Key, message, currEntityPair.Value.SymptomLevelStr, report);
             
             for (var i = 1; i < imports.Count; i++)
             {
@@ -430,22 +430,9 @@ namespace MedExpert.Web.Controllers
                         $"Уровень симптома ({currLevel}) больше уровня предыдушего симптома/диагноза ({prevLevel}) больше чем на 1";
                 }
 
-                AddSymptomErrorByRow(header, currEntityPair, message, report);
+                AddErrorByRow(header, currEntityPair.Key, message, currEntityPair.Value.SymptomLevelStr, report);
 
                 prevLevel = currLevel;
-            }
-        }
-
-        private static void AddSymptomErrorByRow(Dictionary<string, string> header, KeyValuePair<int, ImportSymptomModel> currEntityPair, string message, ImportReport report)
-        {
-            if (message != null)
-            {
-                if (!report.ErrorsByRows.ContainsKey(currEntityPair.Key))
-                {
-                    report.ErrorsByRows[currEntityPair.Key] = new List<ColumnError>();
-                }
-                        
-                report.ErrorsByRows[currEntityPair.Key].Add(new ColumnError{ Column = header[currEntityPair.Value.SymptomLevelStr], ErrorMessage = message });
             }
         }
 
@@ -670,7 +657,7 @@ namespace MedExpert.Web.Controllers
                     }
                 }
 
-                AddAnalysisDeviationLevelErrorByRow(header, currKey, message, "Вниз от центра%", report);
+                AddErrorByRow(header, currKey, message, "Вниз от центра%", report);
 
                 message = null;
                 
@@ -685,20 +672,7 @@ namespace MedExpert.Web.Controllers
                     }
                 }
                 
-                AddAnalysisDeviationLevelErrorByRow(header, currKey, message, "Вверх от центра%", report);
-            }
-        }
-        
-        private static void AddAnalysisDeviationLevelErrorByRow(Dictionary<string, string> header, int row, string message, string columnName, ImportReport report)
-        {
-            if (message != null)
-            {
-                if (!report.ErrorsByRows.ContainsKey(row))
-                {
-                    report.ErrorsByRows[row] = new List<ColumnError>();
-                }
-            
-                report.ErrorsByRows[row].Add(new ColumnError{ Column = header[columnName], ErrorMessage = message });
+                AddErrorByRow(header, currKey, message, "Вверх от центра%", report);
             }
         }
 
@@ -707,18 +681,8 @@ namespace MedExpert.Web.Controllers
             foreach (var currEntityPair in imports.Where(x => x.Key > imports.Keys.Min()))
             {
                 var message = $"Недопустимо больше одной строки данных анализа";
-                AddAnalysisErrorByRow(header, currEntityPair, message, report);
+                AddErrorByRow(header, currEntityPair.Key, message, "Пол", report);
             }
-        }
-        
-        private static void AddAnalysisErrorByRow(Dictionary<string, string> header, KeyValuePair<int, ImportAnalysisModel> currEntityPair, string message, ImportReport report)
-        {
-            if (!report.ErrorsByRows.ContainsKey(currEntityPair.Key))
-            {
-                report.ErrorsByRows[currEntityPair.Key] = new List<ColumnError>();
-            }
-            
-            report.ErrorsByRows[currEntityPair.Key].Add(new ColumnError{ Column = header["Пол"], ErrorMessage = message });
         }
 
         #endregion
@@ -819,6 +783,18 @@ namespace MedExpert.Web.Controllers
                     })));
             }
         }
+        
+        private static void AddErrorByRow(IReadOnlyDictionary<string, string> header, int row, string message, string columnName, ImportReport report)
+        {
+            if (message == null) return;
+            
+            if (!report.ErrorsByRows.ContainsKey(row))
+            {
+                report.ErrorsByRows[row] = new List<ColumnError>();
+            }
+            
+            report.ErrorsByRows[row].Add(new ColumnError{ Column = header[columnName], ErrorMessage = message });
+        }
 
         private static async Task SingleBulkUpdateAndSetReport<TImportEntity>(IImportService<TImportEntity> importService, List<TImportEntity> toUpdates, ImportReport report)
         {
@@ -840,7 +816,7 @@ namespace MedExpert.Web.Controllers
                 await importService.InsertBulk(toInserts);
                 report.TotalInsertedRows += toInserts.Count;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 report.TotalInsertedErrorsCount += toInserts.Count;
             }
@@ -854,7 +830,7 @@ namespace MedExpert.Web.Controllers
                 await importService.Insert(toInsert);
                 report.TotalInsertedRows += 1;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 report.TotalInsertedErrorsCount += 1;
             }
