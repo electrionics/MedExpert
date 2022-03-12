@@ -4,9 +4,9 @@ using MedExpert.Domain.Entities;
 
 namespace MedExpert.Services.Interfaces
 {
-    public interface ISpecialistService
+    public interface ISymptomCategoryService
     {
-        Task<List<Specialist>> GetSpecialists();
-        Task CreateSpecialist(Specialist specialist);
+        Task<bool> CategoryExists(int categoryId);
+        Task<List<SymptomCategory>> GetAll();
     }
 }

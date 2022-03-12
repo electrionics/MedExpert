@@ -1,0 +1,21 @@
+﻿using System.Collections.Generic;
+
+namespace MedExpert.Domain.Entities
+{
+    public class AnalysisSymptom
+    {
+        public int AnalysisId { get; set; }
+        
+        public int SymptomId { get; set; }
+        
+        public decimal Match { get; set; }
+        
+        public decimal UnMatch { get; set; }
+        
+        public decimal Expressiveness { get; set; }
+        
+        public Analysis Analysis { get; set; }
+        
+        public Symptom Symptom { get; set; }
+    }
+}

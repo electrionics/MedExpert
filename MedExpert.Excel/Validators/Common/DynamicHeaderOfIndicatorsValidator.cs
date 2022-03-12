@@ -36,7 +36,7 @@ namespace MedExpert.Excel.Validators.Common
         private static List<string> GetRepeatedItems(IEnumerable<string> list)
         {
             return list
-                .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(x => x)
                 .Where(x => x.Count() > 1)
                 .Select(x => x.Key)
                 .ToList();

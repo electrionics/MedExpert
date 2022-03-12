@@ -50,7 +50,8 @@ namespace MedExpert.Web
             }).AddFluentValidation();
             
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
-
+            services.AddTransient<IValidator<ImportSymptomForm>, ImportSymptomFormValidator>();
+            
             services.AddScoped<ISpecialistService, SpecialistService>();
             services.AddScoped<IReferenceIntervalService, ReferenceIntervalService>();
             services.AddScoped<IIndicatorService, IndicatorService>();
@@ -58,7 +59,8 @@ namespace MedExpert.Web
             services.AddScoped<ISymptomService, SymptomService>();
             services.AddScoped<IAnalysisService, AnalysisService>();
             services.AddScoped<IAnalysisIndicatorService, AnalysisIndicatorService>();
-
+            services.AddScoped<ISymptomCategoryService, SymptomCategoryService>();
+            
             services.AddScoped<ExcelParser, ExcelParser>();
         }
 

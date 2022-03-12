@@ -10,6 +10,8 @@ namespace MedExpert.Domain.Entities
 
         public int SpecialistId { get; set; }
         
+        public int CategoryId { get; set; }
+        
         public string Name { get; set; }
         
         public string Comment { get; set; }
@@ -21,9 +23,13 @@ namespace MedExpert.Domain.Entities
         
         public Specialist Specialist { get; set; }
         
+        public SymptomCategory Category { get; set; }
+        
         
         public List<Symptom> Children { get; set; }
         
         public List<SymptomIndicatorDeviationLevel> SymptomIndicatorDeviationLevels { get; set; }
+        
+        public List<AnalysisSymptom> AnalysisSymptoms { get; set; }
     }
 }

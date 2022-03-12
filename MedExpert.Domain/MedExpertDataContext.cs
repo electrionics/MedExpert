@@ -69,6 +69,19 @@ namespace MedExpert.Domain
                     .WithMany(x => x.AnalysisDeviationLevels)
                     .HasForeignKey(x => x.DeviationLevelId);
             });
+            
+            modelBuilder.Entity<AnalysisSymptom>(entity =>
+            {
+                entity.HasKey(x => new { x.AnalysisId, x.SymptomId });
+                entity.HasOne(x => x.Analysis)
+                    .WithMany(x => x.AnalysisSymptoms)
+                    .HasForeignKey(x => x.AnalysisId);
+                entity.HasOne(x => x.Symptom)
+                    .WithMany(x => x.AnalysisSymptoms)
+                    .HasForeignKey(x => x.SymptomId);
+            });
+            
+            
 
             #endregion
 
@@ -94,6 +107,11 @@ namespace MedExpert.Domain
 
             #region Symptom
 
+            modelBuilder.Entity<SymptomCategory>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+            });
+            
             modelBuilder.Entity<Symptom>(entity =>
             {
                 entity.HasKey(x => x.Id);
@@ -101,6 +119,9 @@ namespace MedExpert.Domain
                     .WithMany(x => x.Children)
                     .HasForeignKey(x => x.ParentSymptomId)
                     .IsRequired(false);
+                entity.HasOne(x => x.Category)
+                    .WithMany(x => x.Symptoms)
+                    .HasForeignKey(x => x.CategoryId);
             });
 
             modelBuilder.Entity<SymptomIndicatorDeviationLevel>(entity =>

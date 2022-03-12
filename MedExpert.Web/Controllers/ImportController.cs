@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
+using FluentValidation;
 using MedExpert.Domain.Entities;
 using MedExpert.Domain.Enums;
 using MedExpert.Excel;
@@ -19,6 +20,7 @@ using MedExpert.Excel.Model.Symptoms;
 using Microsoft.AspNetCore.Mvc;
 using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
+
 // ReSharper disable CommentTypo
 
 // ReSharper disable StringLiteralTypo
@@ -35,9 +37,11 @@ namespace MedExpert.Web.Controllers
         private readonly ISymptomService _symptomService;
         private readonly IAnalysisService _analysisService;
         private readonly IAnalysisIndicatorService _analysisIndicatorService;
+        private readonly ISymptomCategoryService _symptomCategoryService;
         private readonly ExcelParser _excelParser;
+        private readonly IValidator<ImportSymptomForm> _importSymptomValidator;
 
-        public ImportController(IReferenceIntervalService referenceIntervalService, ExcelParser excelParser, IIndicatorService indicatorService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, ISymptomService symptomService, IAnalysisService analysisService, IAnalysisIndicatorService analysisIndicatorService)
+        public ImportController(IReferenceIntervalService referenceIntervalService, ExcelParser excelParser, IIndicatorService indicatorService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, ISymptomService symptomService, IAnalysisService analysisService, IAnalysisIndicatorService analysisIndicatorService, IValidator<ImportSymptomForm> importSymptomValidator, ISymptomCategoryService symptomCategoryService)
         {
             _referenceIntervalService = referenceIntervalService;
             _excelParser = excelParser;
@@ -47,6 +51,8 @@ namespace MedExpert.Web.Controllers
             _symptomService = symptomService;
             _analysisService = analysisService;
             _analysisIndicatorService = analysisIndicatorService;
+            _importSymptomValidator = importSymptomValidator;
+            _symptomCategoryService = symptomCategoryService;
         }
         
         
@@ -90,6 +96,8 @@ namespace MedExpert.Web.Controllers
                         {
                             var keys = importCandidates.Values.Select(x => x.ShortName).ToList();
 
+                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            
                             var toUpdates = await _indicatorService.GetIndicators(keys);
 
                             var toUpdateKeys = toUpdates.Select(x => x.ShortName).ToList();
@@ -107,6 +115,15 @@ namespace MedExpert.Web.Controllers
 
                             await SingleBulkUpdateAndSetReport(_indicatorService, toUpdates, report);
                             await SingleBulkInsertAndSetReport(_indicatorService, toInserts, report);
+                            
+                            if (report.TotalInsertedErrorsCount == 0 && report.TotalUpdatedErrorsCount == 0)
+                            {
+                                transaction.Complete();
+                            }
+                            else
+                            {
+                                transaction.Dispose();
+                            }
                         }
                     }
 
@@ -201,7 +218,14 @@ namespace MedExpert.Web.Controllers
                             
                             await SingleBulkInsertAndSetReport(_referenceIntervalService, toInserts, report);
                             
-                            transaction.Complete();
+                            if (report.TotalInsertedErrorsCount == 0)
+                            {
+                                transaction.Complete();
+                            }
+                            else
+                            {
+                                transaction.Dispose();
+                            }
                         }
                     }
 
@@ -264,10 +288,11 @@ namespace MedExpert.Web.Controllers
         
         [HttpPost]
         [ApiRoute("Import/Symptoms")]
-        public async Task<ImportReport> ImportSymptoms([FromQuery]int? specialistId)
+        public async Task<ImportReport> ImportSymptoms([FromForm]ImportSymptomForm model)
         {
             var file = Request.Form.Files.FirstOrDefault();
-            if (file != null && specialistId != null)
+            var validation = await _importSymptomValidator.ValidateAsync(model);
+            if (file != null && validation.IsValid)
             {
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
@@ -312,27 +337,46 @@ namespace MedExpert.Web.Controllers
                                     .ToList();
                             
                             var indicators = await _indicatorService.GetIndicators(firstRowKeys);
-                            var indicatorsDict = indicators.ToDictionary(x => x.ShortName, x => x, StringComparer.OrdinalIgnoreCase);
+                            var indicatorsDict = indicators.ToDictionary(x => x.ShortName, x => x);
                             var deviationLevels = await _deviationLevelService.GetAll();
                             var deviationLevelsDict = deviationLevels.ToDictionary(x => x.Alias, x => x, StringComparer.OrdinalIgnoreCase);
                             
-                            var insertEntities = importCandidates.Values
-                                .Select(x => Tuple.Create(x.CreateEntity(deviationLevelsDict, indicatorsDict, specialistId.Value), x.SymptomLevel))
-                                .ToList();
-                            var toInserts = BuildSymptomsTree(insertEntities);
-
                             using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
                             
-                            await _symptomService.DeleteAllSymptomIndicatorDeviationLevels(specialistId.Value);
-                            await _symptomService.TryDeleteAllSymptoms(specialistId.Value);
+                            if (model.SpecialistId == null)
+                            {
+                                var specialist = new Specialist
+                                {
+                                    ApplySexOnly = model.NewSpecialistSex,
+                                    Name = model.NewSpecialistName
+                                };
+                                await _specialistService.CreateSpecialist(specialist);
+
+                                model.SpecialistId = specialist.Id;
+                            }
+
+                            var specialistId = model.SpecialistId.Value;
+                            var categoryId = model.SymptomCategoryId;
                             
+                            var insertEntities = importCandidates.Values
+                                .Select(x => Tuple.Create(x.CreateEntity(deviationLevelsDict, indicatorsDict, specialistId, categoryId), x.SymptomLevel))
+                                .ToList();
+                            var toInserts = BuildSymptomsTree(insertEntities);
+                            
+                            await _symptomService.DeleteAllSymptomIndicatorDeviationLevels(specialistId, categoryId);
+                            await _symptomService.TryDeleteAllSymptoms(specialistId, categoryId);
+
                             await SingleBulkInsertAndSetReport(_symptomService, toInserts, report);
                             if (report.TotalInsertedErrorsCount == 0)
                             {
+                                transaction.Complete();
                                 report.TotalInsertedRows = insertEntities.Count;
+                                report.Result = specialistId.ToString();
                             }
-                            
-                            transaction.Complete();
+                            else
+                            {
+                                transaction.Dispose();
+                            }
                         }
                     }
 
@@ -396,6 +440,7 @@ namespace MedExpert.Web.Controllers
             var aliases = deviationLevels.Select(x => x.Alias).ToHashSet();
             aliases.Add(string.Empty);
             aliases.Add(null);
+            aliases.Remove("N");
             
             foreach (var symptomModel in importCandidates)
             {
@@ -480,18 +525,39 @@ namespace MedExpert.Web.Controllers
         }
 
         [HttpGet]
-        [ApiRoute("Import/Lists/Specialists")]
-        public async Task<List<SpecialistModel>> GetSpecialists()
+        [ApiRoute("Import/Lists/Lookups")]
+        public async Task<Dictionary<string, List<LookupModel>>> GetLookups()
         {
-            var entities = await _specialistService.GetSpecialists();
-
-            var model = entities.Select(x => new SpecialistModel
+            var result = new Dictionary<string, List<LookupModel>>();
+            
+            var specialists = await _specialistService.GetSpecialists();
+            var model = specialists.Select(x => new LookupModel
             {
                 Id = x.Id,
                 Name = x.Name
             }).ToList();
 
-            return model;
+            result["Specialists"] = model;
+
+            var categories = await _symptomCategoryService.GetAll();
+            model = categories.Select(x => new LookupModel
+            {
+                Id = x.Id,
+                Name = x.DisplayName
+            }).ToList();
+
+            result["Categories"] = model;
+
+            model = new List<LookupModel>
+            {
+                new() {Id = 0, Name = "Любой"},
+                new() {Id = (int) Sex.Male, Name = "Мужской"},
+                new() {Id = (int) Sex.Female, Name = "Женский"}
+            };
+
+            result["Sex"] = model;
+
+            return result;
         }
 
         #endregion
@@ -588,7 +654,14 @@ namespace MedExpert.Web.Controllers
                             await SingleBulkInsertAndSetReport(_analysisIndicatorService, toInsertIndicators, report);
                             await SingleBulkInsertAndSetReport(_deviationLevelService, toInsertDeviationLevels, report);
                             
-                            transaction.Complete();
+                            if (report.TotalInsertedErrorsCount == 0)
+                            {
+                                transaction.Complete();
+                            }
+                            else
+                            {
+                                transaction.Dispose();
+                            }
                         }
                     }
 

@@ -22,5 +22,7 @@ namespace MedExpert.Domain.Entities
         public List<AnalysisDeviationLevel> AnalysisDeviationLevels { get; set; }
         
         public List<AnalysisIndicator> AnalysisIndicators { get; set; }
+        
+        public List<AnalysisSymptom> AnalysisSymptoms { get; set; }
     }
 }

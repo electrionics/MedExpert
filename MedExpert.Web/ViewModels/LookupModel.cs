@@ -1,6 +1,6 @@
 ﻿namespace MedExpert.Web.ViewModels
 {
-    public class SpecialistModel
+    public class LookupModel
     {
         public int Id { get; set; }
         

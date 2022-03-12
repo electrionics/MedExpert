@@ -51,6 +51,7 @@ export class ImportReport{
   totalUpdatedErrorsCount: number;
   totalExecutionTimeSeconds: number;
   error: string;
+  result: string;
 
   countErrors: number;
   errorsByRows: { [row: number]: ColumnError[] };

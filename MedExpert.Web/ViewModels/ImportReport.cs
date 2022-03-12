@@ -24,6 +24,8 @@ namespace MedExpert.Web.ViewModels
         public decimal TotalExecutionTimeSeconds { get; set; }
         
         public string Error { get; set; }
+        
+        public string Result { get; set; }
 
         public int CountErrors { get; set; }
         public Dictionary<int, List<ColumnError>> ErrorsByRows { get; set; }

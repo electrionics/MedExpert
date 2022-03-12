@@ -21,11 +21,12 @@ namespace MedExpert.Excel.Model.Symptoms
             DeviationLevels = new Dictionary<string, DeviationLevelModel>();
         }
 
-        public Symptom CreateEntity(Dictionary<string, DeviationLevel> deviationLevels, Dictionary<string, Indicator> indicators, int specialistId)
+        public Symptom CreateEntity(Dictionary<string, DeviationLevel> deviationLevels, Dictionary<string, Indicator> indicators, int specialistId, int categoryId)
         {
             return new Symptom
             {
                 SpecialistId = specialistId,
+                CategoryId = categoryId,
                 Name = SymptomName,
                 Comment = SymptomDescription,
                 SymptomIndicatorDeviationLevels = DeviationLevels.Select(x =>

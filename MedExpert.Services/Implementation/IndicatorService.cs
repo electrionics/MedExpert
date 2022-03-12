@@ -36,7 +36,7 @@ namespace MedExpert.Services.Implementation
                 .Distinct()
                 .ToListAsync();
 
-            return shortNames.Where(x => !existingShortNames.Contains(x, StringComparer.OrdinalIgnoreCase)).ToList();
+            return shortNames.Where(x => !existingShortNames.Contains(x)).ToList();
         }
 
         public async Task UpdateBulk(List<Indicator> indicators)
