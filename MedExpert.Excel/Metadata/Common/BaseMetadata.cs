@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -255,22 +256,23 @@ namespace MedExpert.Excel.Metadata.Common
             var validationResult = Validator.Validate(entity);
 
             var result = new Dictionary<string, List<string>>();
+
             foreach (var error in validationResult.Errors)
             {
                 var cellErrorPropertyName = error.PropertyName.Split('.')[0];
                 var dictionaryErrorPropertyName = error.FormattedMessagePlaceholderValues["PropertyName"]?.ToString();
 
-                if (PropertyToColumnValueLastSet.ContainsKey(entity) && PropertyToColumnValueLastSet[entity].ContainsKey(cellErrorPropertyName))
+                if (PropertyToColumnValueLastSet.TryGetValue(entity, out var propertyToColumnValue) && propertyToColumnValue.TryGetValue(cellErrorPropertyName, out var valueColumn))
                 {
-                    AddDictionaryListItem(result, header[PropertyToColumnValueLastSet[entity][cellErrorPropertyName].Item2], error.ErrorMessage);
+                    AddDictionaryListItem(result, header[valueColumn.Item2], error.ErrorMessage);
                 }
-                else if (PropertyToColumnCommentLastSet.ContainsKey(entity) && PropertyToColumnCommentLastSet[entity].ContainsKey(cellErrorPropertyName))
+                else if (PropertyToColumnCommentLastSet.TryGetValue(entity, out var propertyToColumnComment) && propertyToColumnComment.TryGetValue(cellErrorPropertyName, out var commentColumn))
                 {
-                    AddDictionaryListItem(result, header[PropertyToColumnCommentLastSet[entity][cellErrorPropertyName].Item2], error.ErrorMessage);
+                    AddDictionaryListItem(result, header[commentColumn.Item2], error.ErrorMessage);
                 }
-                else if (CellDictionary != null && header.ContainsKey(dictionaryErrorPropertyName!))
+                else if (CellDictionary != null && header.TryGetValue(dictionaryErrorPropertyName!, out var columnName))
                 {
-                    AddDictionaryListItem(result, header[dictionaryErrorPropertyName], error.ErrorMessage);
+                    AddDictionaryListItem(result, columnName, error.ErrorMessage);
                 }
                 else
                 {
@@ -283,16 +285,16 @@ namespace MedExpert.Excel.Metadata.Common
                 foreach (var propertyToColumnPair in propertyToColumnValuePair.Where(pair => pair.Value.Item1 > 1))
                 {
                     AddDictionaryListItem(result,
-                        header[PropertyToColumnValueLastSet[entity][propertyToColumnPair.Key].Item2],
+                        header[propertyToColumnPair.Value.Item2],
                         $"Значение ячейки для столбца с заголовком '{propertyToColumnPair.Value.Item2}' присутствует также и в других столбцах.");
                 }
             }
-
+            
             if (PropertyToColumnCommentLastSet.TryGetValue(entity, out var propertyToColumnCommentPair))
             {
                 foreach (var propertyToColumnPair in propertyToColumnCommentPair.Where(pair => pair.Value.Item1 > 1))
                 {
-                    AddDictionaryListItem(result, header[PropertyToColumnCommentLastSet[entity][propertyToColumnPair.Key].Item2], 
+                    AddDictionaryListItem(result, header[propertyToColumnPair.Value.Item2], 
                         $"Комментарий к ячейке для столбца с заголовком '{propertyToColumnPair.Value.Item2}' присутствует также и в других столбцах.");
                 }
             }

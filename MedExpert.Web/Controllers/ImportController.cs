@@ -931,7 +931,7 @@ namespace MedExpert.Web.Controllers
                 await importService.InsertBulk(toInserts);
                 report.TotalInsertedRows += toInserts.Count;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 report.TotalInsertedErrorsCount += toInserts.Count;
             }
