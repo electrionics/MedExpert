@@ -9,11 +9,15 @@ namespace MedExpert.Web.ViewModels
         public ImportReport()
         {
             HeaderErrors = new List<string>();
+            HeaderWarnings = new List<string>();
+            
             ErrorsByRows = new Dictionary<int, List<ColumnError>>();
         }
 
         public bool HeaderValid => !HeaderErrors.Any();
+        public bool HeaderWithoutWarnings => !HeaderWarnings.Any();
         public List<string> HeaderErrors { get; set; }
+        public List<string> HeaderWarnings { get; set; }
         public int TotalRowsFound { get; set; }
         public int TotalRowsReady { get; set; }
         public int CountInvalidRows { get; set; }

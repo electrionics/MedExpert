@@ -10,6 +10,8 @@ namespace MedExpert.Excel.Model.Analysis
         
         public int? Age { get; set; }
         
+        public DateTime? Date { get; set; }
+        
         public Dictionary<string, string> OtherColumns { get; set; }
         
         public ImportAnalysisModel()
@@ -23,6 +25,7 @@ namespace MedExpert.Excel.Model.Analysis
             {
                 Sex = Sex.Value,
                 Age = Age.Value,
+                Date = Date.Value,
                 CalculationTime = DateTime.Now,
                 UserId = 1
             };

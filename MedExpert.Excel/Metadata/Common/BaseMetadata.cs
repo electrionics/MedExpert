@@ -40,7 +40,7 @@ namespace MedExpert.Excel.Metadata.Common
 
         private readonly List<IConverter> _defaultConverters = new()
         {
-            new BoolConverter(), new StringConverter(), new IntConverter(), new DecimalConverter()
+            new BoolConverter(), new StringConverter(), new IntConverter(), new DecimalConverter(), new DateTimeConverter("dd.MM.yyyy")
         };
         
         private Dictionary<Type, IConverter> Converters { get; }

@@ -596,7 +596,7 @@ namespace MedExpert.Web.Controllers
 
                     var header = CreateAndValidateHeaderAndInitializeReport(metadataObjectIndicator, parseResult, headerRow, entityRows.Count, report);
                     CreateAndValidateHeaderAndInitializeReport(metadataObjectAnalysis, parseResult, headerRow, entityRows.Count, report);
-                    CreateAndValidateHeaderAndInitializeReport(metadataObjectDeviationLevel, parseResult, headerRow, entityRows.Count, report);
+                    CreateAndValidateHeaderAndInitializeReport(metadataObjectDeviationLevel, parseResult, headerRow, entityRows.Count, report, true);
 
                     if (report.HeaderValid)
                     {
@@ -604,7 +604,10 @@ namespace MedExpert.Web.Controllers
                         
                         ValidateCellsAndSetReportErrors(metadataObjectAnalysis, header, entityRows, report);
                         ValidateCellsAndSetReportErrors(metadataObjectIndicator, header, entityRows, report);
-                        ValidateCellsAndSetReportErrors(metadataObjectDeviationLevel, header, entityRows, report);
+                        if (report.HeaderWithoutWarnings)
+                        {
+                            ValidateCellsAndSetReportErrors(metadataObjectDeviationLevel, header, entityRows, report);    
+                        }
 
                         var importCandidatesAnalysis = CreateImportCandidates(metadataObjectAnalysis, header, entityRows, report)
                             .Where(x => x.Value.Sex != null)
@@ -612,22 +615,36 @@ namespace MedExpert.Web.Controllers
                         var importCandidatesIndicator = CreateImportCandidates(metadataObjectIndicator, header, entityRows, report)
                             .Where(x => x.Value.Value != null)
                             .ToDictionary(x => x.Key, x => x.Value);
-                        var importCandidatesDeviationLevel = CreateImportCandidates(metadataObjectDeviationLevel, header, entityRows, report)
-                            .Where(x => x.Value.Alias != null)
-                            .ToDictionary(x => x.Key, x => x.Value);
-
+                        var importCandidatesDeviationLevel = new Dictionary<int, ImportAnalysisDeviationLevelModel>();
+                        if (report.HeaderWithoutWarnings)
+                        {
+                            importCandidatesDeviationLevel = CreateImportCandidates(metadataObjectDeviationLevel, header, entityRows, report)
+                                .Where(x => x.Value.Alias != null)
+                                .ToDictionary(x => x.Key, x => x.Value);
+                        }
+                        
                         var indicators = await _indicatorService.GetAnalysisIndicators();
                         var deviationLevels = await _deviationLevelService.GetAll();
-                        PrepareAnalysisIndicators(importCandidatesIndicator, indicators);
-                        PrepareAnalysisDeviationLevels(importCandidatesDeviationLevel, deviationLevels);
                         
+                        PrepareAnalysisIndicators(importCandidatesIndicator, indicators);
+                        if (report.HeaderWithoutWarnings)
+                        {
+                            PrepareAnalysisDeviationLevels(importCandidatesDeviationLevel, deviationLevels);
+                        }
+
                         ValidateEntitiesAndAddErrorsToReport(metadataObjectAnalysis, header, importCandidatesAnalysis, report);
                         ValidateEntitiesAndAddErrorsToReport(metadataObjectIndicator, header, importCandidatesIndicator, report);
-                        ValidateEntitiesAndAddErrorsToReport(metadataObjectDeviationLevel, header, importCandidatesDeviationLevel, report);
-                        
+                        if (report.HeaderWithoutWarnings)
+                        {
+                            ValidateEntitiesAndAddErrorsToReport(metadataObjectDeviationLevel, header, importCandidatesDeviationLevel, report);
+                        }
+
                         if (!report.ErrorsByRows.Any())
                         {
-                            ValidateAnalysisDeviationLevelsListAndAddErrorsToReport(header, importCandidatesDeviationLevel, report);
+                            if (report.HeaderWithoutWarnings)
+                            {
+                                ValidateAnalysisDeviationLevelsListAndAddErrorsToReport(header, importCandidatesDeviationLevel, report);
+                            }
                             ValidateAnalysisListAndAddErrorsToReport(header, importCandidatesAnalysis, report);
                         }
                         
@@ -639,10 +656,14 @@ namespace MedExpert.Web.Controllers
                             var toInsertIndicators = importCandidatesIndicator.Values
                                 .Select(x => x.CreateEntity())
                                 .ToList();
-                            var toInsertDeviationLevels = importCandidatesDeviationLevel.Values
-                                .Select(x => x.CreateEntity(deviationLevels))
-                                .ToList();
-                            
+                            var toInsertDeviationLevels = new List<AnalysisDeviationLevel>();
+                            if (report.HeaderWithoutWarnings)
+                            {
+                                toInsertDeviationLevels = importCandidatesDeviationLevel.Values
+                                    .Select(x => x.CreateEntity(deviationLevels))
+                                    .ToList();
+                            }
+
                             using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
                             await SingleInsertAndSetReport(_analysisService, toInsertsAnalysis, report);
@@ -772,9 +793,10 @@ namespace MedExpert.Web.Controllers
 
         #endregion
         
+        
         #region Common Methods
 
-        private static Dictionary<string, string> CreateAndValidateHeaderAndInitializeReport<TImport>(BaseMetadata<TImport> metadataObject, Dictionary<int, Dictionary<string, Tuple<string, string>>> parseResult, int headerRow, int entityRowsCount, ImportReport report)
+        private static Dictionary<string, string> CreateAndValidateHeaderAndInitializeReport<TImport>(BaseMetadata<TImport> metadataObject, Dictionary<int, Dictionary<string, Tuple<string, string>>> parseResult, int headerRow, int entityRowsCount, ImportReport report, bool setWarningsInsteadOfErrors = false)
             where TImport: new()
         {
             var headerItems = parseResult[headerRow]
@@ -784,8 +806,16 @@ namespace MedExpert.Web.Controllers
             
             report.TotalRowsFound = entityRowsCount;
 
-            report.HeaderErrors.AddRange(metadataObject.ValidateHeader(headerItems));
-            if (!report.HeaderValid) return null;
+            if (setWarningsInsteadOfErrors)
+            {
+                report.HeaderWarnings.AddRange(metadataObject.ValidateHeader(headerItems));
+            }
+            else
+            {
+                report.HeaderErrors.AddRange(metadataObject.ValidateHeader(headerItems));                
+            }
+            
+            if (!setWarningsInsteadOfErrors && !report.HeaderValid || !report.HeaderWithoutWarnings) return null;
             
             var header = headerItems.ToDictionary(
                 x => x.Key,

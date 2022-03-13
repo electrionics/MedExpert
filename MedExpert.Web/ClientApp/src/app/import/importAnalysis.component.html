@@ -1,7 +1,10 @@
 <div *ngIf="requestProgress" class="loading-overlay">
 </div>
 <h1>Импорт анализа</h1>
-
+<div class="form-group">
+  <a href="./templates/analysis-full.xlsx" download>Шаблон файла анализа (полный)</a><br/>
+  <a href="./templates/analysis-public.xlsx" download>Шаблон файла анализа (сокращённый)</a>
+</div>
 <div class="form-group">
   <input type="file"
          id="file"

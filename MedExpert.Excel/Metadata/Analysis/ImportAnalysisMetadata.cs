@@ -19,6 +19,7 @@ namespace MedExpert.Excel.Metadata.Analysis
             
             CellValue(x => x.Sex, "Пол");
             CellValue(x => x.Age, "Возраст");
+            CellValue(x => x.Date, "Дата анализа");
             
             CellsDictionary(x => x.OtherColumns);
             

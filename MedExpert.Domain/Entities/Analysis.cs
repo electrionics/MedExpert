@@ -16,6 +16,8 @@ namespace MedExpert.Domain.Entities
         
         public DateTime CalculationTime { get; set; }
         
+        public DateTime Date { get; set; }
+        
         public User User { get; set; }
         
         

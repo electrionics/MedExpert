@@ -12,10 +12,10 @@ namespace MedExpert.Excel.Validators.Analysis
             RuleFor(x => x.Sex)
                 .IsInEnum().WithMessage("Пол указан некорректно.");
             RuleFor(x => x.Age)
-                .NotEmpty()
-                .WithMessage("Укажите возраст.")
-                .GreaterThanOrEqualTo(0)
-                .WithMessage("Возраст должен быть неотрицательным значением.");
+                .NotEmpty().WithMessage("Укажите возраст.")
+                .GreaterThanOrEqualTo(0).WithMessage("Возраст должен быть неотрицательным значением.");
+            RuleFor(x => x.Date)
+                .NotEmpty().WithMessage("Дата анализа обязательна.");
         }
     }
 }
