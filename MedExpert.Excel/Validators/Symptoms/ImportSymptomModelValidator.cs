@@ -10,12 +10,12 @@ namespace MedExpert.Excel.Validators.Symptoms
         public ImportSymptomModelValidator()
         {
             RuleFor(x => x.SymptomName)
-                .NotEmpty().WithMessage("Название симптома(болезни) не должно быть пустым.")
-                .MaximumLength(300).WithMessage("Название болезни не должно превышать 300 символов.");
+                .NotNull().WithMessage("Название симптома(болезни) не должно быть пустым.")
+                .SetValidator(new SymptomNameModelValidator());
 
             RuleFor(x => x.DeviationLevels)
                 .NotEmpty().WithMessage(x =>
-                    $"Болезнь/симптом '{x.SymptomName}' должен содержать как минимум один показатель с указанным уровнем отклонения.")
+                    $"Болезнь/симптом '{x.SymptomName.Value}' должен содержать как минимум один показатель с указанным уровнем отклонения.")
                 .WithName("SymptomName");
             
             RuleForEach(x => x.DeviationLevels)

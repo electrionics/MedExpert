@@ -4,9 +4,11 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using FluentValidation;
 using MedExpert.Domain.Enums;
+using MedExpert.Excel.Converters.Common;
+using MedExpert.Excel.Converters.Common.Base;
+using MedExpert.Excel.Converters.Common.Default;
 using MedExpert.Excel.Model;
 using MedExpert.Excel.Model.Common;
 using MedExpert.Excel.Model.Symptoms;
@@ -26,7 +28,22 @@ namespace MedExpert.Excel.Metadata.Common
             CellCommentHeaders = new Dictionary<string, PropertyInfo>();
             PropertyToColumnValueLastSet = new Dictionary<TImport, Dictionary<string, Tuple<int, string>>>();
             PropertyToColumnCommentLastSet = new Dictionary<TImport, Dictionary<string, Tuple<int, string>>>();
+            Converters = new Dictionary<Type, IConverter>();
+            foreach (var defaultConverter in _defaultConverters)
+            {
+                foreach (var type in defaultConverter.GetTypes())
+                {
+                    Converters[type] = defaultConverter;
+                }
+            }
         }
+
+        private readonly List<IConverter> _defaultConverters = new()
+        {
+            new BoolConverter(), new StringConverter(), new IntConverter(), new DecimalConverter()
+        };
+        
+        private Dictionary<Type, IConverter> Converters { get; }
         
         private Dictionary<TImport, Dictionary<string, Tuple<int, string>>> PropertyToColumnValueLastSet { get; }
         private Dictionary<TImport, Dictionary<string, Tuple<int, string>>> PropertyToColumnCommentLastSet { get; }
@@ -68,6 +85,17 @@ namespace MedExpert.Excel.Metadata.Common
                 if (property != null)
                 {
                     CellDictionary = property;
+                }
+            }
+        }
+
+        protected void AddConverters(IEnumerable<IConverter> converters)
+        {
+            foreach (var converter in converters)
+            {
+                foreach (var type in converter.GetTypes())
+                {
+                    Converters[type] = converter;
                 }
             }
         }
@@ -198,61 +226,22 @@ namespace MedExpert.Excel.Metadata.Common
             return result;
         }
 
-        private static readonly Regex IntervalRegex = new("(\\d+(,?\\d+)?)-(\\d+(,?\\d+)?)");
-
-        private static string ValidateString(Type propertyType, string value)
+        private string ValidateString(Type propertyType, string value)
         {
-            if (propertyType == typeof(bool) || propertyType == typeof(bool?))
+            if (Converters.TryGetValue(propertyType, out var converter))
             {
-                return value is "0" or "1" or "" ? null : "Значение должно быть равно '1', '0' или быть пустым.";
-            }
-
-            if (propertyType == typeof(string) || propertyType == typeof(DeviationLevelModel))
-            {
-                return null;
-            }
-
-            if (propertyType == typeof(Sex) || propertyType == typeof(Sex?))
-            {
-                return value is "М" or "Ж" || propertyType == typeof(Sex?) && string.IsNullOrEmpty(value)
-                    ? null
-                    : "Значение должно быть равно 'М' или 'Ж'.";
-            }
-
-            if (propertyType == typeof(IntervalModel))
-            {
-                return !string.IsNullOrEmpty(value) && !IntervalRegex.IsMatch(value)
-                    ? "Некорректный формат интервала (пример: '0,1-0,3')"
-                    : null;
-            }
-
-            if (propertyType == typeof(int) || propertyType == typeof(int?))
-            {
-                return propertyType == typeof(int?) && string.IsNullOrEmpty(value)
-                    ? null
-                    : int.TryParse(value, out _)
-                        ? null
-                        : "Значение должно быть целым.";
-            }
-            
-            if (propertyType == typeof(decimal) || propertyType == typeof(decimal?))
-            {
-                return propertyType == typeof(decimal?) && string.IsNullOrEmpty(value)
-                    ? null
-                    : decimal.TryParse(value?.Replace(",", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator), out _)
-                        ? null
-                        : "Значение должно быть целым.";
+                return converter.ValidateString(propertyType, value);
             }
 
             throw new ArgumentException("Validation not implemented", nameof(propertyType));
         }
 
-        private static string ValidateStringValue(Type propertyType, Tuple<string, string> cell)
+        private string ValidateStringValue(Type propertyType, Tuple<string, string> cell)
         {
             return ValidateString(propertyType, cell.Item1);
         }
         
-        private static string ValidateStringComment(Type propertyType, Tuple<string, string> cell)
+        private string ValidateStringComment(Type propertyType, Tuple<string, string> cell)
         {
             return ValidateString(propertyType, cell.Item2);
         }
@@ -435,77 +424,11 @@ namespace MedExpert.Excel.Metadata.Common
             indexerPropertyInfo.SetValue(dictionary, valueObj, new[] { key });
         }
 
-        private static object ConvertStringValue(Type propertyType, string value, string additionalValue = null)
+        private object ConvertStringValue(Type propertyType, string value, string additionalValue = null)
         {
-            if (propertyType == typeof(bool))
+            if (Converters.TryGetValue(propertyType, out var converter))
             {
-                return value == "1";
-            }
-
-            if (propertyType == typeof(string))
-            {
-                return value == string.Empty ? null : value;
-            }
-
-            if (propertyType == typeof(decimal) || propertyType == typeof(decimal?))
-            {
-                if (decimal.TryParse(value, out var decimalValue))
-                {
-                    return decimalValue;
-                }
-
-                return propertyType == typeof(decimal?) ? null : 0;
-            }
-            
-            if (propertyType == typeof(int) || propertyType == typeof(int?))
-            {
-                if (int.TryParse(value, out var intValue))
-                {
-                    return intValue;
-                }
-
-                return propertyType == typeof(int?) ? null : 0;
-            }
-            
-            if (propertyType == typeof(Sex) || propertyType == typeof(Sex?))
-            {
-                var sexValue = value switch
-                {
-                    "М" => Sex.Male,
-                    "Ж" => Sex.Female,
-                    _ => (Sex?)null
-                };
-
-                if (propertyType == typeof(Sex) && sexValue == null)
-                {
-                    sexValue = Sex.Male;
-                }
-
-                return sexValue;
-            }
-
-            if (propertyType == typeof(IntervalModel))
-            {
-                if (string.IsNullOrEmpty(value))
-                {
-                    return null;
-                }
-                
-                var groups = IntervalRegex.Match(value).Groups;
-                return new IntervalModel
-                {
-                    ValueMin = decimal.Parse(groups[1].Value.Replace(",", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)),
-                    ValueMax = decimal.Parse(groups[3].Value.Replace(",", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator))
-                };
-            }
-
-            if (propertyType == typeof(DeviationLevelModel))
-            {
-                return new DeviationLevelModel
-                {
-                    Alias = value,
-                    Description = additionalValue
-                };
+                return converter.ConvertStringValue(propertyType, value, additionalValue);
             }
 
             throw new ArgumentException("Conversion not implemented", nameof(propertyType));

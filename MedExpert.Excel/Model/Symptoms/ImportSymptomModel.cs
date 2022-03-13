@@ -6,7 +6,7 @@ namespace MedExpert.Excel.Model.Symptoms
 {
     public class ImportSymptomModel
     {
-        public string SymptomName { get; set; }
+        public SymptomNameModel SymptomName { get; set; }
         
         public string SymptomDescription { get; set; }
         
@@ -27,7 +27,8 @@ namespace MedExpert.Excel.Model.Symptoms
             {
                 SpecialistId = specialistId,
                 CategoryId = categoryId,
-                Name = SymptomName,
+                Name = SymptomName.Value,
+                ApplyToSexOnly = SymptomName.Sex,
                 Comment = SymptomDescription,
                 SymptomIndicatorDeviationLevels = DeviationLevels.Select(x =>
                 {

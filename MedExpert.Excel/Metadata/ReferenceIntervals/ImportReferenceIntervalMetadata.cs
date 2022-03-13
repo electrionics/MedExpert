@@ -1,4 +1,8 @@
-﻿using MedExpert.Excel.Metadata.Common;
+﻿using System.Collections.Generic;
+using MedExpert.Excel.Converters;
+using MedExpert.Excel.Converters.Common;
+using MedExpert.Excel.Converters.Common.Base;
+using MedExpert.Excel.Metadata.Common;
 using MedExpert.Excel.Model;
 using MedExpert.Excel.Model.ReferenceIntervals;
 using MedExpert.Excel.Validators.Common;
@@ -17,8 +21,10 @@ namespace MedExpert.Excel.Metadata.ReferenceIntervals
             
             CellValue(x => x.Sex, "Пол");
             CellValue(x => x.AgeInterval, "Возраст");
-
+            
             CellsDictionary(x => x.Values);
+            
+            AddConverters(new List<IConverter>{ new SexConverter(), new IntervalModelConverter()});
             
             EntityValidator(new ImportReferenceIntervalModelValidator());
         }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MedExpert.Domain.Enums;
 
 namespace MedExpert.Domain.Entities
 {
@@ -11,6 +12,8 @@ namespace MedExpert.Domain.Entities
         public int SpecialistId { get; set; }
         
         public int CategoryId { get; set; }
+        
+        public Sex? ApplyToSexOnly { get; set; }
         
         public string Name { get; set; }
         

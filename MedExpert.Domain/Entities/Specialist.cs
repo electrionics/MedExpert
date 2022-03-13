@@ -9,7 +9,7 @@ namespace MedExpert.Domain.Entities
         
         public string Name { get; set; }
         
-        public Sex? ApplySexOnly { get; set; }
+        public Sex? ApplyToSexOnly { get; set; }
         
         
         public List<Symptom> Symptoms { get; set; }

@@ -1,5 +1,8 @@
-﻿using MedExpert.Excel.Metadata.Common;
-using MedExpert.Excel.Model;
+﻿using System.Collections.Generic;
+using MedExpert.Excel.Converters.Common;
+using MedExpert.Excel.Converters.Common.Base;
+using MedExpert.Excel.Converters.Symptom;
+using MedExpert.Excel.Metadata.Common;
 using MedExpert.Excel.Model.Symptoms;
 using MedExpert.Excel.Validators.Common;
 using MedExpert.Excel.Validators.Symptoms;
@@ -20,6 +23,8 @@ namespace MedExpert.Excel.Metadata.Symptoms
             }
             
             CellsDictionary(x => x.DeviationLevels);
+            
+            AddConverters(new List<IConverter>{ new SymptomNameModelConverter(), new DeviationLevelModelConverter()});
             
             EntityValidator(new ImportSymptomModelValidator());
         }

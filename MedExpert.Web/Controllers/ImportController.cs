@@ -347,7 +347,7 @@ namespace MedExpert.Web.Controllers
                             {
                                 var specialist = new Specialist
                                 {
-                                    ApplySexOnly = model.NewSpecialistSex,
+                                    ApplyToSexOnly = model.NewSpecialistSex,
                                     Name = model.NewSpecialistName
                                 };
                                 await _specialistService.CreateSpecialist(specialist);
@@ -493,31 +493,36 @@ namespace MedExpert.Web.Controllers
             var result = new List<Symptom>();
             var maxLevel = 1;
             var lastLevelIndexes = new Dictionary<int, int>();
+            var lastLevelSex = new Dictionary<int, Sex?>();
             for (var i = 0; i < symptoms.Count; i++)
             {
-                var currLevel = symptoms[i].Item2;
+                var (symptom, currLevel) = symptoms[i];
+
                 maxLevel = Math.Max(currLevel, maxLevel);
                 if (currLevel == 1)
                 {
-                    lastLevelIndexes.Clear();
-                    result.Add(symptoms[i].Item1);
+                    result.Add(symptom);
                 }
                 else
                 {
                     var parentIndex = lastLevelIndexes[currLevel - 1];
+                    var parentSex = lastLevelSex[currLevel - 1];
+                    if (parentSex != null)
+                    {
+                        symptom.ApplyToSexOnly = parentSex.Value; // overwrites sex of lower level symptoms with parent, if specified
+                    }
                     
                     symptoms[parentIndex].Item1.Children ??= new List<Symptom>();
-                    symptoms[parentIndex].Item1.Children.Add(symptoms[i].Item1);
+                    symptoms[parentIndex].Item1.Children.Add(symptom);
                 }
 
                 lastLevelIndexes[currLevel] = i;
+                lastLevelSex[currLevel] = symptom.ApplyToSexOnly;
                 
                 for (var l = currLevel + 1; l <= maxLevel; l++)
                 {
-                    if (lastLevelIndexes.ContainsKey(l))
-                    {
-                        lastLevelIndexes.Remove(l);
-                    }
+                    lastLevelSex.Remove(l);
+                    lastLevelIndexes.Remove(l);
                 }
             }
 
