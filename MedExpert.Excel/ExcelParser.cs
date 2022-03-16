@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+// ReSharper disable StringLiteralTypo
 
 namespace MedExpert.Excel
 {
@@ -20,16 +21,19 @@ namespace MedExpert.Excel
             {
                 try
                 {
-
                     var workbookPart = doc.WorkbookPart;
-                    var sstPart = workbookPart.GetPartsOfType<SharedStringTablePart>().First();
-                    var sst = sstPart.SharedStringTable;
-
+                    if (workbookPart.WorksheetParts.Count() > 1)
+                    {
+                        throw new InvalidDataException("Разбираемый файл не должен содержать больше одного листа.");
+                    }
+                    
                     var worksheetPart = workbookPart.WorksheetParts.First();
                     var sheet = worksheetPart.Worksheet;
-
                     var rows = sheet.Descendants<Row>();
 
+                    var sstPart = workbookPart.GetPartsOfType<SharedStringTablePart>().First();
+                    var sst = sstPart.SharedStringTable;
+                    
                     foreach (var row in rows)
                     {
                         foreach (var cell in row.Elements<Cell>())
@@ -86,9 +90,9 @@ namespace MedExpert.Excel
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    
+                    throw;
                 }
             }
 

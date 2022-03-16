@@ -1,19 +1,21 @@
 <div class="form-group" *ngIf="Report">
   <h1>Отчёт импорта</h1>
   <ul>
-    <li class="text-danger" *ngIf="Report.error">Ошибка: {{Report.error}}.</li>
-    <li class="text-danger" *ngIf="!Report.headerValid">Заголовок содержит ошибки:<ul>
-      <li *ngFor="let error of Report.headerErrors">{{error}}</li>
-    </ul></li>
-    <li class="text-success" *ngIf="Report.headerValid">Заголовок в порядке.</li>
-    <li class="text-success">{{Report.totalRowsFound}} строк найдено.</li>
-    <li class="text-success">{{Report.totalRowsReady}} строк готово к импорту.</li>
-    <li class="text-danger">{{Report.countInvalidRows}} строк не годны. <span *ngIf="Report.countInvalidRows">Смотрите ошибки ниже.</span></li>
-    <li class="text-success">{{Report.totalInsertedRows}} суммарно добавлено.</li>
-    <li class="text-success">{{Report.totalUpdatedRows}} суммарно обновлено.</li>
-    <li class="text-danger" *ngIf="Report.totalInsertedErrorsCount">{{Report.totalInsertedErrorsCount}} ошибок при добавлении.</li>
-    <li class="text-danger" *ngIf="Report.totalUpdatedErrorsCount">{{Report.totalUpdatedErrorsCount}} ошибок при обновлении.</li>
-    <li class="text-success">{{Report.totalExecutionTimeSeconds | number: '0.1-3'}} секунд.</li>
+    <li class="text-danger" *ngIf="Report.error">Ошибка: {{Report.error}}</li>
+    <ng-container *ngIf="!Report.error">
+      <li class="text-danger" *ngIf="!Report.headerValid">Заголовок содержит ошибки:<ul>
+        <li *ngFor="let error of Report.headerErrors">{{error}}</li>
+      </ul></li>
+      <li class="text-success" *ngIf="Report.headerValid">Заголовок в порядке.</li>
+      <li class="text-success">{{Report.totalRowsFound}} строк найдено.</li>
+      <li class="text-success">{{Report.totalRowsReady}} строк готово к импорту.</li>
+      <li class="text-danger">{{Report.countInvalidRows}} строк не годны. <span *ngIf="Report.countInvalidRows">Смотрите ошибки ниже.</span></li>
+      <li class="text-success">{{Report.totalInsertedRows}} суммарно добавлено.</li>
+      <li class="text-success">{{Report.totalUpdatedRows}} суммарно обновлено.</li>
+      <li class="text-danger" *ngIf="Report.totalInsertedErrorsCount">{{Report.totalInsertedErrorsCount}} ошибок при добавлении.</li>
+      <li class="text-danger" *ngIf="Report.totalUpdatedErrorsCount">{{Report.totalUpdatedErrorsCount}} ошибок при обновлении.</li>
+      <li class="text-success">{{Report.totalExecutionTimeSeconds | number: '0.1-3'}} секунд.</li>
+    </ng-container>
   </ul>
 
   <div class="legend" *ngIf="Report.countInvalidRows">

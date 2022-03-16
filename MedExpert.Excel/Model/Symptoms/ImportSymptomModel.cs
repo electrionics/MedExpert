@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MedExpert.Domain.Entities;
 
@@ -46,5 +47,27 @@ namespace MedExpert.Excel.Model.Symptoms
                 }).Where(x => x != null).ToList()
             };
         }
+        
+        
+        // protected bool Equals(ImportSymptomModel other)
+        // {
+        //     return Equals(SymptomName, other.SymptomName) && SymptomLevelStr == other.SymptomLevelStr;
+        // }
+        //
+        // public override bool Equals(object obj)
+        // {
+        //     if (ReferenceEquals(null, obj)) return false;
+        //     if (ReferenceEquals(this, obj)) return true;
+        //     if (obj.GetType() != this.GetType()) return false;
+        //     return Equals((ImportSymptomModel) obj);
+        // }
+        //
+        // public override int GetHashCode()
+        // {
+        //     unchecked
+        //     {
+        //         return ((SymptomName?.GetHashCode() ?? 0) * 397) ^ (SymptomLevelStr?.GetHashCode() ?? 0);
+        //     }
+        // }
     }
 }
