@@ -34,58 +34,49 @@ import { StartGameRedirectComponent } from "./game/startGameRedirect.component";
 import { PassGameParametersService } from "./game/passGameParametersService";
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    NavMenuComponent,
-    FooterComponent,
-    HomeComponent,
-    AboutComponent,
-    ImportReportComponent,
-    ImportReferenceIntervalsComponent,
-    ImportIndicatorsComponent,
-    ImportSymptomsComponent,
-    ImportAnalysisComponent,
-
-    //TODO: delete
-    StartGameComponent,
-    GameComponent,
-    StartGameDialogComponent,
-    StartGameRedirectComponent,
-
-    ConfirmDialogComponent,
-    AlertDialogComponent
-  ],
-  imports: [
-    BrowserModule.withServerTransition({appId: 'ng-cli-universal'}),
-    HttpClientModule,
-    FormsModule,
-    RouterModule.forRoot([
-      {path: '', component: HomeComponent, pathMatch: 'full'},
-      {path: 'game', component: GameComponent}, //TODO: delete
-      {path: 'gameRedirect', component: StartGameRedirectComponent}, //TODO: delete
-      {path: 'about', component: AboutComponent},
-      {path: 'import/reference-intervals', component: ImportReferenceIntervalsComponent},
-      {path: 'import/indicators', component: ImportIndicatorsComponent},
-      {path: 'import/symptoms', component: ImportSymptomsComponent},
-      {path: 'import/analysis', component: ImportAnalysisComponent}
-    ]),
-    BrowserAnimationsModule,
-    MatTooltipModule,
-    MatDialogModule,
-    MatButtonModule
-  ],
-  entryComponents: [
-    StartGameDialogComponent, //TODO: delete
-
-    ConfirmDialogComponent,
-    AlertDialogComponent
-  ],
-  providers: [
-    {provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: {hasBackdrop: true, disableClose: true}},
-    CookieService,
-
-    PassGameParametersService //TODO: delete
-  ],
-  bootstrap: [AppComponent]
+    declarations: [
+        AppComponent,
+        NavMenuComponent,
+        FooterComponent,
+        HomeComponent,
+        AboutComponent,
+        ImportReportComponent,
+        ImportReferenceIntervalsComponent,
+        ImportIndicatorsComponent,
+        ImportSymptomsComponent,
+        ImportAnalysisComponent,
+        //TODO: delete
+        StartGameComponent,
+        GameComponent,
+        StartGameDialogComponent,
+        StartGameRedirectComponent,
+        ConfirmDialogComponent,
+        AlertDialogComponent
+    ],
+    imports: [
+        BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
+        HttpClientModule,
+        FormsModule,
+        RouterModule.forRoot([
+            { path: '', component: HomeComponent, pathMatch: 'full' },
+            { path: 'game', component: GameComponent },
+            { path: 'gameRedirect', component: StartGameRedirectComponent },
+            { path: 'about', component: AboutComponent },
+            { path: 'import/reference-intervals', component: ImportReferenceIntervalsComponent },
+            { path: 'import/indicators', component: ImportIndicatorsComponent },
+            { path: 'import/symptoms', component: ImportSymptomsComponent },
+            { path: 'import/analysis', component: ImportAnalysisComponent }
+        ]),
+        BrowserAnimationsModule,
+        MatTooltipModule,
+        MatDialogModule,
+        MatButtonModule
+    ],
+    providers: [
+        { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { hasBackdrop: true, disableClose: true } },
+        CookieService,
+        PassGameParametersService //TODO: delete
+    ],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }
