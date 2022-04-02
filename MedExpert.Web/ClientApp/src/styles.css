@@ -1,4 +1,5 @@
 @import "~bootstrap-icons/font/bootstrap-icons.css";
+@import "~@ng-select/ng-select/themes/default.theme.css";
 
 /* You can add global styles to this file, and also import other style files */
 
@@ -19,45 +20,45 @@ code {
   vertical-align: middle!important;
 }
 
-.btn{
-  box-shadow: 1px 1px 12px 5px #313155!important;
-}
-.btn.disabled, .btn:disabled{
-  opacity: 0.55!important;
-}
+/*.btn{*/
+/*  box-shadow: 1px 1px 12px 5px #313155!important;*/
+/*}*/
+/*.btn.disabled, .btn:disabled{*/
+/*  opacity: 0.55!important;*/
+/*}*/
 
-.btn-info {
-  color: #fff;
-  background-color: #17a2b8;
-  border-color: #17a2b8;
-}
+/*.btn-info {*/
+/*  color: #fff;*/
+/*  background-color: #17a2b8;*/
+/*  border-color: #17a2b8;*/
+/*}*/
 
-.btn-hint {
-  color: #fff;
-  background-color: orange;
-  border-color: orange;
-}
+/*.btn-hint {*/
+/*  color: #fff;*/
+/*  background-color: orange;*/
+/*  border-color: orange;*/
+/*}*/
 
-.btn-hint:hover {
-  color: #fff;
-  background-color: darkorange;
-  border-color: darkorange;
-}
+/*.btn-hint:hover {*/
+/*  color: #fff;*/
+/*  background-color: darkorange;*/
+/*  border-color: darkorange;*/
+/*}*/
 
-.btn-hint[disabled]:hover{
-  background-color: orange;
-  border-color: orange;
-}
+/*.btn-hint[disabled]:hover{*/
+/*  background-color: orange;*/
+/*  border-color: orange;*/
+/*}*/
 
-.btn-hint.btn-small{
-  width: 16px;
-  height: 25px;
-  padding: 0;
-}
+/*.btn-hint.btn-small{*/
+/*  width: 16px;*/
+/*  height: 25px;*/
+/*  padding: 0;*/
+/*}*/
 
-html, body {
-  height: 100%;
-}
+/*html, body {*/
+/*  height: 100%;*/
+/*}*/
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
@@ -108,7 +109,7 @@ header {
   height: 100%;
   z-index: 1000;
   background-color: rgba(0, 0, 0, 0);
-  background-image: url("loading.gif");
+  background-image: url("./assets/loading.gif");
   background-size: 48px 48px;
   background-position: center;
   background-repeat: no-repeat;
@@ -121,11 +122,11 @@ header {
   }
 
   10% {
-    background-image: url("loading.gif");
+    background-image: url("./assets/loading.gif");
   }
 
   100% {
-    background-image: url("loading.gif");
+    background-image: url("./assets/loading.gif");
   }
 }
 @-moz-keyframes loader {
@@ -134,11 +135,11 @@ header {
   }
 
   10% {
-    background-image: url("loading.gif");
+    background-image: url("./assets/loading.gif");
   }
 
   100% {
-    background-image: url("loading.gif");
+    background-image: url("./assets/loading.gif");
   }
 }
 @-webkit-keyframes loader {
@@ -147,11 +148,11 @@ header {
   }
 
   10% {
-    background-image: url("loading.gif");
+    background-image: url("./assets/loading.gif");
   }
 
   100% {
-    background-image: url("loading.gif");
+    background-image: url("./assets/loading.gif");
   }
 }
 

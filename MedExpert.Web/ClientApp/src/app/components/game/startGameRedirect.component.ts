@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PassGameParametersService } from './passGameParametersService';
+import { PassGameParametersService } from '../../services/passGameParametersService';
 
 @Component({
   selector: 'app-start-game-redirect',

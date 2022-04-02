@@ -2,7 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { HttpClient } from "@angular/common/http";
 import { Router } from '@angular/router';
-import { PassGameParametersService } from "./passGameParametersService";
+import { PassGameParametersService } from "../../services/passGameParametersService";
 
 @Component({
   selector: 'app-start-game-dialog',

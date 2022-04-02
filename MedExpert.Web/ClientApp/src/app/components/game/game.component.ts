@@ -4,7 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from "../common/confirm.component";
 import {AlertDialogComponent} from "../common/alert.component";
-import {PassGameParametersService} from "./passGameParametersService";
+import {PassGameParametersService} from "../../services/passGameParametersService";
 import {StartGameDialogComponent} from './startGameDialog.component';
 
 @Component({
