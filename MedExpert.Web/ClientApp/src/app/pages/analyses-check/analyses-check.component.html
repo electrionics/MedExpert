@@ -1,0 +1,78 @@
+<h1 class="h3 font-weight-bold mb-3">Проверка анализов</h1>
+
+<div class="box mb-5">
+  <div class="header">
+    <h5 class="mb-0">Данные пациента</h5>
+  </div>
+  <div class="body">
+    <form [formGroup]="patientForm" class="mb-3">
+      <div class="row d-flex pb-3">
+        <div class="col-2 d-flex align-items-center justify-content-end pr-3 text-right">
+          <label class="mb-0" for="gender">Пол</label>
+        </div>
+        <div class="col-10">
+          <ng-select formControlName="gender" class="form-select" labelForId="gender" [searchable]="false" placeholder="Выберите пол">
+            <ng-option *ngFor="let gender of (genders$ | async).items" [value]="gender">{{gender.label}}</ng-option>
+          </ng-select>
+        </div>
+      </div>
+      <div class="row d-flex pb-3">
+        <div class="col-2 d-flex align-items-center justify-content-end pr-3 text-right">
+          <label class="mb-0" for="age">Возраст</label>
+        </div>
+        <div class="col-10">
+          <input type="number" id="age" formControlName="age" class="form-control" placeholder="Введите возраст" />
+        </div>
+      </div>
+      <div class="row d-flex pb-3">
+        <div class="col-2 d-flex align-items-center justify-content-end pr-3 text-right">
+          <label class="mb-0" for="specialists">Специалисты</label>
+        </div>
+        <div class="col-10">
+          <ng-select formControlName="specialists" class="form-select" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
+            <ng-option *ngFor="let specialist of (specialists$ | async).items" [value]="specialist">{{specialist.label}}</ng-option>
+          </ng-select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-12 text-right">
+          <button class="btn btn-primary" (click)="save()">Сохранить</button>
+        </div>
+      </div>
+    </form>
+
+    <hr />
+
+    <form [formGroup]="parametersForm">
+      <table class="w-100">
+        <thead>
+          <tr>
+            <th class="pb-3">Показатель</th>
+            <th class="pb-3">Результат</th>
+            <th class="pb-3">Референсные значения</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container formArrayName="items" *ngFor="let parameterForm of parametersForm.get('items')['controls']; let parameterFormIndex = index">
+            <tr [formGroupName]="parameterFormIndex">
+              <td class="pr-3 pb-3">
+                <label class="mb-0" [for]="parameterForm.value.item.label">{{parameterForm.value.item.label}}</label>
+              </td>
+              <td class="pr-3 pb-3 w-25">
+                <input type="number" [id]="parameterForm.value.item.label" formControlName="result" class="form-control" />
+              </td>
+              <td class="pb-3 w-25">
+                <div class="d-flex">
+                  <input type="number" formControlName="from" class="form-control" />
+                  <span class="ml-3 mr-3 d-flex align-items-center">-</span>
+                  <input type="number" formControlName="to" class="form-control" />
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,58 @@
+<div *ngIf="requestProgress" class="loading-overlay">
+</div>
+<h1>Импорт файлов специалистов</h1>
+<div class="form-group">
+  <a href="./templates/symptoms.xlsx" download>Шаблон файла специалиста</a>
+</div>
+<div class="form-group">
+  <input type="file"
+         id="file"
+         (change)="changeFile($event.target.files)"><br/>
+  <label>Категория строк файла</label>
+  <select [(ngModel)]="specialist.SymptomCategoryId">
+    <option *ngFor="let item of categories" [value]="item.id">
+      {{item.name}}
+    </option>
+  </select><br/>
+  <label>Создать нового специалиста</label>
+  <input type="checkbox" [(ngModel)]="isNewSpecialist"/><br/>
+  <ng-container *ngIf="!isNewSpecialist">
+    <label>Специалист</label>
+    <select [(ngModel)]="specialist.SpecialistId" (ngModelChange)="updateControls()">
+      <option *ngFor="let item of specialists" [value]="item.id">
+        {{item.name}}
+      </option>
+    </select><br/>
+    <div *ngIf="SpecialistId.invalid"
+         class="alert alert-danger">
+      <div *ngIf="SpecialistId.errors?.required">
+        Выберите специалиста.
+      </div>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="isNewSpecialist">
+    <label>Пол пациента, которого может обслуживать данная специальность</label>
+    <select [(ngModel)]="specialist.NewSpecialistSex">
+      <option *ngFor="let item of sex" [value]="item.id">
+        {{item.name}}
+      </option>
+    </select><br/>
+    <label>Название специальности</label>
+    <input type="text" [(ngModel)]="specialist.NewSpecialistName" (ngModelChange)="updateControls()"/><br/>
+    <div *ngIf="NewSpecialistName.invalid"
+         class="alert alert-danger">
+      <div *ngIf="NewSpecialistName.errors?.required">
+        Введите название нового специалиста.
+      </div>
+      <div *ngIf="NewSpecialistName.errors?.maxlength">
+        Длина названия не должна превышать 100 символов.
+      </div>
+      <div *ngIf="NewSpecialistName.errors?.pattern">
+        Название содержит недопустимые символы.
+      </div>
+    </div>
+  </ng-container>
+  <button (click)="upload()" [disabled]="!isFormValid()" class="btn btn-success">Импортировать</button>
+</div>
+
+<app-import-report [Report]="Report" [Options]="Options"></app-import-report>

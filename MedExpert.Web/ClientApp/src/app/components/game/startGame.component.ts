@@ -2,8 +2,8 @@
 import {HttpClient} from "@angular/common/http";
 import {MatDialog} from "@angular/material/dialog";
 import {Router} from '@angular/router';
-import {PassGameParametersService} from "./passGameParametersService";
-import {CookieService} from "../common/cookieService.component";
+import {PassGameParametersService} from "../../services/passGameParametersService";
+import {CookieService} from "../../services/cookieService.component";
 
 @Component({
   selector: 'app-start-game',
