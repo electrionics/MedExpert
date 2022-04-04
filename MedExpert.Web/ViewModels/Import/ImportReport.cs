@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MedExpert.Web.ViewModels
+namespace MedExpert.Web.ViewModels.Import
 {
     public class ImportReport
     {

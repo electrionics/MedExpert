@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using MedExpert.Web.ViewModels;
+using MedExpert.Web.ViewModels.Import;
 
 namespace MedExpert.Web.Validators
 {

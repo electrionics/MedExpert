@@ -20,6 +20,7 @@ using MedExpert.Excel.Model.Symptoms;
 using Microsoft.AspNetCore.Mvc;
 using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
+using MedExpert.Web.ViewModels.Import;
 
 // ReSharper disable CommentTypo
 

@@ -1,6 +1,6 @@
 ﻿using MedExpert.Domain.Enums;
 
-namespace MedExpert.Web.ViewModels
+namespace MedExpert.Web.ViewModels.Import
 {
     public class ImportSymptomForm
     {

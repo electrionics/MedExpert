@@ -1,6 +1,6 @@
-﻿namespace MedExpert.Web.ViewModels
+﻿namespace MedExpert.Web.ViewModels.Import
 {
-    public class ReferenceIntervalModel
+    public abstract class ReferenceIntervalModel
     {
         public decimal ValueMin { get; set; }
         
