@@ -28,7 +28,7 @@ namespace MedExpert.Web.Controllers
             _specialistService = specialistService;
         }
 
-        [HttpGet]
+        [HttpPost]
         [ApiRoute("Analysis/Indicators")]
         public async Task<List<IndicatorValueDependencyModel>> Indicators([FromBody] ProfileModel model)
         {

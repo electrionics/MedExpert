@@ -32,6 +32,10 @@
         </Content>
         <None Remove="$(SpaRoot)**" />
         <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
+        <None Remove="ClientApp\src\app\game\**" />
+        <Content Remove="ClientApp\src\app\game\**" />
+        <None Remove="ClientApp\src\app\import\**" />
+        <Content Remove="ClientApp\src\app\import\**" />
     </ItemGroup>
 
     <ItemGroup>
@@ -45,20 +49,24 @@
     </ItemGroup>
 
     <ItemGroup>
-      <TypeScriptCompile Include="ClientApp\src\app\game\startGameRedirect.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\game\updateRecordDialog.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\records\records.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\game\tutorial.component.ts" />
-      <TypeScriptCompile Include="ClientApp\src\app\import\importAnalysis.component.ts" />
-      <TypeScriptCompile Include="ClientApp\src\app\import\importBase.ts" />
-      <TypeScriptCompile Include="ClientApp\src\app\import\importIndicators.component.ts" />
-      <TypeScriptCompile Include="ClientApp\src\app\import\importReport.component.ts" />
-      <TypeScriptCompile Include="ClientApp\src\app\import\importSymptoms.component.ts" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="ClientApp\dist" />
       <Folder Include="Filters" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="ClientApp\src\app\game\**" />
+      <Compile Remove="ClientApp\src\app\import\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="ClientApp\src\app\game\**" />
+      <EmbeddedResource Remove="ClientApp\src\app\import\**" />
     </ItemGroup>
 
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">

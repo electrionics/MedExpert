@@ -52,8 +52,8 @@ export class AnalysesState {
   }
 
   @Action(GetIndicatorsAction)
-  GetIndicatorsAction({ patchState }: StateContext<IAnalysesState>) {
-    return this.analysesService.getIndicators().pipe(tap((indicators) => {
+  GetIndicatorsAction({ patchState }: StateContext<IAnalysesState>, { sex, age }: GetIndicatorsAction) {
+    return this.analysesService.getIndicators(sex, age).pipe(tap((indicators) => {
       patchState({ indicators: new IndicatorsDTO(indicators) });
     }))
   }

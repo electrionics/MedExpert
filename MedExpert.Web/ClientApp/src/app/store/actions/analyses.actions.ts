@@ -10,7 +10,7 @@ export class GetSpecialistsAction {
 export class GetIndicatorsAction {
   static readonly type = '[GET] Indicators';
 
-  constructor() {}
+  constructor(public sex: string, public age: number) {}
 }
 
 export class GetResultsAction {

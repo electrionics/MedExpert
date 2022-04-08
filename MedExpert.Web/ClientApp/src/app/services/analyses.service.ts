@@ -18,8 +18,11 @@ export class AnalysesService {
     })
   }
 
-  public getIndicators() {
-    return this.apiService.get<IIndicator[]>('Analysis/Indicators')
+  public getIndicators(sex: string, age: number) {
+    return this.apiService.post<IIndicator[]>('Analysis/Indicators', {
+      sex,
+      age
+    })
   }
 
   public getResults(body) {

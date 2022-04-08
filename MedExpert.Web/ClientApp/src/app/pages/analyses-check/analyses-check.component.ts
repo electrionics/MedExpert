@@ -87,7 +87,9 @@ export class AnalysesCheckComponent implements OnInit {
   }
 
   public savePatientForm(): void {
-    this.store.dispatch(new GetIndicatorsAction())
+    const { sex: { id: sexId }, age } = this.patientForm.value;
+
+    this.store.dispatch(new GetIndicatorsAction(sexId, age))
       .subscribe(() => {
         this.patientFormState = FormStateEnum.saved;
         this.patientForm.disable();
@@ -95,7 +97,9 @@ export class AnalysesCheckComponent implements OnInit {
   }
 
   public resavePatientForm(): void {
-    this.store.dispatch(new GetIndicatorsAction())
+    const { sex: { id: sexId }, age } = this.patientForm.value;
+
+    this.store.dispatch(new GetIndicatorsAction(sexId, age))
       .subscribe(() => {
         this.patientFormState = FormStateEnum.saved;
         this.patientForm.disable();

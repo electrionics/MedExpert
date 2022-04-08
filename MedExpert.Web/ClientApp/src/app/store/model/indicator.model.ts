@@ -7,6 +7,7 @@ export interface IIndicator {
   referenceIntervalMin: number;
   shortName: string
   value: number;
+  dependencyIndicatorIds: number[];
 }
 
 export interface IIndicators {
