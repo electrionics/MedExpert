@@ -20,3 +20,23 @@
 .body {
   padding: 1.25rem;
 }
+
+.value {
+  width: 120px;
+}
+
+.indicators th {
+  border-bottom: 1px solid #212529;
+}
+
+.indicators tbody tr:nth-child(2n) {
+  background-color: #f6f6f6;
+}
+
+.indicators tbody tr:hover td {
+  background-color: #efefef;
+}
+
+.indicators td:first-child {
+  width: 100%;
+}

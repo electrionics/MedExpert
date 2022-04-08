@@ -1,20 +1,28 @@
 import { Injectable } from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {ApiService} from './api.service';
+import {IIndicator} from '../store/model/indicator.model';
+import {ISelectOption} from '../store/model/select-option.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AnalysesService {
   constructor(
-    private readonly httpClient: HttpClient
+    private readonly apiService: ApiService
   ) { }
 
-  getSpecialists(gender: string, age: number) {
-    return this.httpClient.get('/api/request', {
-      params: {
-        gender,
-        age
-      }
+  public getSpecialists(sex: string, age: number) {
+    return this.apiService.post<ISelectOption[]>('Analysis/Specialists', {
+      sex,
+      age
     })
+  }
+
+  public getIndicators() {
+    return this.apiService.get<IIndicator[]>('Analysis/Indicators')
+  }
+
+  public getResults(body) {
+    return this.apiService.post('Analysis/Calculate', body);
   }
 }

@@ -239,3 +239,10 @@ header {
   font-size: 13px;
   border-radius: 8px;
 }
+
+.form-control.ng-invalid.ng-touched,
+.form-control.ng-invalid.ng-dirty,
+ng-select.ng-invalid.ng-touched .ng-select-container,
+ng-select.ng-invalid.ng-dirty .ng-select-container {
+  border-color: #dc3545;
+}

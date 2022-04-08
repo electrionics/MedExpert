@@ -1,30 +1,26 @@
 import { Injectable } from '@angular/core';
 import {Action, Selector, State, StateContext} from '@ngxs/store';
-import {GetSpecialistsAction} from '../actions/analyses.actions';
+import {GetIndicatorsAction, GetResultsAction, GetSpecialistsAction} from '../actions/analyses.actions';
 import {AnalysesService} from '../../services/analyses.service';
-import {catchError, tap} from 'rxjs/operators';
-import {ISelectOption, ISelectOptions, SelectOptionsDTO} from '../model/select-option.model';
-import {IParameters, ParametersDTO} from '../model/parameter.model';
+import {tap} from 'rxjs/operators';
+import {ISelectOptions, SelectOptionsDTO} from '../model/select-option.model';
+import {IIndicators, IndicatorsDTO} from '../model/indicator.model';
 
 export interface IAnalysesState {
-  genders: ISelectOptions;
+  sexes: ISelectOptions;
   specialists: ISelectOptions;
-  parameters: IParameters;
+  indicators: IIndicators;
 }
 
 @State<IAnalysesState>({
   name: 'analyses',
   defaults: {
-    genders: new SelectOptionsDTO([
-      { id: '1', label: "Мужчина" },
-      { id: '2', label: "Женщина" }
+    sexes: new SelectOptionsDTO([
+      { id: 1, name: "Мужчина" },
+      { id: 2, name: "Женщина" }
     ]),
     specialists: new SelectOptionsDTO([]),
-    parameters: new ParametersDTO([
-      { id: '1', label: "Параметр 1", referenceValues: [1, 2] },
-      { id: '2', label: "Параметр 2", referenceValues: [4, 8] },
-      { id: '3', label: "Параметр 3", referenceValues: [2, 5] },
-    ]),
+    indicators: new IndicatorsDTO([]),
   }
 })
 @Injectable()
@@ -34,8 +30,8 @@ export class AnalysesState {
   ) { }
 
   @Selector()
-  static GetGenders({ genders }: IAnalysesState) {
-    return genders;
+  static GetSexes({ sexes }: IAnalysesState) {
+    return sexes;
   }
 
   @Selector()
@@ -44,24 +40,28 @@ export class AnalysesState {
   }
 
   @Selector()
-  static GetParameters({ parameters }: IAnalysesState) {
-    return parameters;
+  static GetIndicators({ indicators }: IAnalysesState) {
+    return indicators;
   }
 
   @Action(GetSpecialistsAction)
-  GetSpecialistsAction({ patchState }: StateContext<IAnalysesState>, { gender, age }: GetSpecialistsAction) {
-    const specialists: ISelectOption[] = [
-      {id: '1', label: 'специалист 1'},
-      {id: '2', label: 'специалист 2'},
-      {id: '3', label: 'специалист 3'}
-    ];
-
-    return this.analysesService.getSpecialists(gender, age).pipe(tap((_specialists) => {
+  GetSpecialistsAction({ patchState }: StateContext<IAnalysesState>, { sex, age }: GetSpecialistsAction) {
+    return this.analysesService.getSpecialists(sex, age).pipe(tap((specialists) => {
       patchState({ specialists: new SelectOptionsDTO(specialists) });
-    }), catchError(error => {
-      patchState({ specialists: new SelectOptionsDTO(specialists) });
+    }))
+  }
 
-      throw error;
+  @Action(GetIndicatorsAction)
+  GetIndicatorsAction({ patchState }: StateContext<IAnalysesState>) {
+    return this.analysesService.getIndicators().pipe(tap((indicators) => {
+      patchState({ indicators: new IndicatorsDTO(indicators) });
+    }))
+  }
+
+  @Action(GetResultsAction)
+  GetResultsAction({ patchState }: StateContext<IAnalysesState>, body: GetResultsAction) {
+    return this.analysesService.getResults(body).pipe(tap((response) => {
+      console.log(response)
     }))
   }
 }

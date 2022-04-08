@@ -50,6 +50,16 @@ namespace MedExpert.Web
                 //...mvc setup...
             }).AddFluentValidation();
             
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    bld => bld
+                        .WithOrigins("http://localhost:4200")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
+            });
+            
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
             services.AddTransient<IValidator<ImportSymptomForm>, ImportSymptomFormValidator>();
             
@@ -87,6 +97,8 @@ namespace MedExpert.Web
             }
 
             app.UseRouting();
+            
+            app.UseCors("CorsPolicy");
 
             app.UseEndpoints(endpoints =>
             {
@@ -101,18 +113,18 @@ namespace MedExpert.Web
                 //     pattern: "Api/{controller}/{action}/{id?}");
             });
 
-            app.UseSpa(spa =>
-            {
-                // To learn more about options for serving an Angular SPA from ASP.NET Core,
-                // see https://go.microsoft.com/fwlink/?linkid=864501
-
-                spa.Options.SourcePath = "ClientApp";
-
-                if (env.IsDevelopment())
-                {
-                    spa.UseAngularCliServer(npmScript: "start");
-                }
-            });
+            // app.UseSpa(spa =>
+            // {
+            //     // To learn more about options for serving an Angular SPA from ASP.NET Core,
+            //     // see https://go.microsoft.com/fwlink/?linkid=864501
+            //
+            //     spa.Options.SourcePath = "ClientApp";
+            //
+            //     if (env.IsDevelopment())
+            //     {
+            //         spa.UseAngularCliServer(npmScript: "start");
+            //     }
+            // });
         }
     }
 }
