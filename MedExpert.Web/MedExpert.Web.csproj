@@ -52,6 +52,11 @@
       <TypeScriptCompile Remove="ClientApp\src\app\game\updateRecordDialog.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\records\records.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\game\tutorial.component.ts" />
+      <TypeScriptCompile Remove="ClientApp\src\app\components\game\game.component.ts" />
+      <TypeScriptCompile Remove="ClientApp\src\app\components\game\startGame.component.ts" />
+      <TypeScriptCompile Remove="ClientApp\src\app\components\game\startGameDialog.component.ts" />
+      <TypeScriptCompile Remove="ClientApp\src\app\components\game\startGameRedirect.component.ts" />
+      <TypeScriptCompile Remove="ClientApp\src\app\services\passGameParametersService.ts" />
     </ItemGroup>
 
     <ItemGroup>
