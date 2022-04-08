@@ -27,12 +27,6 @@ import { ConfirmDialogComponent } from "./components/common/confirm.component";
 import { AlertDialogComponent } from "./components/common/alert.component";
 import { CookieService } from "./services/cookieService.component";
 
-//TODO: delete
-import { StartGameComponent } from "./components/game/startGame.component";
-import { GameComponent } from "./components/game/game.component";
-import { StartGameDialogComponent } from "./components/game/startGameDialog.component";
-import { StartGameRedirectComponent } from "./components/game/startGameRedirect.component";
-import { PassGameParametersService } from "./services/passGameParametersService";
 import {AnalysesCheckModule} from './pages/analyses-check/analyses-check.module';
 import {environment} from '../environments/environment';
 import {AnalysesState} from './store/state/analyses.state';
@@ -49,11 +43,6 @@ import {AnalysesState} from './store/state/analyses.state';
         ImportIndicatorsComponent,
         ImportSymptomsComponent,
         ImportAnalysisComponent,
-        //TODO: delete
-        StartGameComponent,
-        GameComponent,
-        StartGameDialogComponent,
-        StartGameRedirectComponent,
         ConfirmDialogComponent,
         AlertDialogComponent
     ],
@@ -66,8 +55,6 @@ import {AnalysesState} from './store/state/analyses.state';
         FormsModule,
         RouterModule.forRoot([
             { path: '', component: HomeComponent, pathMatch: 'full' },
-            { path: 'game', component: GameComponent },
-            { path: 'gameRedirect', component: StartGameRedirectComponent },
             { path: 'about', component: AboutComponent },
             { path: 'import/reference-intervals', component: ImportReferenceIntervalsComponent },
             { path: 'import/indicators', component: ImportIndicatorsComponent },
@@ -82,8 +69,7 @@ import {AnalysesState} from './store/state/analyses.state';
     ],
     providers: [
         { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { hasBackdrop: true, disableClose: true } },
-        CookieService,
-        PassGameParametersService //TODO: delete
+        CookieService
     ],
     bootstrap: [AppComponent]
 })
