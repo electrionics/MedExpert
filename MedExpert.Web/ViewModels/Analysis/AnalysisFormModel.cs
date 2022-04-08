@@ -8,7 +8,7 @@ namespace MedExpert.Web.ViewModels.Analysis
         
         public ProfileModel Profile { get; set; }
         
-        public List<IndicatorModel> Indicators { get; set; }
+        public List<IndicatorValueModel> Indicators { get; set; }
         
         public List<int> SpecialistIds { get; set; }
     }

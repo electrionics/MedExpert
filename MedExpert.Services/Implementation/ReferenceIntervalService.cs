@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using MedExpert.Domain;
 using MedExpert.Domain.Entities;
+using MedExpert.Domain.Enums;
 using MedExpert.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace MedExpert.Services.Implementation
 {
@@ -14,7 +17,17 @@ namespace MedExpert.Services.Implementation
         {
             _dataContext = dataContext;
         }
-        
+
+        public async Task<List<ReferenceIntervalValues>> GetReferenceIntervalsByCriteria(Sex sex, decimal age)
+        {
+            return await _dataContext.Set<ReferenceIntervalValues>().Where(x =>
+                    x.ApplyCriteria.Sex == sex &&
+                    x.ApplyCriteria.AgeMin <= age &&
+                    x.ApplyCriteria.AgeMax >= age &&
+                    x.Indicator.InAnalysis)
+                .ToListAsync();
+        }
+
         public async Task DeleteAllReferenceIntervalValues()
         {
             var toRemove = _dataContext.Set<ReferenceIntervalValues>();

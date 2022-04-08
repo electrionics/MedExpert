@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using MedExpert.Domain.Enums;
+using MedExpert.Services.Implementation.ComputedIndicators;
+using MedExpert.Services.Interfaces;
 using MedExpert.Web.ViewModels;
 using MedExpert.Web.ViewModels.Analysis;
 using Microsoft.AspNetCore.Mvc;
@@ -12,58 +15,110 @@ namespace MedExpert.Web.Controllers
     [ApiController]
     public class AnalysisController:ControllerBase
     {
-        public AnalysisController()
+        private static readonly List<IComputedIndicator> ComputedIndicators = new() { new ELR(), new EMR(), new LMR(), new MLR(), new NLR(), new PLR(), new SII()};
+        
+        private readonly IIndicatorService _indicatorService;
+        private readonly IReferenceIntervalService _referenceIntervalService;
+        private readonly ISpecialistService _specialistService;
+
+        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService)
         {
-            
+            _indicatorService = indicatorService;
+            _referenceIntervalService = referenceIntervalService;
+            _specialistService = specialistService;
         }
 
         [HttpGet]
         [ApiRoute("Analysis/Indicators")]
-        public async Task<List<IndicatorValueModel>> Indicators()
+        public async Task<List<IndicatorValueDependencyModel>> Indicators([FromBody] ProfileModel model)
         {
-            return await Task.FromResult(new List<IndicatorValueModel>
+            var indicators = await _indicatorService.GetAnalysisIndicators();
+            var referenceIntervals =
+                await _referenceIntervalService.GetReferenceIntervalsByCriteria(model.Sex, model.Age);
+            
+            var indicatorNamesDict = indicators
+                .ToDictionary(x => x.ShortName, x => x.Id);
+            var referenceIntervalsDict = referenceIntervals
+                .ToDictionary(x => x.IndicatorId, x => x);
+            
+            var result = indicators.Select(x =>
             {
-                new()
+                var referenceExists = referenceIntervalsDict.TryGetValue(x.Id, out var referenceInterval);
+                return new IndicatorValueDependencyModel
                 {
-                    Id = 1, ShortName = "Hb", Name = "Гемоглобин"
-                },
-                new()
-                {
-                    Id = 2, ShortName = "RBC", Name = "Эритроциты", ReferenceIntervalMin = 1,
-                    ReferenceIntervalMax = 1.5m
-                },
-                new()
-                {
-                    Id = 3, ShortName = "HCT", Name = "Гематокрит", ReferenceIntervalMin = 2,
-                    ReferenceIntervalMax = 2.8m
-                }
-            });
+                    Id = x.Id,
+                    Name = x.Name,
+                    ShortName = x.ShortName,
+                    Value = null,
+                    ReferenceIntervalMin = referenceExists ? referenceInterval.ValueMin : null,
+                    ReferenceIntervalMax = referenceExists ? referenceInterval.ValueMax : null,
+                    DependencyIndicatorIds = ComputedIndicators
+                        .FirstOrDefault(y => y.ShortName == x.ShortName)?.DependentShortNames
+                        .Select(y => indicatorNamesDict.ContainsKey(y) ? indicatorNamesDict[y] : (int?)null)
+                        .Where(y => y.HasValue)
+                        .Select(y => y.Value)
+                        .ToList()
+                };
+            }).ToList();
+
+            return result;
+
+            //return GetStubIndicators();
         }
         
         [HttpPost]
         [ApiRoute("Analysis/Specialists")]
         public async Task<List<LookupModel>> Specialists([FromBody] ProfileModel model)
         {
-            var result = new List<LookupModel>
-            {
-                new() {Id = 1, Name = "Гематолог"},
-                new() {Id = 2, Name = "Онколог"},
-                new() {Id = 3, Name = "Психиатр"}
-            };
+            var specialists = await _specialistService.GetSpecialistsByCriteria(model.Sex);
 
-            switch (model.Sex)
+            var result = specialists.Select(x => new LookupModel
             {
-                case Sex.Female:
-                    result.Add(new LookupModel{ Id = 4, Name = "Гинеколог"});
-                    break;
-                case Sex.Male:
-                    result.Add(new LookupModel{ Id = 5, Name = "Андролог"});
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(model.Sex));
+                Id = x.Id,
+                Name = x.Name
+            }).ToList();
+
+            return result;
+
+            //return GetStubSpecialists(model);
+        }
+
+        [HttpPost]
+        [ApiRoute("Analysis/ComputeIndicators")]
+        public async Task<Dictionary<int, decimal>> ComputeIndicators(List<IdValueModel> idValues)
+        {
+            var indicators = await _indicatorService.GetAnalysisIndicators();
+            var idValuesDict = idValues
+                .ToDictionary(x => x.Id, x => x);
+            
+            var nameValuesDict = new Dictionary<string, decimal>();
+            foreach (var indicator in indicators)
+            {
+                if (idValuesDict.TryGetValue(indicator.Id, out var idValue) && idValue.Value.HasValue)
+                {
+                    nameValuesDict[indicator.ShortName] = idValue.Value.Value;
+                }
             }
 
-            return await Task.FromResult(result);
+            var nameValuesComputedDict = new Dictionary<string, decimal>();
+            foreach (var computedIndicator in ComputedIndicators
+                .Where(computedIndicator => computedIndicator.DependentShortNames
+                    .All(n => nameValuesDict.ContainsKey(n))))
+            {
+                nameValuesComputedDict[computedIndicator.ShortName] = computedIndicator.Compute(nameValuesDict);
+            }
+
+            var result = new Dictionary<int, decimal>();
+
+            foreach (var indicator in indicators)
+            {
+                if (nameValuesComputedDict.TryGetValue(indicator.ShortName, out var value))
+                {
+                    result[indicator.Id] = value;
+                }
+            }
+
+            return result;
         }
 
         [HttpPost]
@@ -176,5 +231,54 @@ namespace MedExpert.Web.Controllers
                 }
             });
         }
+        
+        #region Stubs
+
+        private static List<IndicatorValueDependencyModel> GetStubIndicators()
+        {
+            return new()
+            {
+                new()
+                {
+                    Id = 1, ShortName = "Hb", Name = "Гемоглобин"
+                },
+                new()
+                {
+                    Id = 2, ShortName = "RBC", Name = "Эритроциты", ReferenceIntervalMin = 1,
+                    ReferenceIntervalMax = 1.5m
+                },
+                new()
+                {
+                    Id = 3, ShortName = "HCT", Name = "Гематокрит", ReferenceIntervalMin = 2,
+                    ReferenceIntervalMax = 2.8m
+                }
+            };
+        }
+        
+        private static List<LookupModel> GetStubSpecialists(ProfileModel model)
+        {
+            var result = new List<LookupModel>
+            {
+                new() {Id = 1, Name = "Гематолог"},
+                new() {Id = 2, Name = "Онколог"},
+                new() {Id = 3, Name = "Психиатр"}
+            };
+
+            switch (model.Sex)
+            {
+                case Sex.Female:
+                    result.Add(new LookupModel{ Id = 4, Name = "Гинеколог"});
+                    break;
+                case Sex.Male:
+                    result.Add(new LookupModel{ Id = 5, Name = "Андролог"});
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(model.Sex));
+            }
+
+            return result;
+        }
+
+        #endregion
     }
 }
