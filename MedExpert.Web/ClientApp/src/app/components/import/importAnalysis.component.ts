@@ -1,6 +1,7 @@
 import {Component, Inject} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {ImportBaseComponent, ImportReport} from "./importBase";
+import {ApiService} from "../../services/api.service";
 
 @Component({
   selector: 'app-import-analysis',
@@ -9,12 +10,14 @@ import {ImportBaseComponent, ImportReport} from "./importBase";
 export class ImportAnalysisComponent extends ImportBaseComponent{
   private readonly http: HttpClient;
   private readonly baseUrl: string;
+  private readonly apiService: ApiService;
 
-  constructor(http: HttpClient, @Inject('BASE_API_URL') baseUrl: string) {
+  constructor(http: HttpClient, @Inject('BASE_API_URL') baseUrl: string, apiService: ApiService) {
     super();
 
     this.http = http;
     this.baseUrl = baseUrl;
+    this.apiService = apiService;
   }
 
   public upload(){
@@ -22,7 +25,7 @@ export class ImportAnalysisComponent extends ImportBaseComponent{
       let formData = new FormData();
       formData.append('import', this.fileToUpload, this.fileToUpload.name);
       this.requestProgress = true;
-      this.http.post<ImportReport>(this.baseUrl + 'Import/Analysis', formData).subscribe(result => {
+      this.apiService.post<ImportReport>('Import/Analysis', formData).subscribe(result => {
         this.setupReportAndOptions(result);
       }, error => console.error(error), () => this.requestProgress = false );
     }

@@ -8,14 +8,13 @@ namespace MedExpert.Domain.Entities
         
         public int SymptomId { get; set; }
         
-        public decimal Match { get; set; }
-        
-        public decimal UnMatch { get; set; }
-        
         public decimal Expressiveness { get; set; }
         
         public Analysis Analysis { get; set; }
         
         public Symptom Symptom { get; set; }
+        
+        
+        public HashSet<int> MatchedIndicatorIds { get; set; }
     }
 }

@@ -14,5 +14,10 @@ namespace MedExpert.Core.Helpers
             var multiplier = Math.Pow(10, accuracy);
             return Math.Round(value * multiplier) / multiplier;
         }
+
+        public static double MultiplySign(this double value, double signValue)
+        {
+            return value * signValue < 0 ? -1 : 1;
+        }
     }
 }

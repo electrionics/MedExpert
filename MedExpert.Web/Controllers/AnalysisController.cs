@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentValidation;
+using MedExpert.Core;
+using MedExpert.Core.Helpers;
+using MedExpert.Domain.Entities;
 using MedExpert.Domain.Enums;
 using MedExpert.Services.Implementation.ComputedIndicators;
 using MedExpert.Services.Interfaces;
@@ -20,12 +24,20 @@ namespace MedExpert.Web.Controllers
         private readonly IIndicatorService _indicatorService;
         private readonly IReferenceIntervalService _referenceIntervalService;
         private readonly ISpecialistService _specialistService;
-
-        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService)
+        private readonly IDeviationLevelService _deviationLevelService;
+        private readonly IAnalysisIndicatorService _analysisIndicatorService;
+        private readonly IAnalysisService _analysisService;
+        private readonly IValidator<AnalysisFormModel> _analysisFormValidator;
+        
+        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, IAnalysisIndicatorService analysisIndicatorService, IAnalysisService analysisService, IValidator<AnalysisFormModel> analysisFormValidator)
         {
             _indicatorService = indicatorService;
             _referenceIntervalService = referenceIntervalService;
             _specialistService = specialistService;
+            _deviationLevelService = deviationLevelService;
+            _analysisIndicatorService = analysisIndicatorService;
+            _analysisService = analysisService;
+            _analysisFormValidator = analysisFormValidator;
         }
 
         [HttpPost]
@@ -125,111 +137,165 @@ namespace MedExpert.Web.Controllers
         [ApiRoute("Analysis/Calculate")]
         public async Task<AnalysisResultModel> Calculate([FromBody] AnalysisFormModel formModel)
         {
-            return await Task.FromResult(new AnalysisResultModel
+            var validationResult = await _analysisFormValidator.ValidateAsync(formModel);
+            if (!validationResult.IsValid)
             {
-                AnalysisId = 1,
-                FoundMedicalStates = new List<MedicalStateModel>
-                {
-                    new()
-                    {
-                        SymptomId = 1, Name = "Воспалительные заболевания носа, горла и уха", Expressiveness = 0.8m, Match = 1, RecommendedAnalyses =
-                            new List<IndicatorModel>
-                            {
-                                new() {Id = 1, ShortName = "CHOLES", Name = "CHOLES"},
-                                new() {Id = 2, ShortName = "LDL", Name = "LDL"},
-                                new() {Id = 3, ShortName = "TG", Name = "TG"},
-                            },
-                        ChildSymptoms = new List<MedicalStateModel>
-                        {
-                            new()
-                            {
-                                SymptomId = 2, Name = "Ринит", Expressiveness = 0.76m, Match = 0.8m, RecommendedAnalyses =
-                                    new List<IndicatorModel>
-                                    {
-                                        new() {Id = 4, ShortName = "Hb", Name = "Гемоглобин"},
-                                        new() {Id = 5, ShortName = "QWE", Name = "QWE"},
-                                        new() {Id = 3, ShortName = "TG", Name = "TG"},
-                                    },
-                                ChildSymptoms = new List<MedicalStateModel>
-                                {
-                                    new()
-                                    {
-                                        SymptomId = 3, Name = "Ринит не аллергический", Expressiveness = 0.88m, Match = 0.7m, RecommendedAnalyses =
-                                            new List<IndicatorModel>
-                                            {
-                                                new() {Id = 6, ShortName = "RBC", Name = "RBC"},
-                                                new() {Id = 7, ShortName = "TB", Name = "Тромбоциты"},
-                                                new() {Id = 2, ShortName = "LDL", Name = "LDL"},
-                                            }
-                                    },
-                                    new()
-                                    {
-                                        SymptomId = 4, Name = "Хронический ринит", Expressiveness = 0.79m, Match = 0.75m
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    new()
-                    {
-                        SymptomId = 5, Name = "Аллергические заболевания", Expressiveness = 0.56m, Match = 0.67m, RecommendedAnalyses =
-                            new List<IndicatorModel>
-                            {
-                                new() {Id = 8, ShortName = "AAA", Name = "AAA"},
-                                new() {Id = 9, ShortName = "BBB", Name = "BBB"},
-                                new() {Id = 10, ShortName = "CCC", Name = "CCC"},
-                            },
-                        ChildSymptoms = new List<MedicalStateModel>
-                        {
-                            new()
-                            {
-                                SymptomId = 6, Name = "Респираторные аллергические заболевания", Expressiveness = 0.6m, Match = 1,
-                                ChildSymptoms = new List<MedicalStateModel>
-                                {
-                                    new()
-                                    {
-                                        SymptomId = 7, Name = "Астма", Expressiveness = 0.7m, Match = 1,
-                                        ChildSymptoms = new List<MedicalStateModel>
-                                        {
-                                            new()
-                                            {
-                                                SymptomId = 8, Name = "Варианты астмы", Expressiveness = 0.4m, Match = 1,
-                                                ChildSymptoms = new List<MedicalStateModel>
-                                                {
-                                                    new()
-                                                    {
-                                                        SymptomId = 9, Name = "Аллергическая астма", Expressiveness = 0.48m, Match = 1,
-                                                        ChildSymptoms = new List<MedicalStateModel>
-                                                        {
-                                                            new()
-                                                            {
-                                                                SymptomId = 10, Name = "Обострение алергической астмы", Expressiveness = 0.95m, Match = 1
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            new()
-                            {
-                                SymptomId = 3, Name = "Анафилаксия", Expressiveness = 0.55m, Match = 1
-                            },
-                        }
-                    }
-                },
-                Comments = new List<CommentModel>
-                {
-                    new (){ CommentId = 1, Type = CommentType.Illness, Name = "Воспалительные заболевания носа, горла и уха", Text = "LTE 4 в моче является подтвержденным маркером активности цистеиниллейкотриенов, и его следует рассматривать для включения в клинические испытания молекул, которые могут прямо или косвенно влиять на этот путь." },
-                    new (){ CommentId = 5, Type = CommentType.Illness, Name = "Аллергические заболевания", Text = "Комментарий 1" },
-                    new (){ CommentId = 3, Type = CommentType.Symptom, Name = "Анафилаксия", Text = "Комментарий 2" },
-                    new (){ CommentId = 4, Type = CommentType.MatchedIndicator, Name = "Гемоглобин (Hb)", Text = "Провоспалительные цитокины, включая фактор некроза опухоли и интерлейкин 6, не только повышаются при сердечной недостаточности, но и обратно пропорциональны гемоглобину." },
-                    new (){ CommentId = 1, Type = CommentType.RecommendedForAnalysisIndicator, Name = "CHOLES", Text = "Хронический гайморит часто встречается у детей с респираторной аллергией и связан с повышенной заболеваемостью. Бактериология хронической болезни носовых пазух у этих детей не была адекватно оценена. В период с мая 1987 г. по январь 1988 г. было полностью обследовано 12 детей (в возрасте от 3 до 9 лет) с подтвержденной респираторной аллергией и хроническими респираторными симптомами, характерными для хронического синусита (>30 дней). Был проведен анамнез, медицинский осмотр, общий анализ крови, мазок из носа и рентгенологическое исследование Уотерса. У всех пациентов было затемнение одной или обеих верхнечелюстных пазух, не реагировали на многократные курсы антибиотиков, и впоследствии им была проведена аспирация и промывание верхнечелюстных пазух. Образцы культивировали на наличие аэробных и анаэробных организмов по стандартной методике и получали чувствительность.Moraxella [Branhamella] catarrhalis ) у пяти пациентов, у одного пациента были обнаружены M. catarrhalis плюс виды Streptococcus , у трех были отрицательные результаты, и у трех пациентов развились несколько микроорганизмов (у двух с несколькими видами аэробных стрептококков и у одного пациента с аэробными стрептококками и Peptostreptococcus ). Все дети получали адекватную культуральную антимикробную терапию. Последовательное наблюдение раз в две недели выявило прогрессирующее рентгенологическое прояснение и значительное симптоматическое улучшение. M. catarrhalis является распространенным патогеном, тогда как анаэробные микроорганизмы редко вызывают хронический гайморит у детей-аллергиков. Некоторым детям, несмотря на отрицательные результаты посева, может помочь промывание верхнечелюстной пазухи." },
-                    new (){ CommentId = 9, Type = CommentType.RecommendedForAnalysisIndicator, Name = "BBB", Text = "Комментарий 3" }
-                }
+                throw new ValidationException(validationResult.Errors);
+            }
+            
+            var now = DateTime.Now;
+            var analysis = new Analysis
+            {
+
+                Age = formModel.Profile.Age,
+                Sex = formModel.Profile.Sex,
+                UserId = 1,
+                CalculationTime = now,
+                Date = now.Date
+            };
+
+            var deviationLevels = await _deviationLevelService.GetAll();
+            var toInsertDeviationLevels = deviationLevels.Select(x => new AnalysisDeviationLevel
+            {
+                MinPercentFromCenter = x.MinPercentFromCenter,
+                MaxPercentFromCenter = x.MaxPercentFromCenter,
+                DeviationLevelId = x.Id,
+                Analysis = analysis
+            }).ToList();
+            
+            var toInsertIndicators = formModel.Indicators.Select(x => new AnalysisIndicator
+            {
+                Analysis = analysis,
+                IndicatorId = x.Id,
+                Value = x.Value.Value,
+                ReferenceIntervalValueMin = x.ReferenceIntervalMin.Value,
+                ReferenceIntervalValueMax = x.ReferenceIntervalMax.Value,
+                DeviationLevelId = CalculateDeviationLevel(x.ReferenceIntervalMin.Value, x.ReferenceIntervalMax.Value, x.Value.Value, toInsertDeviationLevels)
+            }).ToList();
+
+            await _analysisService.Insert(analysis);
+            await _analysisIndicatorService.InsertBulk(toInsertIndicators);
+            await _deviationLevelService.InsertBulk(toInsertDeviationLevels);
+
+            var (analysisObj, symptomsTree) = await _analysisService.CalculateAnalysis(analysis.Id);
+            
+            var commentsList = new List<CommentModel>();
+            var toReturn = new AnalysisResultModel
+            {
+                AnalysisId = analysisObj.Id,
+                FoundMedicalStates =
+                    symptomsTree.VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList))
+            };
+            toReturn.Comments = commentsList
+                .OrderBy(x => x.Type)
+                .ThenBy(x => x.SpecialistId)
+                .ThenBy(x => x.Name)
+                .ToList();
+            return toReturn;
+        }
+
+
+        [HttpPost]
+        [ApiRoute("Analysis/CalculateStub")]
+        public async Task<AnalysisResultModel> CalculateStub([FromBody] AnalysisFormModel formModel)
+        {
+            return await Task.FromResult(GetStubAnalysisResult());
+        }
+
+        private static MedicalStateModel ConvertAnalysisSymptomToModel(AnalysisSymptom analysisSymptom, List<CommentModel> commentsToFill)
+        {
+            var matchedIndicators = analysisSymptom.Symptom.SymptomIndicatorDeviationLevels
+                .Where(x => analysisSymptom.MatchedIndicatorIds.Contains(x.IndicatorId))
+                .ToList();
+            var recommendedIndicators = analysisSymptom.Symptom.SymptomIndicatorDeviationLevels
+                .Where(x => !x.Indicator.InAnalysis)
+                .ToList();
+
+            var symptomId = analysisSymptom.SymptomId;
+            var specialistId = analysisSymptom.Symptom.SpecialistId;
+            
+            commentsToFill.Add(new CommentModel
+            {
+                SpecialistId = specialistId,
+                SymptomId = symptomId,
+                Name = analysisSymptom.Symptom.Name,
+                Text = analysisSymptom.Symptom.Comment,
+                Type = CommentType.Symptom
             });
+            
+            commentsToFill.AddRange(matchedIndicators.Select(x => new CommentModel
+            {
+                SpecialistId = specialistId,
+                SymptomId = symptomId,
+                Name = x.Indicator.Name,
+                Text = x.Comment,
+                Type = CommentType.MatchedIndicator
+            }));
+            
+            commentsToFill.AddRange(recommendedIndicators.Where(x => !string.IsNullOrEmpty(x.Comment))
+                .Select(x => new CommentModel
+            {
+                SpecialistId = specialistId,
+                SymptomId = symptomId,
+                Name = x.Indicator.Name,
+                Text = x.Comment,
+                Type = CommentType.RecommendedForAnalysisIndicator
+            }));
+            
+            return new MedicalStateModel
+            {
+                SpecialistId = specialistId,
+                SymptomId = symptomId,
+                Name = analysisSymptom.Symptom.Name,
+                Expressiveness = analysisSymptom.Expressiveness,
+                RecommendedAnalyses = 
+                    recommendedIndicators.Select(x => new IndicatorModel
+                    {
+                        Id = x.IndicatorId,
+                        Name = x.Indicator.Name,
+                        ShortName = x.Indicator.ShortName
+                    }).ToList()
+            };
+        }
+
+        public static int CalculateDeviationLevel(decimal refIntervalMin, decimal refIntervalMax, decimal value,
+            IList<AnalysisDeviationLevel> deviationLevelsSorted)
+        {
+            var refCenter = (refIntervalMin + refIntervalMax) / 2;
+            var refLength = refIntervalMax - refIntervalMin;
+
+            if (value < refCenter)
+            {
+                var percentFromCenter = (refCenter - value) / refLength * 100;
+                var deviationLevels = deviationLevelsSorted.Where(x =>
+                    x.DeviationLevelId <= 0).ToArray();
+
+                for (var i = deviationLevels.Length - 1; i > 0; i--)
+                {
+                    if (deviationLevels[i].MinPercentFromCenter > percentFromCenter) // TODO: or >=
+                    {
+                        return deviationLevels[i].DeviationLevelId;
+                    }
+                }
+
+                return deviationLevels[0].DeviationLevelId;
+            }
+            else
+            {
+                var percentFromCenter = (value - refCenter) / refLength * 100;
+                var deviationLevels = deviationLevelsSorted.Where(x =>
+                    x.DeviationLevelId >= 0).ToArray();
+                
+                for (var i = 0; i < deviationLevels.Length - 1; i++)
+                {
+                    if (deviationLevels[i].MaxPercentFromCenter > percentFromCenter) // TODO: or >=
+                    {
+                        return deviationLevels[i].DeviationLevelId;
+                    }
+                }
+
+                return deviationLevels[^1].DeviationLevelId;
+            }
         }
         
         #region Stubs
@@ -279,6 +345,156 @@ namespace MedExpert.Web.Controllers
             return result;
         }
 
+        private static AnalysisResultModel GetStubAnalysisResult()
+        {
+            return new()
+            {
+                AnalysisId = 1,
+                FoundMedicalStates = new List<TreeItem<MedicalStateModel>>
+                {
+                    new()
+                    {
+                        Item = new()
+                        {
+                            SymptomId = 1, 
+                            Name = "Воспалительные заболевания носа, горла и уха", 
+                            Expressiveness = 0.8m, 
+                            RecommendedAnalyses = new List<IndicatorModel>
+                            {
+                                new() {Id = 1, ShortName = "CHOLES", Name = "CHOLES"},
+                                new() {Id = 2, ShortName = "LDL", Name = "LDL"},
+                                new() {Id = 3, ShortName = "TG", Name = "TG"},
+                            }
+                        },
+                        Children = new List<TreeItem<MedicalStateModel>>
+                        {
+                            new()
+                            {
+                                Item = new()
+                                {
+                                    SymptomId = 2, 
+                                    Name = "Ринит", 
+                                    Expressiveness = 0.76m, 
+                                    RecommendedAnalyses = new List<IndicatorModel>
+                                    {
+                                        new() {Id = 4, ShortName = "Hb", Name = "Гемоглобин"},
+                                        new() {Id = 5, ShortName = "QWE", Name = "QWE"},
+                                        new() {Id = 3, ShortName = "TG", Name = "TG"},
+                                    }
+                                },
+                                Children = new List<TreeItem<MedicalStateModel>>
+                                {
+                                    new()
+                                    {
+                                        Item = new()
+                                        {
+                                            SymptomId = 3, 
+                                            Name = "Ринит не аллергический", 
+                                            Expressiveness = 0.88m, RecommendedAnalyses =
+                                            new List<IndicatorModel>
+                                            {
+                                                new() {Id = 6, ShortName = "RBC", Name = "RBC"},
+                                                new() {Id = 7, ShortName = "TB", Name = "Тромбоциты"},
+                                                new() {Id = 2, ShortName = "LDL", Name = "LDL"},
+                                            }
+                                        }
+                                    },
+                                    new()
+                                    {
+                                        Item = new()
+                                        {
+                                            SymptomId = 4, 
+                                            Name = "Хронический ринит", 
+                                            Expressiveness = 0.79m
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    new()
+                    {
+                        Item = new()
+                        {
+                            SymptomId = 5, Name = "Аллергические заболевания", Expressiveness = 0.56m, RecommendedAnalyses =
+                            new List<IndicatorModel>
+                            {
+                                new() {Id = 8, ShortName = "AAA", Name = "AAA"},
+                                new() {Id = 9, ShortName = "BBB", Name = "BBB"},
+                                new() {Id = 10, ShortName = "CCC", Name = "CCC"},
+                            },
+                        },
+                        Children = new List<TreeItem<MedicalStateModel>>
+                        {
+                            new()
+                            {
+                                Item = new()
+                                {
+                                    SymptomId = 6, Name = "Респираторные аллергические заболевания", Expressiveness = 0.6m
+                                },
+                                Children = new List<TreeItem<MedicalStateModel>>
+                                {
+                                    new()
+                                    {
+                                        Item = new()
+                                        {
+                                            SymptomId = 7, Name = "Астма", Expressiveness = 0.7m
+                                        },
+                                        Children = new List<TreeItem<MedicalStateModel>>
+                                        {
+                                            new()
+                                            {
+                                                Item = new()
+                                                {
+                                                    SymptomId = 8, Name = "Варианты астмы", Expressiveness = 0.4m
+                                                },
+                                                Children = new List<TreeItem<MedicalStateModel>>
+                                                {
+                                                    new()
+                                                    {
+                                                        Item = new()
+                                                        {
+                                                            SymptomId = 9, Name = "Аллергическая астма", Expressiveness = 0.48m
+                                                        },
+                                                        Children = new List<TreeItem<MedicalStateModel>>
+                                                        {
+                                                            new()
+                                                            {
+                                                                Item = new()
+                                                                {
+                                                                    SymptomId = 10, Name = "Обострение алергической астмы", Expressiveness = 0.95m
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            new()
+                            {
+                                Item = new()
+                                {
+                                    SymptomId = 3, Name = "Анафилаксия", Expressiveness = 0.55m
+                                }
+                            }
+                        }
+                    }
+                },
+                Comments = new List<CommentModel>
+                {
+                    new (){ SpecialistId = 1, SymptomId = 1, Type = CommentType.Symptom, Name = "Воспалительные заболевания носа, горла и уха", Text = "LTE 4 в моче является подтвержденным маркером активности цистеиниллейкотриенов, и его следует рассматривать для включения в клинические испытания молекул, которые могут прямо или косвенно влиять на этот путь." },
+                    new (){ SpecialistId = 1, SymptomId = 2, Type = CommentType.Symptom, Name = "Аллергические заболевания", Text = "Комментарий 1" },
+                    new (){ SpecialistId = 1, SymptomId = 3, Type = CommentType.Symptom, Name = "Анафилаксия", Text = "Комментарий 2" },
+                    new (){ SpecialistId = 2, SymptomId = 4, Type = CommentType.MatchedIndicator, Name = "Гемоглобин (Hb)", Text = "Провоспалительные цитокины, включая фактор некроза опухоли и интерлейкин 6, не только повышаются при сердечной недостаточности, но и обратно пропорциональны гемоглобину." },
+                    new (){ SpecialistId = 2, SymptomId = 5, Type = CommentType.RecommendedForAnalysisIndicator, Name = "CHOLES", Text = "Хронический гайморит часто встречается у детей с респираторной аллергией и связан с повышенной заболеваемостью. Бактериология хронической болезни носовых пазух у этих детей не была адекватно оценена. В период с мая 1987 г. по январь 1988 г. было полностью обследовано 12 детей (в возрасте от 3 до 9 лет) с подтвержденной респираторной аллергией и хроническими респираторными симптомами, характерными для хронического синусита (>30 дней). Был проведен анамнез, медицинский осмотр, общий анализ крови, мазок из носа и рентгенологическое исследование Уотерса. У всех пациентов было затемнение одной или обеих верхнечелюстных пазух, не реагировали на многократные курсы антибиотиков, и впоследствии им была проведена аспирация и промывание верхнечелюстных пазух. Образцы культивировали на наличие аэробных и анаэробных организмов по стандартной методике и получали чувствительность.Moraxella [Branhamella] catarrhalis ) у пяти пациентов, у одного пациента были обнаружены M. catarrhalis плюс виды Streptococcus , у трех были отрицательные результаты, и у трех пациентов развились несколько микроорганизмов (у двух с несколькими видами аэробных стрептококков и у одного пациента с аэробными стрептококками и Peptostreptococcus ). Все дети получали адекватную культуральную антимикробную терапию. Последовательное наблюдение раз в две недели выявило прогрессирующее рентгенологическое прояснение и значительное симптоматическое улучшение. M. catarrhalis является распространенным патогеном, тогда как анаэробные микроорганизмы редко вызывают хронический гайморит у детей-аллергиков. Некоторым детям, несмотря на отрицательные результаты посева, может помочь промывание верхнечелюстной пазухи." },
+                    new (){ SpecialistId = 3, SymptomId = 6, Type = CommentType.RecommendedForAnalysisIndicator, Name = "BBB", Text = "Комментарий 3" }
+                }
+            };
+        }
+        
         #endregion
     }
 }

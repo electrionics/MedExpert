@@ -12,7 +12,7 @@ namespace MedExpert.Domain.Entities
         
         public Sex Sex { get; set; }
         
-        public int Age { get; set; }
+        public decimal Age { get; set; }
         
         public DateTime CalculationTime { get; set; }
         

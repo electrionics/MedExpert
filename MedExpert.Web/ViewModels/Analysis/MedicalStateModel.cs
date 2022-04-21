@@ -6,11 +6,9 @@ namespace MedExpert.Web.ViewModels.Analysis
     {
         public int SymptomId { get; set; }
         
+        public int SpecialistId { get; set; }
+        
         public string Name { get; set; }
-        
-        public List<MedicalStateModel> ChildSymptoms { get; set;  }
-        
-        public decimal Match { get; set; }
         
         public decimal Expressiveness { get; set; }
         

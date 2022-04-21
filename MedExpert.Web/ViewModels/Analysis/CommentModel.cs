@@ -2,8 +2,10 @@
 {
     public class CommentModel
     {
-        public int CommentId { get; set; } // SymptomId or DeviationLevelId, depends on type
+        public int SymptomId { get; set; }
         
+        public int SpecialistId { get; set; }
+
         public string Name { get; set; }
         
         public CommentType Type { get; set; }
@@ -13,9 +15,8 @@
 
     public enum CommentType
     {
-        Illness = 1,
-        Symptom = 2,
-        MatchedIndicator = 3,
-        RecommendedForAnalysisIndicator = 4
+        Symptom = 1,
+        MatchedIndicator = 2,
+        RecommendedForAnalysisIndicator = 3
     }
 }

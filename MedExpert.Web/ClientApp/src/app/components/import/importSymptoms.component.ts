@@ -2,6 +2,7 @@ import {Component, Inject, OnInit} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {ImportBaseComponent, ImportReport} from "./importBase";
 import {FormControl, Validators} from "@angular/forms";
+import {ApiService} from "../../services/api.service";
 
 @Component({
   selector: 'app-import-symptoms',
@@ -10,6 +11,7 @@ import {FormControl, Validators} from "@angular/forms";
 export class ImportSymptomsComponent extends ImportBaseComponent{
   private readonly http: HttpClient;
   private readonly baseUrl: string
+  private readonly apiService: ApiService;
 
   public NewSpecialistName: FormControl;
   public SpecialistId: FormControl;
@@ -24,11 +26,13 @@ export class ImportSymptomsComponent extends ImportBaseComponent{
 
   private requestCounter: number;
 
-  constructor(http: HttpClient, @Inject('BASE_API_URL') baseUrl: string) {
+  constructor(http: HttpClient, @Inject('BASE_API_URL') baseUrl: string, apiService: ApiService) {
     super();
 
     this.http = http;
     this.baseUrl = baseUrl;
+    this.apiService = apiService;
+
     this.requestCounter = 0;
   }
 
@@ -65,7 +69,7 @@ export class ImportSymptomsComponent extends ImportBaseComponent{
 
       this.requestProgress = true;
       this.requestCounter = 1;
-      this.http.post<ImportReport>(this.baseUrl + 'Import/Symptoms', formData).subscribe(result => {
+      this.apiService.post<ImportReport>('Import/Symptoms', formData).subscribe(result => {
         this.setupReportAndOptions(result);
 
         if (!this.Report.countInvalidRows &&
@@ -110,7 +114,7 @@ export class ImportSymptomsComponent extends ImportBaseComponent{
   private loadLookups(){
     this.requestProgress = true;
     this.requestCounter++;
-    this.http.get<{[name: string]: Lookup[]}>(this.baseUrl + "Import/Lists/Lookups").subscribe(result => {
+    this.apiService.get<{[name: string]: Lookup[]}>("Import/Lists/Lookups").subscribe(result => {
       this.specialists = result["Specialists"];
       this.categories = result["Categories"];
       this.sex = result["Sex"];
