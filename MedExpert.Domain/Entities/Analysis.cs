@@ -14,6 +14,8 @@ namespace MedExpert.Domain.Entities
         
         public decimal Age { get; set; }
         
+        public bool Calculated { get; set; }
+        
         public DateTime CalculationTime { get; set; }
         
         public DateTime Date { get; set; }
@@ -26,5 +28,7 @@ namespace MedExpert.Domain.Entities
         public List<AnalysisIndicator> AnalysisIndicators { get; set; }
         
         public List<AnalysisSymptom> AnalysisSymptoms { get; set; }
+        
+        public List<AnalysisSymptomIndicator> AnalysisSymptomIndicators { get; set; }
     }
 }

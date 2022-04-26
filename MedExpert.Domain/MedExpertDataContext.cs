@@ -82,6 +82,19 @@ namespace MedExpert.Domain
                 entity.Ignore(x => x.MatchedIndicatorIds);
             });
             
+            modelBuilder.Entity<AnalysisSymptomIndicator>(entity =>
+            {
+                entity.HasKey(x => new { x.AnalysisId, x.SymptomId, x.IndicatorId });
+                entity.HasOne(x => x.Analysis)
+                    .WithMany(x => x.AnalysisSymptomIndicators)
+                    .HasForeignKey(x => x.AnalysisId);
+                entity.HasOne(x => x.Symptom)
+                    .WithMany(x => x.AnalysisSymptomIndicators)
+                    .HasForeignKey(x => x.SymptomId);
+                entity.HasOne(x => x.Indicator)
+                    .WithMany(x => x.AnalysisSymptomIndicators)
+                    .HasForeignKey(x => x.IndicatorId);
+            });
             
 
             #endregion

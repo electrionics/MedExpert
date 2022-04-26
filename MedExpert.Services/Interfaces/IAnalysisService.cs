@@ -8,6 +8,7 @@ namespace MedExpert.Services.Interfaces
 {
     public interface IAnalysisService : IImportService<Analysis>
     {
-        Task<Tuple<Analysis, IList<TreeItem<AnalysisSymptom>>>> CalculateAnalysis(int analysisId);
+        Task<Tuple<Analysis, IList<TreeItem<AnalysisSymptom>>>> CalculateNewAnalysis(int analysisId, List<int> specialistIds);
+        Task Update(Analysis analysis);
     }
 }

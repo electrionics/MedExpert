@@ -18,19 +18,22 @@ namespace MedExpert.Services.Implementation
     {
         private readonly MedExpertDataContext _dataContext;
 
-        public AnalysisService(MedExpertDataContext dataContext)
+        private readonly ISymptomService _symptomService;
+
+        public AnalysisService(MedExpertDataContext dataContext, ISymptomService symptomService)
         {
             _dataContext = dataContext;
+            _symptomService = symptomService;
         }
         
         public Task UpdateBulk(List<Analysis> entities)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public Task InsertBulk(List<Analysis> entities)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public async Task Insert(Analysis entity)
@@ -39,7 +42,7 @@ namespace MedExpert.Services.Implementation
             await _dataContext.SaveChangesAsync();
         }
 
-        public async Task<Tuple<Analysis, IList<TreeItem<AnalysisSymptom>>>> CalculateAnalysis(int analysisId)
+        public async Task<Tuple<Analysis, IList<TreeItem<AnalysisSymptom>>>> CalculateNewAnalysis(int analysisId, List<int> specialistIds)
         {
             var analysis = await _dataContext.Set<Analysis>().FirstOrDefaultAsync(x => x.Id == analysisId);
 
@@ -51,6 +54,7 @@ namespace MedExpert.Services.Implementation
             var matchedSymptoms = (await QueryableExtensions.LeftJoin(
                     _dataContext.Set<SymptomIndicatorDeviationLevel>().Include(x => x.Indicator).Where(x =>
                             !x.Symptom.IsDeleted &&
+                            specialistIds.Contains(x.Symptom.SpecialistId) &&
                             (x.Symptom.ApplyToSexOnly == null || x.Symptom.ApplyToSexOnly == analysis.Sex) &&
                             (x.Symptom.Specialist.ApplyToSexOnly == null || x.Symptom.Specialist.ApplyToSexOnly == analysis.Sex) &&
                             !x.Indicator.InAnalysis), 
@@ -72,15 +76,9 @@ namespace MedExpert.Services.Implementation
                 })
                 .ToListAsync()).ToDictionary(x => x.Key, x => x.MatchedIndicators);
 
-            var symptoms = await _dataContext.Set<Symptom>()
-                .Include(x => x.SymptomIndicatorDeviationLevels)
-                .Where(x => !x.IsDeleted)
-                .ToListAsync();
+            var symptomsTree = await _symptomService.GetSymptomsTree();
 
-            var symptomsTree = symptoms.Select(x => new TreeItem<Symptom> {Item = x}).ToList()
-                .GenerateTree(x => x.Item.Id, x => x.Item.ParentSymptomId);
-
-            var matchedSymptomsTree = symptomsTree.GetMatched(x => x.Item.Id, matchedSymptoms.Keys.ToHashSet());
+            var matchedSymptomsTree = symptomsTree.GetMatched(x => x.Id, matchedSymptoms.Keys.ToHashSet());
 
             var analysisIndicators = await _dataContext.Set<AnalysisIndicator>()
                 .Include(x => x.Indicator)
@@ -91,14 +89,22 @@ namespace MedExpert.Services.Implementation
                 .ToDictionary(x => x.IndicatorId, x => x.DeviationLevelId);
 
             var calculatedTree = matchedSymptomsTree.VisitAndConvert(x =>
-                CalculateExpressiveness(x.Item, analysisIndicatorDict, analysisId, matchedSymptoms));
+                CalculateExpressiveness(x, analysisIndicatorDict, analysisId, matchedSymptoms));
 
             var filteredCalculatedTree =
                 calculatedTree.GetMatched(x => x.Expressiveness > 0.2m, new HashSet<bool> {true});
 
+            analysis.Calculated = true;
+            
             return new Tuple<Analysis, IList<TreeItem<AnalysisSymptom>>>(analysis, filteredCalculatedTree);
         }
-        
+
+        public async Task Update(Analysis analysis)
+        {
+            _dataContext.Set<Analysis>().Update(analysis);
+            await _dataContext.SaveChangesAsync();
+        }
+
         private static readonly Dictionary<string, double> IndicatorWeightsDict = new()
         {
             {"nRBC", 3}, {"WBC", 3}, {"PLT", 3}, {"NLR", 3},

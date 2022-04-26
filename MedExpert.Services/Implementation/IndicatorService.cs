@@ -13,9 +13,12 @@ namespace MedExpert.Services.Implementation
     {
         private readonly MedExpertDataContext _dataContext;
 
-        public IndicatorService(MedExpertDataContext dataContext)
+        private readonly ISymptomService _symptomService;
+
+        public IndicatorService(MedExpertDataContext dataContext, ISymptomService symptomService)
         {
             _dataContext = dataContext;
+            _symptomService = symptomService;
         }
 
         public async Task<List<Indicator>> GetIndicators(List<string> shortNames)
@@ -42,12 +45,14 @@ namespace MedExpert.Services.Implementation
         public async Task UpdateBulk(List<Indicator> indicators)
         {
             await _dataContext.SaveChangesAsync();
+            _symptomService.RefreshSymptomsCache();
         }
 
         public async Task InsertBulk(List<Indicator> indicators)
         {
             await _dataContext.Set<Indicator>().AddRangeAsync(indicators);
             await _dataContext.SaveChangesAsync();
+            _symptomService.RefreshSymptomsCache();
         }
 
         public Task Insert(Indicator entity)

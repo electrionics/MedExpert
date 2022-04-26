@@ -146,7 +146,6 @@ namespace MedExpert.Web.Controllers
             var now = DateTime.Now;
             var analysis = new Analysis
             {
-
                 Age = formModel.Profile.Age,
                 Sex = formModel.Profile.Sex,
                 UserId = 1,
@@ -162,22 +161,27 @@ namespace MedExpert.Web.Controllers
                 DeviationLevelId = x.Id,
                 Analysis = analysis
             }).ToList();
-            
-            var toInsertIndicators = formModel.Indicators.Select(x => new AnalysisIndicator
-            {
-                Analysis = analysis,
-                IndicatorId = x.Id,
-                Value = x.Value.Value,
-                ReferenceIntervalValueMin = x.ReferenceIntervalMin.Value,
-                ReferenceIntervalValueMax = x.ReferenceIntervalMax.Value,
-                DeviationLevelId = CalculateDeviationLevel(x.ReferenceIntervalMin.Value, x.ReferenceIntervalMax.Value, x.Value.Value, toInsertDeviationLevels)
-            }).ToList();
+
+            var toInsertIndicators = formModel.Indicators
+                .Where(x => x.Value != null)
+                .Select(x => new AnalysisIndicator
+                {
+                    Analysis = analysis,
+                    IndicatorId = x.Id,
+                    Value = x.Value.Value,
+                    ReferenceIntervalValueMin = x.ReferenceIntervalMin.Value,
+                    ReferenceIntervalValueMax = x.ReferenceIntervalMax.Value,
+                    DeviationLevelId = _deviationLevelService.Calculate(x.ReferenceIntervalMin.Value,
+                        x.ReferenceIntervalMax.Value, x.Value.Value, toInsertDeviationLevels)
+                }).ToList();
 
             await _analysisService.Insert(analysis);
             await _analysisIndicatorService.InsertBulk(toInsertIndicators);
             await _deviationLevelService.InsertBulk(toInsertDeviationLevels);
 
-            var (analysisObj, symptomsTree) = await _analysisService.CalculateAnalysis(analysis.Id);
+            var (analysisObj, symptomsTree) = await _analysisService.CalculateNewAnalysis(analysis.Id, formModel.SpecialistIds);
+
+            await _analysisService.Update(analysisObj);
             
             var commentsList = new List<CommentModel>();
             var toReturn = new AnalysisResultModel
@@ -258,46 +262,6 @@ namespace MedExpert.Web.Controllers
             };
         }
 
-        public static int CalculateDeviationLevel(decimal refIntervalMin, decimal refIntervalMax, decimal value,
-            IList<AnalysisDeviationLevel> deviationLevelsSorted)
-        {
-            var refCenter = (refIntervalMin + refIntervalMax) / 2;
-            var refLength = refIntervalMax - refIntervalMin;
-
-            if (value < refCenter)
-            {
-                var percentFromCenter = (refCenter - value) / refLength * 100;
-                var deviationLevels = deviationLevelsSorted.Where(x =>
-                    x.DeviationLevelId <= 0).ToArray();
-
-                for (var i = deviationLevels.Length - 1; i > 0; i--)
-                {
-                    if (deviationLevels[i].MinPercentFromCenter > percentFromCenter) // TODO: or >=
-                    {
-                        return deviationLevels[i].DeviationLevelId;
-                    }
-                }
-
-                return deviationLevels[0].DeviationLevelId;
-            }
-            else
-            {
-                var percentFromCenter = (value - refCenter) / refLength * 100;
-                var deviationLevels = deviationLevelsSorted.Where(x =>
-                    x.DeviationLevelId >= 0).ToArray();
-                
-                for (var i = 0; i < deviationLevels.Length - 1; i++)
-                {
-                    if (deviationLevels[i].MaxPercentFromCenter > percentFromCenter) // TODO: or >=
-                    {
-                        return deviationLevels[i].DeviationLevelId;
-                    }
-                }
-
-                return deviationLevels[^1].DeviationLevelId;
-            }
-        }
-        
         #region Stubs
 
         private static List<IndicatorValueDependencyModel> GetStubIndicators()

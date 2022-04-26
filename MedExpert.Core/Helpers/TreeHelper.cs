@@ -52,5 +52,14 @@ namespace MedExpert.Core.Helpers
                 Children = VisitAndConvert(p.Children, converter)
             }).ToList();
         }
+
+        public static IList<TEntity> MakeFlat<TEntity>(this IEnumerable<TreeItem<TEntity>> tree)
+        {
+            return tree?.SelectMany(p => p.Children
+                    .MakeFlat()
+                    .Prepend(p.Item))
+                .Where(x => x != null)
+                .ToList();
+        }
     }
 }

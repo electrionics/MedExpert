@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MedExpert.Services.Implementation;
 using MedExpert.Services.Interfaces;
+using MedExpert.Web.ViewModels.Analysis;
 using MedExpert.Web.ViewModels.Import;
 
 namespace MedExpert.Web
@@ -62,6 +63,7 @@ namespace MedExpert.Web
             
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
             services.AddTransient<IValidator<ImportSymptomForm>, ImportSymptomFormValidator>();
+            services.AddTransient<IValidator<AnalysisFormModel>, AnalysisFormModelValidator>();
             
             services.AddScoped<ISpecialistService, SpecialistService>();
             services.AddScoped<IReferenceIntervalService, ReferenceIntervalService>();

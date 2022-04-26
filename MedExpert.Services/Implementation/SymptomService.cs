@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MedExpert.Core;
+using MedExpert.Core.Helpers;
 using MedExpert.Domain;
 using MedExpert.Domain.Entities;
 using MedExpert.Services.Interfaces;
@@ -21,12 +23,14 @@ namespace MedExpert.Services.Implementation
         public async Task UpdateBulk(List<Symptom> entities)
         {
             await _dataContext.SaveChangesAsync();
+            RefreshSymptomsCache();
         }
 
         public async Task InsertBulk(List<Symptom> entities)
         {
             await _dataContext.Set<Symptom>().AddRangeAsync(entities);
             await _dataContext.SaveChangesAsync();
+            RefreshSymptomsCache();
         }
 
         public Task Insert(Symptom entity)
@@ -88,6 +92,29 @@ namespace MedExpert.Services.Implementation
             }
 
             await _dataContext.SaveChangesAsync();
+        }
+
+        private static IList<TreeItem<Symptom>> _symptomsCache;
+        
+        public async Task<IList<TreeItem<Symptom>>> GetSymptomsTree()
+        {
+            if (_symptomsCache != null) return _symptomsCache;
+            
+            var symptoms = await _dataContext.Set<Symptom>()
+                .Include(x => x.SymptomIndicatorDeviationLevels)
+                .ThenInclude(x => x.Indicator)
+                .Where(x => !x.IsDeleted)
+                .ToListAsync();
+
+            _symptomsCache = symptoms
+                .GenerateTree(x => x.Id, x => x.ParentSymptomId);
+
+            return _symptomsCache;
+        }
+
+        public void RefreshSymptomsCache()
+        {
+            _symptomsCache = null;
         }
     }
 }

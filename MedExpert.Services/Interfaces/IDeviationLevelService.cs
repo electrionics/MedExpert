@@ -7,5 +7,8 @@ namespace MedExpert.Services.Interfaces
     public interface IDeviationLevelService:IImportService<AnalysisDeviationLevel>
     {
         public Task<List<DeviationLevel>> GetAll();
+
+        int Calculate(decimal refIntervalMin, decimal refIntervalMax, decimal value,
+            IList<AnalysisDeviationLevel> deviationLevelsSorted);
     }
 }

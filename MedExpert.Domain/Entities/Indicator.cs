@@ -21,5 +21,7 @@ namespace MedExpert.Domain.Entities
         public List<ReferenceIntervalValues> ReferenceIntervalValues { get; set; }
         
         public List<SymptomIndicatorDeviationLevel> SymptomIndicatorDeviationLevels { get; set; }
+        
+        public List<AnalysisSymptomIndicator> AnalysisSymptomIndicators { get; set; }
     }
 }

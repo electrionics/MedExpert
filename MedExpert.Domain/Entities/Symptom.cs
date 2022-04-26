@@ -34,5 +34,7 @@ namespace MedExpert.Domain.Entities
         public List<SymptomIndicatorDeviationLevel> SymptomIndicatorDeviationLevels { get; set; }
         
         public List<AnalysisSymptom> AnalysisSymptoms { get; set; }
+        
+        public List<AnalysisSymptomIndicator> AnalysisSymptomIndicators { get; set; }
     }
 }

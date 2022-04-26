@@ -22,6 +22,46 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<DeviationLevel>()
                 .ToListAsync();
         }
+        
+        public int Calculate(decimal refIntervalMin, decimal refIntervalMax, decimal value,
+            IList<AnalysisDeviationLevel> deviationLevelsSorted)
+        {
+            var refCenter = (refIntervalMin + refIntervalMax) / 2;
+            var refLength = refIntervalMax - refIntervalMin;
+
+            if (value < refCenter)
+            {
+                var percentFromCenter = (refCenter - value) / refLength * 100;
+                var deviationLevels = deviationLevelsSorted.Where(x =>
+                    x.DeviationLevelId <= 0).ToArray();
+
+                for (var i = deviationLevels.Length - 1; i > 0; i--)
+                {
+                    if (deviationLevels[i].MinPercentFromCenter > percentFromCenter) // TODO: or >=
+                    {
+                        return deviationLevels[i].DeviationLevelId;
+                    }
+                }
+
+                return deviationLevels[0].DeviationLevelId;
+            }
+            else
+            {
+                var percentFromCenter = (value - refCenter) / refLength * 100;
+                var deviationLevels = deviationLevelsSorted.Where(x =>
+                    x.DeviationLevelId >= 0).ToArray();
+                
+                for (var i = 0; i < deviationLevels.Length - 1; i++)
+                {
+                    if (deviationLevels[i].MaxPercentFromCenter > percentFromCenter) // TODO: or >=
+                    {
+                        return deviationLevels[i].DeviationLevelId;
+                    }
+                }
+
+                return deviationLevels[^1].DeviationLevelId;
+            }
+        }
 
         public Task UpdateBulk(List<AnalysisDeviationLevel> entities)
         {
