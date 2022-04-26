@@ -351,3 +351,4 @@ MigrationBackup/
 NiceNumber.Web/.config/
 NiceNumber.Web/ClientApp/.angular/
 MedExpert.Web/ClientApp/.angular/
+MedExpert.Web/appsettings.Development.json
