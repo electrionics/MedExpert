@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Production"
       }
     },
-    "NiceNumber.Web": {
+    "MedExpert.Web": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

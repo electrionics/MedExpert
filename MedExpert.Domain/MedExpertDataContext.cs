@@ -79,6 +79,7 @@ namespace MedExpert.Domain
                 entity.HasOne(x => x.Symptom)
                     .WithMany(x => x.AnalysisSymptoms)
                     .HasForeignKey(x => x.SymptomId);
+                entity.Ignore(x => x.MatchedIndicatorIds);
             });
             
             
