@@ -23,7 +23,7 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<ReferenceIntervalValues>().Where(x =>
                     x.ApplyCriteria.Sex == sex &&
                     x.ApplyCriteria.AgeMin <= age &&
-                    x.ApplyCriteria.AgeMax >= age &&
+                    x.ApplyCriteria.AgeMax > age &&
                     x.Indicator.InAnalysis)
                 .ToListAsync();
         }
