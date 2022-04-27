@@ -97,7 +97,7 @@ namespace MedExpert.Web.Controllers
 
         [HttpPost]
         [ApiRoute("Analysis/ComputeIndicators")]
-        public async Task<Dictionary<int, decimal>> ComputeIndicators(List<IdValueModel> idValues)
+        public async Task<Dictionary<int, decimal>> ComputeIndicators([FromBody] List<IdValueModel> idValues)
         {
             var indicators = await _indicatorService.GetAnalysisIndicators();
             var idValuesDict = idValues
