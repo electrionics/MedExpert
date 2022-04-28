@@ -53,7 +53,7 @@ namespace MedExpert.Services.Implementation
             var entities = await _dataContext.Set<Symptom>()
                 .Include(x => x.Children)
                 .Where(x => x.SpecialistId == specialistId && x.CategoryId == symptomCategoryId && !x.IsDeleted)
-                .Select(x => new Tuple<Symptom, bool>(x, x.AnalysisSymptoms.Any()))
+                .Select(x => new Tuple<Symptom, bool>(x, x.AnalysisSymptoms.Any() || x.AnalysisSymptomIndicators.Any()))
                 .ToListAsync();
 
             var processEntities = entities.Where(x => !x.Item1.Children.Any()).ToList();

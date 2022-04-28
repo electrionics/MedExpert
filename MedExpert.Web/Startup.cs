@@ -73,7 +73,11 @@ namespace MedExpert.Web
             services.AddScoped<IAnalysisService, AnalysisService>();
             services.AddScoped<IAnalysisIndicatorService, AnalysisIndicatorService>();
             services.AddScoped<ISymptomCategoryService, SymptomCategoryService>();
+            services.AddScoped<IAnalysisSymptomService, AnalysisSymptomService>();
+            services.AddScoped<IAnalysisSymptomIndicatorService, AnalysisSymptomIndicatorService>();
+            services.AddScoped<ILookupService, LookupService>();
             
+
             services.AddScoped<ExcelParser, ExcelParser>();
         }
 

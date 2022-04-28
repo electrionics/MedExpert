@@ -9,6 +9,7 @@ namespace MedExpert.Services.Interfaces
     {
         Task<List<Specialist>> GetSpecialistsByCriteria(Sex sex);
         Task<List<Specialist>> GetSpecialists();
+        Task<Specialist> GetSpecialistById(int specialistId);
         Task CreateSpecialist(Specialist specialist);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using MedExpert.Core;
 using MedExpert.Core.Helpers;
@@ -11,6 +11,7 @@ using MedExpert.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 // ReSharper disable StringLiteralTypo
+// ReSharper disable IdentifierTypo
 
 namespace MedExpert.Services.Implementation
 {
@@ -42,9 +43,14 @@ namespace MedExpert.Services.Implementation
             await _dataContext.SaveChangesAsync();
         }
 
-        public async Task<Tuple<Analysis, IList<TreeItem<AnalysisSymptom>>>> CalculateNewAnalysis(int analysisId, List<int> specialistIds)
+        public async Task<IList<TreeItem<AnalysisSymptom>>> CalculateNewAnalysis(int analysisId, List<int> specialistIds)
         {
             var analysis = await _dataContext.Set<Analysis>().FirstOrDefaultAsync(x => x.Id == analysisId);
+
+            if (analysis.Calculated)
+            {
+                throw new InvalidDataException("Анализ уже рассчитан.");
+            }
 
             Func<Tuple<SymptomIndicatorDeviationLevel, AnalysisIndicator>, bool> matcher = y =>
                 y.Item2 != null &&
@@ -92,13 +98,58 @@ namespace MedExpert.Services.Implementation
                 CalculateExpressiveness(x, analysisIndicatorDict, analysisId, matchedSymptoms));
 
             var filteredCalculatedTree =
-                calculatedTree.GetMatched(x => x.Expressiveness > 0.2m, new HashSet<bool> {true});
-
-            analysis.Calculated = true;
+                calculatedTree.GetMatched(x => x.Expressiveness is > 0.2m or null, new HashSet<bool> {true});
             
-            return new Tuple<Analysis, IList<TreeItem<AnalysisSymptom>>>(analysis, filteredCalculatedTree);
+            return filteredCalculatedTree;
         }
 
+        public async Task<IList<TreeItem<AnalysisSymptom>>> FetchCalculatedAnalysis(int analysisId, List<int> specialistIds, int categoryId)
+        {
+            var analysis = await _dataContext.Set<Analysis>().FirstOrDefaultAsync(x => x.Id == analysisId);
+            
+            if (!analysis.Calculated)
+            {
+                throw new InvalidDataException("Анализ еще не рассчитан.");
+            }
+            
+            var filteredAnalysisSymptoms = _dataContext.Set<AnalysisSymptom>()
+                .Include(x => x.Symptom)
+                .ThenInclude(x => x.SymptomIndicatorDeviationLevels.Where(y => !y.Indicator.InAnalysis))
+                .ThenInclude(x => x.Indicator)
+                .Where(x =>
+                    x.AnalysisId == analysisId &&
+                    specialistIds.Contains(x.Symptom.SpecialistId) &&
+                    x.Symptom.CategoryId == categoryId);
+            var matchedIndicators = _dataContext.Set<AnalysisSymptomIndicator>()
+                .Where(x => x.AnalysisId == analysisId);
+
+            var filteredAnalysisSymptomsWithIndicators = await filteredAnalysisSymptoms.GroupJoin(matchedIndicators,
+                (ansy) => new {ansy.AnalysisId, ansy.SymptomId},
+                (ansyin) => new {ansyin.AnalysisId, ansyin.SymptomId}, (analysisSymptom, indicators) => new
+                {
+                    AnalysisSymptom = analysisSymptom,
+                    MatchedIndicatorIds = indicators.Select(x => x.IndicatorId).ToHashSet()
+                }).ToListAsync();
+
+            foreach (var smi in filteredAnalysisSymptomsWithIndicators)
+            {
+                smi.AnalysisSymptom.MatchedIndicatorIds = smi.MatchedIndicatorIds;
+            }
+
+            var matchedAnalysisSymptoms = filteredAnalysisSymptomsWithIndicators
+                .Select(x => x.AnalysisSymptom)
+                .ToDictionary(x => x.SymptomId, x => x);
+            
+            var symptomsTree = await _symptomService.GetSymptomsTree();
+
+            var mathcedSymptomIds = matchedAnalysisSymptoms.Keys.ToHashSet();
+            var matchedSymptomsTree = symptomsTree.GetMatched(x => x.Id, mathcedSymptomIds);
+
+            var result = matchedSymptomsTree.VisitAndConvert(x => matchedAnalysisSymptoms[x.Id]);
+
+            return result;
+        }
+        
         public async Task Update(Analysis analysis)
         {
             _dataContext.Set<Analysis>().Update(analysis);
@@ -131,64 +182,81 @@ namespace MedExpert.Services.Implementation
                 .Select(x => new {x.Indicator, x.DeviationLevelId})
                 .ToList();
 
-            var vectorMaxExpressiveness = new double[symptomIndicators.Count];
-            var vectorMinExpressiveness = new double[symptomIndicators.Count];
-            var vectorRequired = new double[symptomIndicators.Count];
-            var vectorAnalysis = new double[symptomIndicators.Count];
+            double? expressiveness;
 
-            for (var i = 0; i < symptomIndicators.Count; i++)
+            if (symptomIndicators.Any())
             {
-                var symptomIndicator = symptomIndicators[i];
-                
-                if (!analysisIndicatorDict.ContainsKey(symptomIndicator.Indicator.Id))
+                var vectorMaxExpressiveness = new double[symptomIndicators.Count];
+                var vectorMinExpressiveness = new double[symptomIndicators.Count];
+                var vectorRequired = new double[symptomIndicators.Count];
+                var vectorAnalysis = new double[symptomIndicators.Count];
+
+                for (var i = 0; i < symptomIndicators.Count; i++)
                 {
-                    analysisIndicatorDict[symptomIndicator.Indicator.Id] = 0;
+                    var symptomIndicator = symptomIndicators[i];
+
+                    if (!analysisIndicatorDict.ContainsKey(symptomIndicator.Indicator.Id))
+                    {
+                        analysisIndicatorDict[symptomIndicator.Indicator.Id] = 0; //TODO: is it necessary?
+                    }
+
+                    vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
+                                            .MultiplySign(symptomIndicator.DeviationLevelId)
+                                        * Math.Sqrt(
+                                            IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName,
+                                                1));
+                    vectorAnalysis[i] =
+                        AbsoluteDeviationLevelMeasure[Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
+                            .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id])
+                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                    vectorMaxExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
+                                                     .MultiplySign(symptomIndicator.DeviationLevelId)
+                                                 * Math.Sqrt(
+                                                     IndicatorWeightsDict.GetValueOrDefault(
+                                                         symptomIndicator.Indicator.ShortName, 1));
+                    vectorMinExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
+                                                     .MultiplySign(symptomIndicator.DeviationLevelId * -1)
+                                                 * Math.Sqrt(
+                                                     IndicatorWeightsDict.GetValueOrDefault(
+                                                         symptomIndicator.Indicator.ShortName, 1));
                 }
 
-                vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
-                    .MultiplySign(symptomIndicator.DeviationLevelId) 
-                                    * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                vectorAnalysis[i] = AbsoluteDeviationLevelMeasure[Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
-                    .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id]) 
-                                    * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                vectorMaxExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
-                    .MultiplySign(symptomIndicator.DeviationLevelId) 
-                                    * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                vectorMinExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
-                    .MultiplySign(symptomIndicator.DeviationLevelId * -1)
-                                    * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-            }
-            
-            var vectorMaxExpressivenessProjected = vectorRequired.Project(vectorMaxExpressiveness);
-            var vectorMinExpressivenessProjected = vectorRequired.Project(vectorMinExpressiveness);
-            var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
+                var vectorMaxExpressivenessProjected = vectorRequired.Project(vectorMaxExpressiveness);
+                var vectorMinExpressivenessProjected = vectorRequired.Project(vectorMinExpressiveness);
+                var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
 
-            double expressiveness;
+                var baseExpressiveness =
+                    BaseExpressivenessForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
 
-            var baseExpressiveness =
-                BaseExpressivenessForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
-            
-            if (vectorAnalysisProjected.Subtract(vectorMaxExpressivenessProjected).Distance() >
-                vectorAnalysisProjected.Subtract(vectorMinExpressivenessProjected).Distance())
-            {
-                var baseDistance = vectorMaxExpressivenessProjected.Distance() - vectorRequired.Distance();
-                var resultDistance = vectorMaxExpressivenessProjected.Distance() - vectorAnalysisProjected.Distance();
+                if (vectorAnalysisProjected.Subtract(vectorMaxExpressivenessProjected).Distance() >
+                    vectorAnalysisProjected.Subtract(vectorMinExpressivenessProjected).Distance())
+                {
+                    var baseDistance = vectorMaxExpressivenessProjected.Distance() - vectorRequired.Distance();
+                    var resultDistance =
+                        vectorMaxExpressivenessProjected.Distance() - vectorAnalysisProjected.Distance();
 
-                expressiveness = baseExpressiveness + (1 - baseExpressiveness) * (baseDistance - resultDistance) / baseDistance;
+                    expressiveness = baseExpressiveness +
+                                     (1 - baseExpressiveness) * (baseDistance - resultDistance) / baseDistance;
+                }
+                else
+                {
+                    var baseDistance = vectorMinExpressivenessProjected.Distance() - vectorRequired.Distance();
+                    var resultDistance =
+                        vectorMinExpressivenessProjected.Distance() - vectorAnalysisProjected.Distance();
+
+                    expressiveness = baseExpressiveness * (baseDistance - resultDistance) / baseDistance;
+                }
             }
             else
             {
-                var baseDistance = vectorMinExpressivenessProjected.Distance() - vectorRequired.Distance();
-                var resultDistance = vectorMinExpressivenessProjected.Distance() - vectorAnalysisProjected.Distance();
-                
-                expressiveness = baseExpressiveness * (baseDistance - resultDistance) / baseDistance;
+                expressiveness = null;
             }
 
             return new AnalysisSymptom 
             {
                 Symptom = symptom,
                 SymptomId = symptom.Id, 
-                Expressiveness = (decimal) expressiveness.RoundTo(3), 
+                Expressiveness = (decimal?) expressiveness?.RoundTo(3), 
                 AnalysisId = analysisId,
                 MatchedIndicatorIds = matchedIndicators[symptom.Id]
                     .Select(x => x.IndicatorId)

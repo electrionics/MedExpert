@@ -17,7 +17,7 @@ namespace MedExpert.Web.Validators
                 .Must(x => x.Any(y => y.Value != null))
                 .WithMessage("Минимум одно значение показателя должно быть не пустым.");
             RuleFor(x => x.SpecialistIds)
-                .NotEmpty().WithMessage("Список специалистов должен быть не пустым.");
+                .NotEmpty().WithMessage("Список выбранных специалистов должен быть не пустым.");
         }
         
         private class ProfileModelValidator:AbstractValidator<ProfileModel>

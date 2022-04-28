@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using FluentValidation;
 using MedExpert.Core;
 using MedExpert.Core.Helpers;
@@ -27,9 +28,13 @@ namespace MedExpert.Web.Controllers
         private readonly IDeviationLevelService _deviationLevelService;
         private readonly IAnalysisIndicatorService _analysisIndicatorService;
         private readonly IAnalysisService _analysisService;
+        private readonly IAnalysisSymptomService _analysisSymptomService;
+        private readonly IAnalysisSymptomIndicatorService _analysisSymptomIndicatorService;
+        private readonly ILookupService _lookupService;
+        private readonly ISymptomCategoryService _symptomCategoryService;
         private readonly IValidator<AnalysisFormModel> _analysisFormValidator;
         
-        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, IAnalysisIndicatorService analysisIndicatorService, IAnalysisService analysisService, IValidator<AnalysisFormModel> analysisFormValidator)
+        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, IAnalysisIndicatorService analysisIndicatorService, IAnalysisService analysisService, IValidator<AnalysisFormModel> analysisFormValidator, IAnalysisSymptomService analysisSymptomService, IAnalysisSymptomIndicatorService analysisSymptomIndicatorService, ILookupService lookupService, ISymptomCategoryService symptomCategoryService)
         {
             _indicatorService = indicatorService;
             _referenceIntervalService = referenceIntervalService;
@@ -38,7 +43,13 @@ namespace MedExpert.Web.Controllers
             _analysisIndicatorService = analysisIndicatorService;
             _analysisService = analysisService;
             _analysisFormValidator = analysisFormValidator;
+            _analysisSymptomService = analysisSymptomService;
+            _analysisSymptomIndicatorService = analysisSymptomIndicatorService;
+            _lookupService = lookupService;
+            _symptomCategoryService = symptomCategoryService;
         }
+
+        #region Indicators
 
         [HttpPost]
         [ApiRoute("Analysis/Indicators")]
@@ -75,9 +86,13 @@ namespace MedExpert.Web.Controllers
 
             return result;
 
-            //return GetStubIndicators();
+            return GetStubIndicators();
         }
         
+        #endregion
+
+        #region Specialists
+
         [HttpPost]
         [ApiRoute("Analysis/Specialists")]
         public async Task<List<LookupModel>> Specialists([FromBody] ProfileModel model)
@@ -92,9 +107,13 @@ namespace MedExpert.Web.Controllers
 
             return result;
 
-            //return GetStubSpecialists(model);
+            return GetStubSpecialists(model);
         }
+        
+        #endregion
 
+        #region ComputeIndicators
+        
         [HttpPost]
         [ApiRoute("Analysis/ComputeIndicators")]
         public async Task<Dictionary<int, decimal>> ComputeIndicators(List<IdValueModel> idValues)
@@ -132,10 +151,14 @@ namespace MedExpert.Web.Controllers
 
             return result;
         }
+        
+        #endregion
+
+        #region Calculate
 
         [HttpPost]
         [ApiRoute("Analysis/Calculate")]
-        public async Task<AnalysisResultModel> Calculate([FromBody] AnalysisFormModel formModel)
+        public async Task<int> Calculate([FromBody] AnalysisFormModel formModel)
         {
             var validationResult = await _analysisFormValidator.ValidateAsync(formModel);
             if (!validationResult.IsValid)
@@ -169,43 +192,114 @@ namespace MedExpert.Web.Controllers
                     Analysis = analysis,
                     IndicatorId = x.Id,
                     Value = x.Value.Value,
+                    // ReSharper disable once PossibleInvalidOperationException
                     ReferenceIntervalValueMin = x.ReferenceIntervalMin.Value,
+                    // ReSharper disable once PossibleInvalidOperationException
                     ReferenceIntervalValueMax = x.ReferenceIntervalMax.Value,
                     DeviationLevelId = _deviationLevelService.Calculate(x.ReferenceIntervalMin.Value,
                         x.ReferenceIntervalMax.Value, x.Value.Value, toInsertDeviationLevels)
                 }).ToList();
 
+            using var transaction1 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            
             await _analysisService.Insert(analysis);
             await _analysisIndicatorService.InsertBulk(toInsertIndicators);
             await _deviationLevelService.InsertBulk(toInsertDeviationLevels);
+            
+            transaction1.Complete();
 
-            var (analysisObj, symptomsTree) = await _analysisService.CalculateNewAnalysis(analysis.Id, formModel.SpecialistIds);
+            var symptomsTree = await _analysisService.CalculateNewAnalysis(analysis.Id, formModel.SpecialistIds);
+            var symptomsList = symptomsTree.MakeFlat();
+            
+            var toInsertAnalysisSymptoms = symptomsList.Select(x =>
+                new AnalysisSymptom
+                {
+                    AnalysisId = analysis.Id,
+                    SymptomId = x.SymptomId,
+                    Expressiveness = x.Expressiveness
+                }).ToList();
+            var toInsertMatchedIndicators = symptomsList.SelectMany(x => x.MatchedIndicatorIds.Select(y =>
+                new AnalysisSymptomIndicator
+                {
+                    AnalysisId = analysis.Id,
+                    SymptomId = x.SymptomId,
+                    IndicatorId = y
+                })).ToList();
+            
+            analysis.Calculated = true;
+            
+            using var transaction2 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            
+            await _analysisService.Update(analysis);
+            await _analysisSymptomService.InsertBulk(toInsertAnalysisSymptoms);
+            await _analysisSymptomIndicatorService.InsertBulk(toInsertMatchedIndicators);
+            
+            transaction2.Complete();
 
-            await _analysisService.Update(analysisObj);
+            return analysis.Id;
+        }
+        
+        #endregion
+
+        #region FilterResults
+        
+        [HttpPost]
+        [ApiRoute("Analysis/FilterResults")]
+        public async Task<AnalysisResultModel> FilterResults([FromBody] AnalysisResultFilterModel model)
+        {
+            string categoryName;
+            string specialistLookupName = null;
+            switch (model.Filter)
+            {
+                case MedicalStateFilter.Diseases:
+                    categoryName = "Illness";
+                    break;
+                case MedicalStateFilter.CommonAnalysis:
+                    categoryName = "Analysis";
+                    specialistLookupName = "CommonAnalysisSpecialist";
+                    break;
+                case MedicalStateFilter.SpecialAnalysis:
+                    categoryName = "Analysis";
+                    break;
+                case MedicalStateFilter.CommonTreatment:
+                    categoryName = "Treatment";
+                    specialistLookupName = "CommonTreatmentSpecialist";
+                    break;
+                case MedicalStateFilter.SpecialTreatment:
+                    categoryName = "Treatment";
+                    break;
+                default:
+                    throw new ValidationException("Некорректно заданный фильтр.");
+            }
+
+            if (specialistLookupName != null)
+            {
+                var lookup = await _lookupService.GetByName(specialistLookupName);
+                var specialist = await _specialistService.GetSpecialistById(int.Parse(lookup.Value));
+
+                model.SpecialistIds = new List<int> {specialist.Id};
+            }
+
+            var category = await _symptomCategoryService.GetByName(categoryName);
+            
+            var symptomsTree = await _analysisService.FetchCalculatedAnalysis(model.AnalysisId, model.SpecialistIds, category.Id);
             
             var commentsList = new List<CommentModel>();
             var toReturn = new AnalysisResultModel
             {
-                AnalysisId = analysisObj.Id,
+                AnalysisId = model.AnalysisId,
                 FoundMedicalStates =
-                    symptomsTree.VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList))
+                    symptomsTree.VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList)),
+                Comments = commentsList
+                    .OrderBy(x => x.Type)
+                    .ThenBy(x => x.SpecialistId)
+                    .ThenBy(x => x.Name)
+                    .ToList()
             };
-            toReturn.Comments = commentsList
-                .OrderBy(x => x.Type)
-                .ThenBy(x => x.SpecialistId)
-                .ThenBy(x => x.Name)
-                .ToList();
+            
             return toReturn;
         }
-
-
-        [HttpPost]
-        [ApiRoute("Analysis/CalculateStub")]
-        public async Task<AnalysisResultModel> CalculateStub([FromBody] AnalysisFormModel formModel)
-        {
-            return await Task.FromResult(GetStubAnalysisResult());
-        }
-
+        
         private static MedicalStateModel ConvertAnalysisSymptomToModel(AnalysisSymptom analysisSymptom, List<CommentModel> commentsToFill)
         {
             var matchedIndicators = analysisSymptom.Symptom.SymptomIndicatorDeviationLevels
@@ -261,6 +355,15 @@ namespace MedExpert.Web.Controllers
                     }).ToList()
             };
         }
+        
+        #endregion
+
+        [HttpPost]
+        [ApiRoute("Analysis/CalculateStub")]
+        public async Task<AnalysisResultModel> CalculateStub([FromBody] AnalysisFormModel formModel)
+        {
+            return await Task.FromResult(GetStubAnalysisResult());
+        }
 
         #region Stubs
 
@@ -268,16 +371,16 @@ namespace MedExpert.Web.Controllers
         {
             return new()
             {
-                new()
+                new IndicatorValueDependencyModel
                 {
                     Id = 1, ShortName = "Hb", Name = "Гемоглобин"
                 },
-                new()
+                new IndicatorValueDependencyModel
                 {
                     Id = 2, ShortName = "RBC", Name = "Эритроциты", ReferenceIntervalMin = 1,
                     ReferenceIntervalMax = 1.5m
                 },
-                new()
+                new IndicatorValueDependencyModel
                 {
                     Id = 3, ShortName = "HCT", Name = "Гематокрит", ReferenceIntervalMin = 2,
                     ReferenceIntervalMax = 2.8m

@@ -33,6 +33,11 @@ namespace MedExpert.Domain
                 entity.HasKey(x => x.Id);
             });
 
+            modelBuilder.Entity<Lookup>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+            });
+
             #endregion
 
             #region Analysis

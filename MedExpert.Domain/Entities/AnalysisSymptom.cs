@@ -8,7 +8,7 @@ namespace MedExpert.Domain.Entities
         
         public int SymptomId { get; set; }
         
-        public decimal Expressiveness { get; set; }
+        public decimal? Expressiveness { get; set; }
         
         public Analysis Analysis { get; set; }
         

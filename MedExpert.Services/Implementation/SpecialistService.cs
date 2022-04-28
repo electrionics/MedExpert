@@ -31,6 +31,11 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<Specialist>().OrderBy(x => x.Name).ToListAsync();
         }
 
+        public async Task<Specialist> GetSpecialistById(int specialistId)
+        {
+            return await _dataContext.Set<Specialist>().FirstOrDefaultAsync(x => x.Id == specialistId);
+        }
+
         public async Task CreateSpecialist(Specialist specialist)
         {
             await _dataContext.Set<Specialist>().AddAsync(specialist);

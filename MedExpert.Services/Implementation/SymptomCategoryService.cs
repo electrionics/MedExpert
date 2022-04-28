@@ -21,6 +21,11 @@ namespace MedExpert.Services.Implementation
             return await _dataContext.Set<SymptomCategory>().AnyAsync(x => x.Id == categoryId);
         }
 
+        public async Task<SymptomCategory> GetByName(string name)
+        {
+            return await _dataContext.Set<SymptomCategory>().FirstOrDefaultAsync(x => x.Name == name);
+        }
+
         public async Task<List<SymptomCategory>> GetAll()
         {
             return await _dataContext.Set<SymptomCategory>().ToListAsync();
