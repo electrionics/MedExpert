@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve -c development",
-    "build": "ng build",
+    "build": "ng build -c production",
     "build:ssr": "ng run NiceNumber.Web:server:dev",
     "test": "ng test",
     "lint": "ng lint",
