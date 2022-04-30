@@ -26,7 +26,7 @@ export class AnalysesCheckComponent implements OnInit {
   public readonly patientForm = this.formBuilder.group({
     sex: [null, { validators: Validators.required, updateOn: 'blur' }],
     age: [null, {
-      validators: [Validators.required, Validators.min(10), Validators.max(100)],
+      validators: [Validators.required, Validators.min(0), Validators.max(100)],
       updateOn: 'blur'
     }]
   })
@@ -67,9 +67,9 @@ export class AnalysesCheckComponent implements OnInit {
               conditionalValidator(formControl => formControl.parent.get('min').value > formControl.value, { outOfRange: true }),
               conditionalValidator(formControl => formControl.parent.get('result').value && !formControl.parent.get('min').value && !formControl.parent.get('max').value, { noRange: true })
             ]],
-            result: [],
+            result: [{value: null, disabled: item.dependencyIndicatorIds != null}],
           })
-        })))
+        })));
 
         this.indicatorsForm.markAllAsTouched();
       }))
