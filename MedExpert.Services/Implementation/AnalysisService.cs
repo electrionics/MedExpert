@@ -9,7 +9,8 @@ using MedExpert.Domain;
 using MedExpert.Domain.Entities;
 using MedExpert.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
+using QueryableExtensions = MedExpert.Core.Helpers.QueryableExtensions;
+
 // ReSharper disable StringLiteralTypo
 // ReSharper disable IdentifierTypo
 
@@ -57,7 +58,7 @@ namespace MedExpert.Services.Implementation
                 y.Item1.DeviationLevelId * y.Item2.DeviationLevelId > 0 &&
                 Math.Abs(y.Item1.DeviationLevelId) <= Math.Abs(y.Item2.DeviationLevelId);
             
-            var matchedSymptoms = (await QueryableExtensions.LeftJoin(
+            var matchedSymptoms = (await QueryableExtensions.LeftOuterJoin(
                     _dataContext.Set<SymptomIndicatorDeviationLevel>().Include(x => x.Indicator).Where(x =>
                             !x.Symptom.IsDeleted &&
                             specialistIds.Contains(x.Symptom.SpecialistId) &&

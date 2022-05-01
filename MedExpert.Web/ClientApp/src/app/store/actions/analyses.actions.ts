@@ -1,5 +1,5 @@
 import {IIndicator} from '../model/indicator.model';
-import {ISelectOption} from '../model/select-option.model';
+import {IProfile} from "../model/profile.model";
 
 export class GetSpecialistsAction {
   static readonly type = '[GET] Specialists';
@@ -16,5 +16,5 @@ export class GetIndicatorsAction {
 export class GetResultsAction {
   static readonly type = '[GET] Results';
 
-  constructor(public sex: string, public age: number, public indicators: IIndicator[], public specialists: ISelectOption[]) {}
+  constructor(public profile: IProfile, public indicators: IIndicator[], public specialistIds: number[]) {}
 }

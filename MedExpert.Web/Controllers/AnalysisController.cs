@@ -181,7 +181,7 @@ namespace MedExpert.Web.Controllers
             {
                 MinPercentFromCenter = x.MinPercentFromCenter,
                 MaxPercentFromCenter = x.MaxPercentFromCenter,
-                DeviationLevelId = x.Id,
+                DeviationLevel = x,
                 Analysis = analysis
             }).ToList();
 
@@ -196,47 +196,58 @@ namespace MedExpert.Web.Controllers
                     ReferenceIntervalValueMin = x.ReferenceIntervalMin.Value,
                     // ReSharper disable once PossibleInvalidOperationException
                     ReferenceIntervalValueMax = x.ReferenceIntervalMax.Value,
-                    DeviationLevelId = _deviationLevelService.Calculate(x.ReferenceIntervalMin.Value,
+                    DeviationLevel = _deviationLevelService.Calculate(x.ReferenceIntervalMin.Value,
                         x.ReferenceIntervalMax.Value, x.Value.Value, toInsertDeviationLevels)
                 }).ToList();
 
-            using var transaction1 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-            
-            await _analysisService.Insert(analysis);
-            await _analysisIndicatorService.InsertBulk(toInsertIndicators);
-            await _deviationLevelService.InsertBulk(toInsertDeviationLevels);
-            
-            transaction1.Complete();
+            try
+            {
 
-            var symptomsTree = await _analysisService.CalculateNewAnalysis(analysis.Id, formModel.SpecialistIds);
-            var symptomsList = symptomsTree.MakeFlat();
-            
-            var toInsertAnalysisSymptoms = symptomsList.Select(x =>
-                new AnalysisSymptom
-                {
-                    AnalysisId = analysis.Id,
-                    SymptomId = x.SymptomId,
-                    Expressiveness = x.Expressiveness
-                }).ToList();
-            var toInsertMatchedIndicators = symptomsList.SelectMany(x => x.MatchedIndicatorIds.Select(y =>
-                new AnalysisSymptomIndicator
-                {
-                    AnalysisId = analysis.Id,
-                    SymptomId = x.SymptomId,
-                    IndicatorId = y
-                })).ToList();
-            
-            analysis.Calculated = true;
-            
-            using var transaction2 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-            
-            await _analysisService.Update(analysis);
-            await _analysisSymptomService.InsertBulk(toInsertAnalysisSymptoms);
-            await _analysisSymptomIndicatorService.InsertBulk(toInsertMatchedIndicators);
-            
-            transaction2.Complete();
 
-            return analysis.Id;
+                using (var transaction1 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    await _analysisService.Insert(analysis);
+                    await _analysisIndicatorService.InsertBulk(toInsertIndicators);
+                    await _deviationLevelService.InsertBulk(toInsertDeviationLevels);
+
+                    transaction1.Complete();
+                }
+
+                var symptomsTree = await _analysisService.CalculateNewAnalysis(analysis.Id, formModel.SpecialistIds);
+                var symptomsList = symptomsTree.MakeFlat();
+
+                var toInsertAnalysisSymptoms = symptomsList.Select(x =>
+                    new AnalysisSymptom
+                    {
+                        AnalysisId = analysis.Id,
+                        SymptomId = x.SymptomId,
+                        Expressiveness = x.Expressiveness
+                    }).ToList();
+                var toInsertMatchedIndicators = symptomsList.SelectMany(x => x.MatchedIndicatorIds.Select(y =>
+                    new AnalysisSymptomIndicator
+                    {
+                        AnalysisId = analysis.Id,
+                        SymptomId = x.SymptomId,
+                        IndicatorId = y
+                    })).ToList();
+
+                analysis.Calculated = true;
+
+                using (var transaction2 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    await _analysisService.Update(analysis);
+                    await _analysisSymptomService.InsertBulk(toInsertAnalysisSymptoms);
+                    await _analysisSymptomIndicatorService.InsertBulk(toInsertMatchedIndicators);
+
+                    transaction2.Complete();
+                }
+
+                return analysis.Id;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
         }
         
         #endregion

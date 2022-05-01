@@ -8,6 +8,7 @@ import {ISelectOptions, SelectOptionsDTO} from '../../store/model/select-option.
 import {IIndicators, IndicatorsDTO} from '../../store/model/indicator.model';
 import {debounceTime, filter, switchMap, tap} from 'rxjs/operators';
 import {conditionalValidator, FormsService, FormStateEnum} from '../../services/forms.service';
+import {ProfileDTO} from "../../store/model/profile.model";
 
 @Component({
   selector: 'app-analyses-check',
@@ -118,12 +119,11 @@ export class AnalysesCheckComponent implements OnInit {
       return;
     }
 
-    const { sex: { id: sexId }, age } = this.patientForm.value;
-
     const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
-    const specialists = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists'));
+    const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
+    const profile = new ProfileDTO().fromForm(this.patientForm);
 
-    this.store.dispatch(new GetResultsAction(sexId, age, indicators.items, specialists.items));
+    this.store.dispatch(new GetResultsAction(profile, indicators.items, specialistIds));
   }
 
   get showSaveButton() {

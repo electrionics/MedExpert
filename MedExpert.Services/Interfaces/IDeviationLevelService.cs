@@ -8,7 +8,7 @@ namespace MedExpert.Services.Interfaces
     {
         public Task<List<DeviationLevel>> GetAll();
 
-        int Calculate(decimal refIntervalMin, decimal refIntervalMax, decimal value,
+        DeviationLevel Calculate(decimal refIntervalMin, decimal refIntervalMax, decimal value,
             IList<AnalysisDeviationLevel> deviationLevelsSorted);
     }
 }

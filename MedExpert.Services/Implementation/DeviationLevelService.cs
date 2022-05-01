@@ -23,7 +23,7 @@ namespace MedExpert.Services.Implementation
                 .ToListAsync();
         }
         
-        public int Calculate(decimal refIntervalMin, decimal refIntervalMax, decimal value,
+        public DeviationLevel Calculate(decimal refIntervalMin, decimal refIntervalMax, decimal value,
             IList<AnalysisDeviationLevel> deviationLevelsSorted)
         {
             var refCenter = (refIntervalMin + refIntervalMax) / 2;
@@ -39,11 +39,11 @@ namespace MedExpert.Services.Implementation
                 {
                     if (deviationLevels[i].MinPercentFromCenter > percentFromCenter) // TODO: or >=
                     {
-                        return deviationLevels[i].DeviationLevelId;
+                        return deviationLevels[i].DeviationLevel;
                     }
                 }
 
-                return deviationLevels[0].DeviationLevelId;
+                return deviationLevels[0].DeviationLevel;
             }
             else
             {
@@ -55,11 +55,11 @@ namespace MedExpert.Services.Implementation
                 {
                     if (deviationLevels[i].MaxPercentFromCenter > percentFromCenter) // TODO: or >=
                     {
-                        return deviationLevels[i].DeviationLevelId;
+                        return deviationLevels[i].DeviationLevel;
                     }
                 }
 
-                return deviationLevels[^1].DeviationLevelId;
+                return deviationLevels[^1].DeviationLevel;
             }
         }
 
