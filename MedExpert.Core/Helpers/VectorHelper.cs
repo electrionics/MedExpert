@@ -15,11 +15,11 @@ namespace MedExpert.Core.Helpers
             for (var i = 0; i < @base.Length; i++)
             {
                 numerator += @base[i] * toProject[i];
-                denominator += Math.Pow(toProject[i], 2);
+                denominator += Math.Pow(@base[i], 2);
             }
             for (var i = 0; i < @base.Length; i++)
             {
-                result[i] = toProject[i] * numerator / denominator;
+                result[i] = @base[i] * numerator / denominator;
             }
 
             return result;
