@@ -1,7 +1,7 @@
 import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
-import {FormArray, FormBuilder, Validators} from '@angular/forms';
+import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Select, Store} from '@ngxs/store';
-import {GetIndicatorsAction, GetResultsAction, GetSpecialistsAction} from '../../store/actions/analyses.actions';
+import {GetIndicatorsAction, GetResultsAction, GetSpecialistsAction, GetComputedIndicatorsAction} from '../../store/actions/analyses.actions';
 import {combineLatest, Observable} from 'rxjs';
 import {AnalysesState} from '../../store/state/analyses.state';
 import {ISelectOptions, SelectOptionsDTO} from '../../store/model/select-option.model';
@@ -9,6 +9,7 @@ import {IIndicators, IndicatorsDTO} from '../../store/model/indicator.model';
 import {debounceTime, filter, switchMap, tap} from 'rxjs/operators';
 import {conditionalValidator, FormsService, FormStateEnum} from '../../services/forms.service';
 import {ProfileDTO} from "../../store/model/profile.model";
+import {IComputedIndicator} from "../../store/model/computed-indicator.model";
 
 @Component({
   selector: 'app-analyses-check',
@@ -19,6 +20,7 @@ export class AnalysesCheckComponent implements OnInit {
   @Select(AnalysesState.GetSexes) public readonly sexes$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetSpecialists) public readonly specialists$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetIndicators) private readonly indicators$: Observable<IIndicators>;
+  @Select(AnalysesState.GetComputedIndicators) private readonly computedIndicators$: Observable<IComputedIndicator[]>;
 
   public patientFormState = FormStateEnum.pristine;
   public patientFormStateEnum = FormStateEnum;
@@ -76,6 +78,16 @@ export class AnalysesCheckComponent implements OnInit {
       }))
       .subscribe();
 
+    this.computedIndicators$.subscribe(computedIndicators => {
+      const indicatorFormControls = (this.indicatorsForm.get('indicators') as FormArray).controls;
+      computedIndicators.forEach(computedIndicator => {
+        // find the form group where computed indicator input is located
+        const computedIndicatorFormGroup = indicatorFormControls.find(formGroup => (formGroup as FormGroup).controls.item.value.id == computedIndicator.id) as FormGroup;
+        // set computed indicator input value
+        computedIndicatorFormGroup.controls.result.setValue(computedIndicator.value);
+      });
+    })
+
     combineLatest([
       this.patientForm.get('sex').valueChanges,
       this.patientForm.get('age').valueChanges.pipe(debounceTime(300))
@@ -126,6 +138,17 @@ export class AnalysesCheckComponent implements OnInit {
     this.store.dispatch(new GetResultsAction(profile, indicators.items, specialistIds));
   }
 
+  public getComputedIndicators(): void {
+    // generate proper body for ComputeIndicators request
+    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
+    const indicatorValues: IComputedIndicator[] = indicators.items.map(indicator => {
+      return {id: indicator.id, value: indicator.value}
+    });
+    // send the request to server
+    this.store.dispatch(new GetComputedIndicatorsAction(indicatorValues))
+      .subscribe();
+  }
+
   get showSaveButton() {
     return this.patientFormState & this.patientFormStateEnum.pristine;
   }
@@ -140,5 +163,17 @@ export class AnalysesCheckComponent implements OnInit {
 
   public hasError(name: string): boolean {
     return this.formsService.hasError(this.patientForm, name);
+  }
+
+  public indicatorValueChanged(changedIndicatorId: number, changedIndicatorValue: number) {
+    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
+    // check if changed indicator is a dependency for any of calculated indicators
+    const isDependency = indicators.items.some(indicator => {
+      return indicator.dependencyIndicatorIds && indicator.dependencyIndicatorIds.includes(changedIndicatorId);
+    });
+    // only if changed indicator is a dependency, send request to server to calculate computed indicators
+    if (isDependency) {
+      this.getComputedIndicators();
+    }
   }
 }

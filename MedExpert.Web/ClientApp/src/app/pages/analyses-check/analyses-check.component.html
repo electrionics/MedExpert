@@ -67,7 +67,10 @@
               </label>
             </td>
             <td class="p-3">
-              <input type="number" min="0" [id]="indicator.value.item.name" formControlName="result" [disabled]="indicator.get('result').disabled" class="form-control value" [ngClass]="{'font-weight-bold': indicator.get('result').value > indicator.get('max').value || indicator.get('result').value < indicator.get('min').value}" />
+              <input type="number" min="0" [id]="indicator.value.item.name" formControlName="result"
+                     [disabled]="indicator.get('result').disabled" class="form-control value"
+                     [ngClass]="{'font-weight-bold': indicator.get('result').value > indicator.get('max').value || indicator.get('result').value < indicator.get('min').value}"
+                     (change)="indicatorValueChanged(indicator.value.item.id, indicator.get('result').value)"/>
             </td>
             <td class="p-3">
               <div class="d-flex">

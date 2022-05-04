@@ -28,4 +28,8 @@ export class AnalysesService {
   public getResults(body) {
     return this.apiService.post('Analysis/Calculate', body);
   }
+
+  public getComputedIndicators({indicatorValues}) {
+    return this.apiService.post('Analysis/ComputeIndicators', indicatorValues)
+  }
 }

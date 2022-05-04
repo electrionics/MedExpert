@@ -1,15 +1,17 @@
 import { Injectable } from '@angular/core';
 import {Action, Selector, State, StateContext} from '@ngxs/store';
-import {GetIndicatorsAction, GetResultsAction, GetSpecialistsAction} from '../actions/analyses.actions';
+import {GetIndicatorsAction, GetResultsAction, GetSpecialistsAction, GetComputedIndicatorsAction} from '../actions/analyses.actions';
 import {AnalysesService} from '../../services/analyses.service';
 import {tap} from 'rxjs/operators';
 import {ISelectOptions, SelectOptionsDTO} from '../model/select-option.model';
 import {IIndicators, IndicatorsDTO} from '../model/indicator.model';
+import {IComputedIndicator} from "../model/computed-indicator.model";
 
 export interface IAnalysesState {
   sexes: ISelectOptions;
   specialists: ISelectOptions;
   indicators: IIndicators;
+  computedIndicators: IComputedIndicator[];
 }
 
 @State<IAnalysesState>({
@@ -21,6 +23,7 @@ export interface IAnalysesState {
     ]),
     specialists: new SelectOptionsDTO([]),
     indicators: new IndicatorsDTO([]),
+    computedIndicators: [],
   }
 })
 @Injectable()
@@ -44,6 +47,11 @@ export class AnalysesState {
     return indicators;
   }
 
+  @Selector()
+  static GetComputedIndicators({ computedIndicators }: IAnalysesState) {
+    return computedIndicators;
+  }
+
   @Action(GetSpecialistsAction)
   GetSpecialistsAction({ patchState }: StateContext<IAnalysesState>, { sex, age }: GetSpecialistsAction) {
     return this.analysesService.getSpecialists(sex, age).pipe(tap((specialists) => {
@@ -63,5 +71,18 @@ export class AnalysesState {
     return this.analysesService.getResults(body).pipe(tap((response) => {
       console.log(response)
     }))
+  }
+
+  @Action(GetComputedIndicatorsAction)
+  GetComputedIndicatorsAction({ patchState }: StateContext<IAnalysesState>, body: GetComputedIndicatorsAction) {
+    return this.analysesService.getComputedIndicators(body).pipe(tap((computedIndicatorsDictionary: { [id:number]: number }) => {
+      const computedIndicatorsArray: IComputedIndicator[] = [];
+      // convert indicators dictionary to indicators array
+      for (let indicatorId in computedIndicatorsDictionary) {
+        const indicatorValue = computedIndicatorsDictionary[indicatorId];
+        computedIndicatorsArray.push({ id: Number(indicatorId), value: indicatorValue});
+      }
+      patchState({ computedIndicators:  computedIndicatorsArray})
+    }));
   }
 }
