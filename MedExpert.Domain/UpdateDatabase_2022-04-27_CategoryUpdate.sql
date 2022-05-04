@@ -54,8 +54,8 @@ INSERT INTO Lookup (Name, Value) VALUES ('CommonAnalysisSpecialist', '1')
 INSERT INTO Lookup (Name, Value) VALUES ('CommonTreatmentSpecialist', '1')
 GO
 
-UPDATE SymptomCategory SET DisplayName = 'Болезни', Name = 'Illness' where Id = 1
-UPDATE SymptomCategory SET DisplayName = 'Лечение', Name = 'Treatment' where Id = 2
+UPDATE SymptomCategory SET DisplayName = N'Болезни', Name = 'Illness' where Id = 1
+UPDATE SymptomCategory SET DisplayName = N'Лечение', Name = 'Treatment' where Id = 2
 DELETE FROM SymptomCategory WHERE Id = 3
 GO
 

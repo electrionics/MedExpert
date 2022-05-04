@@ -9,7 +9,6 @@ using MedExpert.Domain;
 using MedExpert.Domain.Entities;
 using MedExpert.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using QueryableExtensions = MedExpert.Core.Helpers.QueryableExtensions;
 
 // ReSharper disable StringLiteralTypo
 // ReSharper disable IdentifierTypo
@@ -53,35 +52,33 @@ namespace MedExpert.Services.Implementation
                 throw new InvalidDataException("Анализ уже рассчитан.");
             }
 
-            Func<Tuple<SymptomIndicatorDeviationLevel, AnalysisIndicator>, bool> matcher = y =>
-                y.Item2 != null &&
-                y.Item1.DeviationLevelId * y.Item2.DeviationLevelId > 0 &&
-                Math.Abs(y.Item1.DeviationLevelId) <= Math.Abs(y.Item2.DeviationLevelId);
-            
-            var matchedSymptoms = (await QueryableExtensions.LeftOuterJoin(
-                    _dataContext.Set<SymptomIndicatorDeviationLevel>().Include(x => x.Indicator).Where(x =>
-                            !x.Symptom.IsDeleted &&
-                            specialistIds.Contains(x.Symptom.SpecialistId) &&
-                            (x.Symptom.ApplyToSexOnly == null || x.Symptom.ApplyToSexOnly == analysis.Sex) &&
-                            (x.Symptom.Specialist.ApplyToSexOnly == null || x.Symptom.Specialist.ApplyToSexOnly == analysis.Sex) &&
-                            !x.Indicator.InAnalysis), 
-                    _dataContext.Set<AnalysisIndicator>().Where(y => 
-                        y.AnalysisId == analysisId && 
-                        y.Indicator.InAnalysis), 
-                    x => x.IndicatorId, 
-                    y => y.IndicatorId, 
-                    (si, ai) => new Tuple<SymptomIndicatorDeviationLevel, AnalysisIndicator>(si, ai))
-                .GroupBy(x => x.Item1.SymptomId).Where(x => //TODO: from cache
-                x.Count(matcher) >= Math.Min((x.Count() + 1) / 2, 3))
+            Func<SymptomIndicatorDeviationLevel, bool> matcher = y =>
+                y.Indicator.AnalysisIndicators.Any() &&
+                y.DeviationLevelId * y.Indicator.AnalysisIndicators.First().DeviationLevelId > 0 &&
+                Math.Abs(y.DeviationLevelId) <= Math.Abs(y.Indicator.AnalysisIndicators.First().DeviationLevelId);
+
+            var sidls = await _dataContext.Set<SymptomIndicatorDeviationLevel>()
+                .Include(x => x.Indicator)
+                .ThenInclude(x => x.AnalysisIndicators.Where(y => y.AnalysisId == analysisId))
+                .Where(x =>
+                    specialistIds.Contains(x.Symptom.SpecialistId) &&
+                    (x.Symptom.ApplyToSexOnly == null || x.Symptom.ApplyToSexOnly == analysis.Sex) &&
+                    (x.Symptom.Specialist.ApplyToSexOnly == null ||
+                     x.Symptom.Specialist.ApplyToSexOnly == analysis.Sex) &&
+                    !x.Symptom.IsDeleted &&
+                    x.Indicator.InAnalysis)
+                .ToListAsync();
+            var matchedSymptoms = sidls
+                .GroupBy(x => x.SymptomId)
+                .Where(x => //TODO: from cache
+                    x.Count(matcher) >= Math.Min((x.Count() + 1) / 2, 3))
                 .Select(x => new
                 {
                     x.Key, 
                     MatchedIndicators = x
                         .Where(matcher)
-                        .Select(y => y.Item1)
                         .ToList()
-                })
-                .ToListAsync()).ToDictionary(x => x.Key, x => x.MatchedIndicators);
+                }).ToDictionary(x => x.Key, x => x.MatchedIndicators);
 
             var symptomsTree = await _symptomService.GetSymptomsTree();
 
@@ -99,7 +96,7 @@ namespace MedExpert.Services.Implementation
                 CalculateExpressiveness(x, analysisIndicatorDict, analysisId, matchedSymptoms));
 
             var filteredCalculatedTree =
-                calculatedTree.GetMatched(x => x.Expressiveness is > 0.2m or null, new HashSet<bool> {true});
+                calculatedTree.GetMatched(x => x.Expressiveness is null or > 0.2m, new HashSet<bool> {true});
             
             return filteredCalculatedTree;
         }
@@ -203,23 +200,16 @@ namespace MedExpert.Services.Implementation
 
                     vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
                                             .MultiplySign(symptomIndicator.DeviationLevelId)
-                                        * Math.Sqrt(
-                                            IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName,
-                                                1));
-                    vectorAnalysis[i] =
-                        AbsoluteDeviationLevelMeasure[Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
-                            .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id])
-                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                    vectorAnalysis[i] = AbsoluteDeviationLevelMeasure[Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
+                                            .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id]) 
+                                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
                     vectorMaxExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
-                                                     .MultiplySign(symptomIndicator.DeviationLevelId)
-                                                 * Math.Sqrt(
-                                                     IndicatorWeightsDict.GetValueOrDefault(
-                                                         symptomIndicator.Indicator.ShortName, 1));
+                                                     .MultiplySign(symptomIndicator.DeviationLevelId) 
+                                                 * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
                     vectorMinExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
                                                      .MultiplySign(symptomIndicator.DeviationLevelId * -1)
-                                                 * Math.Sqrt(
-                                                     IndicatorWeightsDict.GetValueOrDefault(
-                                                         symptomIndicator.Indicator.ShortName, 1));
+                                                 * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
                 }
 
                 var vectorMaxExpressivenessProjected = vectorRequired.Project(vectorMaxExpressiveness);
@@ -229,7 +219,7 @@ namespace MedExpert.Services.Implementation
                 var baseExpressiveness =
                     BaseExpressivenessForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
 
-                if (vectorAnalysisProjected.Subtract(vectorMaxExpressivenessProjected).Distance() >
+                if (vectorAnalysisProjected.Subtract(vectorMaxExpressivenessProjected).Distance() <
                     vectorAnalysisProjected.Subtract(vectorMinExpressivenessProjected).Distance())
                 {
                     var baseDistance = vectorMaxExpressivenessProjected.Distance() - vectorRequired.Distance();

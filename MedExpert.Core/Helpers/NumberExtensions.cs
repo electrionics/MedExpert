@@ -17,7 +17,7 @@ namespace MedExpert.Core.Helpers
 
         public static double MultiplySign(this double value, double signValue)
         {
-            return value * signValue < 0 ? -1 : 1;
+            return value * (signValue < 0 ? -1 : 1);
         }
     }
 }

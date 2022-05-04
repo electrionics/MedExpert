@@ -35,7 +35,7 @@ namespace MedExpert.Core.Helpers
                 .Select(p => new TreeItem<TEntity>
                 {
                     Item = p.Item,
-                    Children = !p.Children.Any() 
+                    Children = !p.Children?.Any() ?? true 
                         ? null : 
                         p.Children.GetMatched(matcher, itemsToMatch)
                 })
@@ -55,7 +55,7 @@ namespace MedExpert.Core.Helpers
 
         public static IList<TEntity> MakeFlat<TEntity>(this IEnumerable<TreeItem<TEntity>> tree)
         {
-            return tree?.SelectMany(p => p.Children
+            return tree?.SelectMany(p => (p.Children ?? Enumerable.Empty<TreeItem<TEntity>>())
                     .MakeFlat()
                     .Prepend(p.Item))
                 .Where(x => x != null)

@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Linq;
+using MedExpert.Core.Helpers;
+using NUnit.Framework;
 
 namespace MedExpert.UnitTests
 {
@@ -11,8 +14,12 @@ namespace MedExpert.UnitTests
         }
 
         [Test]
-        public void Test1()
+        public void TestExpressivenessProject()
         {
+            var baseVector = new double[] {1, 1, 1};
+            var toProjectVector = new double[] {4, 4, 4};
+            var projection = baseVector.Project(toProjectVector);
+            Assert.IsTrue(projection.All(x => x == 4));
             Assert.Pass();
         }
     }
