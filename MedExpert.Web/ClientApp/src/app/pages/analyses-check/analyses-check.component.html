@@ -91,7 +91,7 @@
           <label class="mb-0" for="specialists">Специалисты</label>
         </div>
         <div class="col-10">
-          <ng-select formControlName="specialists" class="form-select" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
+          <ng-select id="specialists" formControlName="specialists" class="form-select" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
             <ng-option *ngFor="let specialist of (specialists$ | async).items" [value]="specialist">{{specialist.name}}</ng-option>
           </ng-select>
         </div>
@@ -101,7 +101,7 @@
         <div class="col-12 text-right">
           <div *ngIf="indicatorsFormDirty && indicatorsForm.invalid" class="text-danger mb-3">Заполните значения всех показателей</div>
 
-          <button class="btn btn-primary" (click)="getResults()">Узнать результаты</button>
+          <button class="btn btn-primary" (click)="saveAnalysisResult()">Узнать результаты</button>
         </div>
       </div>
     </form>

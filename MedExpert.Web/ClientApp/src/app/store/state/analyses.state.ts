@@ -1,17 +1,26 @@
 import { Injectable } from '@angular/core';
 import {Action, Selector, State, StateContext} from '@ngxs/store';
-import {GetIndicatorsAction, GetResultsAction, GetSpecialistsAction, GetComputedIndicatorsAction} from '../actions/analyses.actions';
+import {
+  GetIndicatorsAction,
+  SaveAnalysisResultAction,
+  GetSpecialistsAction,
+  GetComputedIndicatorsAction,
+  GetAnalysisResultByIdAction
+} from '../actions/analyses.actions';
 import {AnalysesService} from '../../services/analyses.service';
 import {tap} from 'rxjs/operators';
 import {ISelectOptions, SelectOptionsDTO} from '../model/select-option.model';
 import {IIndicators, IndicatorsDTO} from '../model/indicator.model';
 import {IComputedIndicator} from "../model/computed-indicator.model";
+import {IAnalysesResult} from "../model/analyses-result.model";
 
 export interface IAnalysesState {
   sexes: ISelectOptions;
   specialists: ISelectOptions;
   indicators: IIndicators;
   computedIndicators: IComputedIndicator[];
+  analysisId: number;
+  analysisResult: IAnalysesResult;
 }
 
 @State<IAnalysesState>({
@@ -24,6 +33,8 @@ export interface IAnalysesState {
     specialists: new SelectOptionsDTO([]),
     indicators: new IndicatorsDTO([]),
     computedIndicators: [],
+    analysisId: null,
+    analysisResult: null,
   }
 })
 @Injectable()
@@ -52,6 +63,16 @@ export class AnalysesState {
     return computedIndicators;
   }
 
+  @Selector()
+  static GetAnalysisResult({ analysisResult }: IAnalysesState) {
+    return analysisResult;
+  }
+
+  @Selector()
+  static GetAnalysisId({ analysisId }: IAnalysesState) {
+    return analysisId;
+  }
+
   @Action(GetSpecialistsAction)
   GetSpecialistsAction({ patchState }: StateContext<IAnalysesState>, { sex, age }: GetSpecialistsAction) {
     return this.analysesService.getSpecialists(sex, age).pipe(tap((specialists) => {
@@ -66,11 +87,18 @@ export class AnalysesState {
     }))
   }
 
-  @Action(GetResultsAction)
-  GetResultsAction({ patchState }: StateContext<IAnalysesState>, body: GetResultsAction) {
-    return this.analysesService.getResults(body).pipe(tap((response) => {
-      console.log(response)
-    }))
+  @Action(SaveAnalysisResultAction)
+  SaveAnalysisResultAction({ patchState }: StateContext<IAnalysesState>, body: SaveAnalysisResultAction) {
+    return this.analysesService.saveAnalysisResult(body).pipe(tap((analysisId) => {
+      patchState({ analysisId: Number(analysisId) });
+    }));
+  }
+
+  @Action(GetAnalysisResultByIdAction)
+  GetAnalysisResultByIdAction({patchState}: StateContext<IAnalysesState>, body: GetAnalysisResultByIdAction) {
+    return this.analysesService.getAnalysisResultById(body).pipe(tap((analysisResult) => {
+      patchState({analysisResult: analysisResult as IAnalysesResult});
+    }));
   }
 
   @Action(GetComputedIndicatorsAction)

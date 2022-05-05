@@ -1,7 +1,13 @@
 import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Select, Store} from '@ngxs/store';
-import {GetIndicatorsAction, GetResultsAction, GetSpecialistsAction, GetComputedIndicatorsAction} from '../../store/actions/analyses.actions';
+import {
+  SaveAnalysisResultAction,
+  GetComputedIndicatorsAction,
+  GetIndicatorsAction,
+  GetAnalysisResultByIdAction,
+  GetSpecialistsAction
+} from '../../store/actions/analyses.actions';
 import {combineLatest, Observable} from 'rxjs';
 import {AnalysesState} from '../../store/state/analyses.state';
 import {ISelectOptions, SelectOptionsDTO} from '../../store/model/select-option.model';
@@ -10,6 +16,7 @@ import {debounceTime, filter, switchMap, tap} from 'rxjs/operators';
 import {conditionalValidator, FormsService, FormStateEnum} from '../../services/forms.service';
 import {ProfileDTO} from "../../store/model/profile.model";
 import {IComputedIndicator} from "../../store/model/computed-indicator.model";
+import {IAnalysesResult, MedicalStateFilterType} from "../../store/model/analyses-result.model";
 
 @Component({
   selector: 'app-analyses-check',
@@ -21,6 +28,8 @@ export class AnalysesCheckComponent implements OnInit {
   @Select(AnalysesState.GetSpecialists) public readonly specialists$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetIndicators) private readonly indicators$: Observable<IIndicators>;
   @Select(AnalysesState.GetComputedIndicators) private readonly computedIndicators$: Observable<IComputedIndicator[]>;
+  @Select(AnalysesState.GetAnalysisId) private readonly analysisId$: Observable<number>;
+  @Select(AnalysesState.GetAnalysisResult) private readonly analysisResult$: Observable<IAnalysesResult>;
 
   public patientFormState = FormStateEnum.pristine;
   public patientFormStateEnum = FormStateEnum;
@@ -88,6 +97,16 @@ export class AnalysesCheckComponent implements OnInit {
       });
     })
 
+    this.analysisId$.subscribe((analysisId) => {
+      if (!analysisId) return;
+      this.getResultsByAnalysisId(analysisId);
+    })
+
+    this.analysisResult$.subscribe(analysesResult => {
+      console.log('Analyses Result received', analysesResult);
+      // TODO implement displaying results
+    });
+
     combineLatest([
       this.patientForm.get('sex').valueChanges,
       this.patientForm.get('age').valueChanges.pipe(debounceTime(300))
@@ -124,7 +143,7 @@ export class AnalysesCheckComponent implements OnInit {
     this.patientForm.enable();
   }
 
-  public getResults(): void {
+  public saveAnalysisResult(): void {
     this.indicatorsFormDirty = true;
 
     if (this.indicatorsForm.invalid) {
@@ -135,7 +154,14 @@ export class AnalysesCheckComponent implements OnInit {
     const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
     const profile = new ProfileDTO().fromForm(this.patientForm);
 
-    this.store.dispatch(new GetResultsAction(profile, indicators.items, specialistIds));
+    // send request to retrieve analysis id
+    this.store.dispatch(new SaveAnalysisResultAction(profile, indicators.items, specialistIds));
+  }
+
+  public getResultsByAnalysisId(analysisId: number) {
+    // TODO set current filter to MedicalStateFilterType.Diseases (that's the default value for filter type)
+    const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
+    this.store.dispatch(new GetAnalysisResultByIdAction(analysisId, MedicalStateFilterType.Diseases, specialistIds));
   }
 
   public getComputedIndicators(): void {

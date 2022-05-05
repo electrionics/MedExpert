@@ -25,8 +25,12 @@ export class AnalysesService {
     })
   }
 
-  public getResults(body) {
+  public saveAnalysisResult(body) {
     return this.apiService.post('Analysis/Calculate', body);
+  }
+
+  public getAnalysisResultById(body) {
+    return this.apiService.post('Analysis/FilterResults', body);
   }
 
   public getComputedIndicators({indicatorValues}) {
