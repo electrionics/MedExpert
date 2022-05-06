@@ -11,7 +11,7 @@
           <label class="mb-0" for="sex">Пол</label>
         </div>
         <div class="col-10">
-          <ng-select formControlName="sex" class="form-select" labelForId="sex" [searchable]="false" placeholder="Выберите пол">
+          <ng-select id="sex" formControlName="sex" class="form-select" labelForId="sex" [searchable]="false" placeholder="Выберите пол">
             <ng-option *ngFor="let sex of (sexes$ | async).items" [value]="sex">{{sex.name}}</ng-option>
           </ng-select>
         </div>
@@ -44,9 +44,9 @@
   </div>
 </div>
 
-<div class="box mb-5" *ngIf="indicatorsForm.get('indicators').value.length">
+<div class="box my-5" *ngIf="indicatorsForm.get('indicators').value.length">
   <div class="header">
-    <h5 class="mb-0">Результаты</h5>
+    <h5 class="mb-0">Показатели</h5>
   </div>
   <div class="body">
     <form [formGroup]="indicatorsForm">
@@ -105,5 +105,25 @@
         </div>
       </div>
     </form>
+
+  </div>
+</div>
+
+<div class="box my-5 analysis-result" *ngIf="isAnalysisResultReceived">
+  <div class="header">
+    <h5 class="mb-0">Результаты</h5>
+  </div>
+  <div class="body">
+    <div class="filter-buttons btn-group">
+      <button class="btn"
+              *ngFor="let filterButton of filterButtons"
+              (click)="selectFilter(filterButton)"
+              [ngClass]="{'btn-secondary': filterButton.isSelected, 'btn-outline-secondary': !filterButton.isSelected}">
+        {{filterButton.name}}
+      </button>
+    </div>
+    <div class="filter-results">
+      <h5 class="mt-5 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
+    </div>
   </div>
 </div>

@@ -61,6 +61,7 @@
       <TypeScriptCompile Include="ClientApp\src\app\store\model\comment.model.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\store\model\computed-indicator.model.ts" />
       <None Include="ClientApp\src\app\store\model\medical-state.modelts" />
+      <TypeScriptCompile Include="ClientApp\src\app\store\model\filter-button.model.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\store\model\profile.model.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\store\model\tree-item.ts" />
     </ItemGroup>

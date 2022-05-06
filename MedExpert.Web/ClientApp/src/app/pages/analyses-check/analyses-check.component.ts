@@ -2,11 +2,11 @@ import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Select, Store} from '@ngxs/store';
 import {
-  SaveAnalysisResultAction,
+  GetAnalysisResultByIdAction,
   GetComputedIndicatorsAction,
   GetIndicatorsAction,
-  GetAnalysisResultByIdAction,
-  GetSpecialistsAction
+  GetSpecialistsAction,
+  SaveAnalysisResultAction
 } from '../../store/actions/analyses.actions';
 import {combineLatest, Observable} from 'rxjs';
 import {AnalysesState} from '../../store/state/analyses.state';
@@ -17,6 +17,7 @@ import {conditionalValidator, FormsService, FormStateEnum} from '../../services/
 import {ProfileDTO} from "../../store/model/profile.model";
 import {IComputedIndicator} from "../../store/model/computed-indicator.model";
 import {IAnalysesResult, MedicalStateFilterType} from "../../store/model/analyses-result.model";
+import {IFilterButton} from "../../store/model/filter-button.model";
 
 @Component({
   selector: 'app-analyses-check',
@@ -34,6 +35,9 @@ export class AnalysesCheckComponent implements OnInit {
   public patientFormState = FormStateEnum.pristine;
   public patientFormStateEnum = FormStateEnum;
   public indicatorsFormDirty = false;
+  public readonly filterButtons: IFilterButton[];
+  public isAnalysisResultReceived = false;
+  private analysisId: number;
 
   public readonly patientForm = this.formBuilder.group({
     sex: [null, { validators: Validators.required, updateOn: 'change' }],
@@ -58,11 +62,33 @@ export class AnalysesCheckComponent implements OnInit {
     private readonly formBuilder: FormBuilder,
     private readonly formsService: FormsService,
     private readonly cdr: ChangeDetectorRef
-  ) { }
+  ) {
+    this.filterButtons = [
+      {
+        value: MedicalStateFilterType.Diseases,
+        name: 'Болезни',
+        isSelected: true,
+      },
+      {
+        value: MedicalStateFilterType.CommonAnalysis,
+        name: 'Общие исследования',
+      },
+      {
+        value: MedicalStateFilterType.SpecialAnalysis,
+        name: 'Специальные исследования',
+      },
+      {
+        value: MedicalStateFilterType.CommonTreatment,
+        name: 'Общее лечение',
+      },
+      {
+        value: MedicalStateFilterType.SpecialTreatment,
+        name: 'Специальное лечение',
+      },
+    ];
+  }
 
   public ngOnInit(): void {
-    console.log(this);
-
     this.indicatorsForm.valueChanges
       .subscribe(() => {
         this.formsService.updateTreeValidity(this.indicatorsForm);
@@ -70,6 +96,7 @@ export class AnalysesCheckComponent implements OnInit {
 
     this.indicators$
       .pipe(tap(({items}) => {
+        if (!items || !items.length) return;
         this.indicatorsForm.setControl('indicators', this.formBuilder.array(items.map(item => {
           return this.formBuilder.group({
             item: [item],
@@ -91,6 +118,7 @@ export class AnalysesCheckComponent implements OnInit {
       .subscribe();
 
     this.computedIndicators$.subscribe(computedIndicators => {
+      if (!computedIndicators || !computedIndicators.length) return;
       const indicatorFormControls = (this.indicatorsForm.get('indicators') as FormArray).controls;
       computedIndicators.forEach(computedIndicator => {
         // find the form group where computed indicator input is located
@@ -102,10 +130,13 @@ export class AnalysesCheckComponent implements OnInit {
 
     this.analysisId$.subscribe((analysisId) => {
       if (!analysisId) return;
-      this.getResultsByAnalysisId(analysisId);
-    })
+      this.analysisId = analysisId;
+      this.getAnalysisResult();
+    });
 
     this.analysisResult$.subscribe(analysesResult => {
+      if (!analysesResult) return;
+      this.isAnalysisResultReceived = true;
       console.log('Analyses Result received', analysesResult);
       // TODO implement displaying results
     });
@@ -161,10 +192,9 @@ export class AnalysesCheckComponent implements OnInit {
     this.store.dispatch(new SaveAnalysisResultAction(profile, indicators.items, specialistIds));
   }
 
-  public getResultsByAnalysisId(analysisId: number) {
-    // TODO set current filter to MedicalStateFilterType.Diseases (that's the default value for filter type)
+  public getAnalysisResult() {
     const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
-    this.store.dispatch(new GetAnalysisResultByIdAction(analysisId, MedicalStateFilterType.Diseases, specialistIds));
+    this.store.dispatch(new GetAnalysisResultByIdAction(this.analysisId, this.selectedFilterButton.value, specialistIds));
   }
 
   public getComputedIndicators(): void {
@@ -190,6 +220,10 @@ export class AnalysesCheckComponent implements OnInit {
     return this.patientFormState & this.patientFormStateEnum.changing;
   }
 
+  get selectedFilterButton(): IFilterButton {
+    return this.filterButtons.find(filterButton => filterButton.isSelected);
+  }
+
   public hasError(name: string): boolean {
     return this.formsService.hasError(this.patientForm, name);
   }
@@ -204,5 +238,13 @@ export class AnalysesCheckComponent implements OnInit {
     if (isDependency) {
       this.getComputedIndicators();
     }
+  }
+
+  public selectFilter(selectedButton: IFilterButton) {
+    this.filterButtons.forEach(filterButton => {
+      filterButton.isSelected = false;
+    });
+    selectedButton.isSelected = true;
+    this.getAnalysisResult();
   }
 }
