@@ -49,7 +49,7 @@ export class AnalysesCheckComponent implements OnInit {
     }),
     specialists: [null, {
       validators: [Validators.required],
-      updateOn: 'submit',
+      updateOn: 'change',
     }],
   })
 
