@@ -47,7 +47,10 @@ export class AnalysesCheckComponent implements OnInit {
     indicators: this.formBuilder.array([], {
       updateOn: 'change'
     }),
-    specialists: []
+    specialists: [null, {
+      validators: [Validators.required],
+      updateOn: 'submit',
+    }],
   })
 
   constructor(
@@ -83,7 +86,7 @@ export class AnalysesCheckComponent implements OnInit {
           })
         })));
 
-        this.indicatorsForm.markAllAsTouched();
+        this.indicatorsForm.get('indicators').markAllAsTouched();
       }))
       .subscribe();
 
