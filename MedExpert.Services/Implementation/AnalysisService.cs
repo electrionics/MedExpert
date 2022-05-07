@@ -110,24 +110,26 @@ namespace MedExpert.Services.Implementation
                 throw new InvalidDataException("Анализ еще не рассчитан.");
             }
             
-            var filteredAnalysisSymptoms = _dataContext.Set<AnalysisSymptom>()
+            var filteredAnalysisSymptoms = await _dataContext.Set<AnalysisSymptom>()
                 .Include(x => x.Symptom)
                 .ThenInclude(x => x.SymptomIndicatorDeviationLevels.Where(y => !y.Indicator.InAnalysis))
                 .ThenInclude(x => x.Indicator)
                 .Where(x =>
                     x.AnalysisId == analysisId &&
                     specialistIds.Contains(x.Symptom.SpecialistId) &&
-                    x.Symptom.CategoryId == categoryId);
-            var matchedIndicators = _dataContext.Set<AnalysisSymptomIndicator>()
-                .Where(x => x.AnalysisId == analysisId);
+                    x.Symptom.CategoryId == categoryId)
+                .ToListAsync();
+            var matchedIndicators = await _dataContext.Set<AnalysisSymptomIndicator>()
+                .Where(x => x.AnalysisId == analysisId)
+                .ToListAsync();
 
-            var filteredAnalysisSymptomsWithIndicators = await filteredAnalysisSymptoms.GroupJoin(matchedIndicators,
+            var filteredAnalysisSymptomsWithIndicators = filteredAnalysisSymptoms.GroupJoin(matchedIndicators,
                 (ansy) => new {ansy.AnalysisId, ansy.SymptomId},
                 (ansyin) => new {ansyin.AnalysisId, ansyin.SymptomId}, (analysisSymptom, indicators) => new
                 {
                     AnalysisSymptom = analysisSymptom,
                     MatchedIndicatorIds = indicators.Select(x => x.IndicatorId).ToHashSet()
-                }).ToListAsync();
+                }).ToList();
 
             foreach (var smi in filteredAnalysisSymptomsWithIndicators)
             {

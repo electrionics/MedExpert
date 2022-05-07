@@ -258,57 +258,65 @@ namespace MedExpert.Web.Controllers
         [ApiRoute("Analysis/FilterResults")]
         public async Task<AnalysisResultModel> FilterResults([FromBody] AnalysisResultFilterModel model)
         {
-            string categoryName;
-            string specialistLookupName = null;
-            switch (model.Filter)
+            try
             {
-                case MedicalStateFilter.Diseases:
-                    categoryName = "Illness";
-                    break;
-                case MedicalStateFilter.CommonAnalysis:
-                    categoryName = "Analysis";
-                    specialistLookupName = "CommonAnalysisSpecialist";
-                    break;
-                case MedicalStateFilter.SpecialAnalysis:
-                    categoryName = "Analysis";
-                    break;
-                case MedicalStateFilter.CommonTreatment:
-                    categoryName = "Treatment";
-                    specialistLookupName = "CommonTreatmentSpecialist";
-                    break;
-                case MedicalStateFilter.SpecialTreatment:
-                    categoryName = "Treatment";
-                    break;
-                default:
-                    throw new ValidationException("Некорректно заданный фильтр.");
+                string categoryName;
+                string specialistLookupName = null;
+                switch (model.Filter)
+                {
+                    case MedicalStateFilter.Diseases:
+                        categoryName = "Illness";
+                        break;
+                    case MedicalStateFilter.CommonAnalysis:
+                        categoryName = "Analysis";
+                        specialistLookupName = "CommonAnalysisSpecialist";
+                        break;
+                    case MedicalStateFilter.SpecialAnalysis:
+                        categoryName = "Analysis";
+                        break;
+                    case MedicalStateFilter.CommonTreatment:
+                        categoryName = "Treatment";
+                        specialistLookupName = "CommonTreatmentSpecialist";
+                        break;
+                    case MedicalStateFilter.SpecialTreatment:
+                        categoryName = "Treatment";
+                        break;
+                    default:
+                        throw new ValidationException("Некорректно заданный фильтр.");
+                }
+
+                if (specialistLookupName != null)
+                {
+                    var lookup = await _lookupService.GetByName(specialistLookupName);
+                    var specialist = await _specialistService.GetSpecialistById(int.Parse(lookup.Value));
+
+                    model.SpecialistIds = new List<int> {specialist.Id};
+                }
+
+                var category = await _symptomCategoryService.GetByName(categoryName);
+
+                var symptomsTree =
+                    await _analysisService.FetchCalculatedAnalysis(model.AnalysisId, model.SpecialistIds, category.Id);
+
+                var commentsList = new List<CommentModel>();
+                var toReturn = new AnalysisResultModel
+                {
+                    AnalysisId = model.AnalysisId,
+                    FoundMedicalStates =
+                        symptomsTree.VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList)),
+                    Comments = commentsList
+                        .OrderBy(x => x.Type)
+                        .ThenBy(x => x.SpecialistId)
+                        .ThenBy(x => x.Name)
+                        .ToList()
+                };
+
+                return toReturn;
             }
-
-            if (specialistLookupName != null)
+            catch (Exception e)
             {
-                var lookup = await _lookupService.GetByName(specialistLookupName);
-                var specialist = await _specialistService.GetSpecialistById(int.Parse(lookup.Value));
-
-                model.SpecialistIds = new List<int> {specialist.Id};
+                throw;
             }
-
-            var category = await _symptomCategoryService.GetByName(categoryName);
-            
-            var symptomsTree = await _analysisService.FetchCalculatedAnalysis(model.AnalysisId, model.SpecialistIds, category.Id);
-            
-            var commentsList = new List<CommentModel>();
-            var toReturn = new AnalysisResultModel
-            {
-                AnalysisId = model.AnalysisId,
-                FoundMedicalStates =
-                    symptomsTree.VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList)),
-                Comments = commentsList
-                    .OrderBy(x => x.Type)
-                    .ThenBy(x => x.SpecialistId)
-                    .ThenBy(x => x.Name)
-                    .ToList()
-            };
-            
-            return toReturn;
         }
         
         private static MedicalStateModel ConvertAnalysisSymptomToModel(AnalysisSymptom analysisSymptom, List<CommentModel> commentsToFill)
@@ -322,17 +330,20 @@ namespace MedExpert.Web.Controllers
 
             var symptomId = analysisSymptom.SymptomId;
             var specialistId = analysisSymptom.Symptom.SpecialistId;
-            
-            commentsToFill.Add(new CommentModel
+
+            if (!string.IsNullOrEmpty(analysisSymptom.Symptom.Comment))
             {
-                SpecialistId = specialistId,
-                SymptomId = symptomId,
-                Name = analysisSymptom.Symptom.Name,
-                Text = analysisSymptom.Symptom.Comment,
-                Type = CommentType.Symptom
-            });
+                commentsToFill.Add(new CommentModel
+                {
+                    SpecialistId = specialistId,
+                    SymptomId = symptomId,
+                    Name = analysisSymptom.Symptom.Name,
+                    Text = analysisSymptom.Symptom.Comment,
+                    Type = CommentType.Symptom
+                });
+            }
             
-            commentsToFill.AddRange(matchedIndicators.Select(x => new CommentModel
+            commentsToFill.AddRange(matchedIndicators.Where(x => string.IsNullOrEmpty(x.Comment)).Select(x => new CommentModel
             {
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
