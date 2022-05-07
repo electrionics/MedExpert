@@ -15,6 +15,8 @@ namespace MedExpert.Domain.Entities
         
         public FormulaType? FormulaType { get; set; }
         
+        public int? Sort { get; set; }
+        
         
         public List<AnalysisIndicator> AnalysisIndicators { get; set; }
         

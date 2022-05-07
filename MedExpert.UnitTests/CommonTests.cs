@@ -14,7 +14,7 @@ namespace MedExpert.UnitTests
         }
 
         [Test]
-        public void TestExpressivenessProject()
+        public void TestSeverityProject()
         {
             var baseVector = new double[] {1, 1, 1};
             var toProjectVector = new double[] {4, 4, 4};

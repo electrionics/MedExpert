@@ -10,7 +10,7 @@ namespace MedExpert.Web.ViewModels.Analysis
         
         public string Name { get; set; }
         
-        public decimal? Expressiveness { get; set; }
+        public decimal? Severity { get; set; }
         
         public List<IndicatorModel> RecommendedAnalyses { get; set; } // can present at each tree node at any level 
     }
