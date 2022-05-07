@@ -93,10 +93,10 @@ namespace MedExpert.Services.Implementation
                 .ToDictionary(x => x.IndicatorId, x => x.DeviationLevelId);
 
             var calculatedTree = matchedSymptomsTree.VisitAndConvert(x =>
-                CalculateExpressiveness(x, analysisIndicatorDict, analysisId, matchedSymptoms));
+                CalculateSeverity(x, analysisIndicatorDict, analysisId, matchedSymptoms));
 
             var filteredCalculatedTree =
-                calculatedTree.GetMatched(x => x.Expressiveness is null or > 0.2m, new HashSet<bool> {true});
+                calculatedTree.GetMatched(x => x.Severity is null or > 0.2m, new HashSet<bool> {true});
             
             return filteredCalculatedTree;
         }
@@ -167,12 +167,12 @@ namespace MedExpert.Services.Implementation
             {0, 0}, {1, 1}, {2, 2}, {3, Math.Sqrt(13)}, {4, Math.Sqrt(27)}, {5, Math.Sqrt(40)}
         };
 
-        private static readonly Dictionary<int, double> BaseExpressivenessForCountOfIndicators = new()
+        private static readonly Dictionary<int, double> BaseSeverityForCountOfIndicators = new()
         {
             {1, 0.4}, {2, 0.5}, {3, 0.6}, {4, 0.6}, {5, 0.6}, {6, 0.6}, {7, 0.7}, {8, 0.7}, {9, 0.8}
         };
 
-        private static AnalysisSymptom CalculateExpressiveness(Symptom symptom,
+        private static AnalysisSymptom CalculateSeverity(Symptom symptom,
             IDictionary<int, int> analysisIndicatorDict, int analysisId,
             IReadOnlyDictionary<int, List<SymptomIndicatorDeviationLevel>> matchedIndicators)
         {
@@ -180,12 +180,12 @@ namespace MedExpert.Services.Implementation
                 .Select(x => new {x.Indicator, x.DeviationLevelId})
                 .ToList();
 
-            double? expressiveness;
+            double? severity;
 
             if (symptomIndicators.Any())
             {
-                var vectorMaxExpressiveness = new double[symptomIndicators.Count];
-                var vectorMinExpressiveness = new double[symptomIndicators.Count];
+                var vectorMaxSeverity = new double[symptomIndicators.Count];
+                var vectorMinSeverity = new double[symptomIndicators.Count];
                 var vectorRequired = new double[symptomIndicators.Count];
                 var vectorAnalysis = new double[symptomIndicators.Count];
 
@@ -204,50 +204,50 @@ namespace MedExpert.Services.Implementation
                     vectorAnalysis[i] = AbsoluteDeviationLevelMeasure[Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
                                             .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id]) 
                                         * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorMaxExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
+                    vectorMaxSeverity[i] = AbsoluteDeviationLevelMeasure[5]
                                                      .MultiplySign(symptomIndicator.DeviationLevelId) 
                                                  * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorMinExpressiveness[i] = AbsoluteDeviationLevelMeasure[5]
+                    vectorMinSeverity[i] = AbsoluteDeviationLevelMeasure[5]
                                                      .MultiplySign(symptomIndicator.DeviationLevelId * -1)
                                                  * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
                 }
 
-                var vectorMaxExpressivenessProjected = vectorRequired.Project(vectorMaxExpressiveness);
-                var vectorMinExpressivenessProjected = vectorRequired.Project(vectorMinExpressiveness);
+                var vectorMaxSeverityProjected = vectorRequired.Project(vectorMaxSeverity);
+                var vectorMinSeverityProjected = vectorRequired.Project(vectorMinSeverity);
                 var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
 
-                var baseExpressiveness =
-                    BaseExpressivenessForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
+                var baseSeverity =
+                    BaseSeverityForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
 
-                if (vectorAnalysisProjected.Subtract(vectorMaxExpressivenessProjected).Distance() <
-                    vectorAnalysisProjected.Subtract(vectorMinExpressivenessProjected).Distance())
+                if (vectorAnalysisProjected.Subtract(vectorMaxSeverityProjected).Distance() <
+                    vectorAnalysisProjected.Subtract(vectorMinSeverityProjected).Distance())
                 {
-                    var baseDistance = vectorMaxExpressivenessProjected.Distance() - vectorRequired.Distance();
+                    var baseDistance = vectorMaxSeverityProjected.Distance() - vectorRequired.Distance();
                     var resultDistance =
-                        vectorMaxExpressivenessProjected.Distance() - vectorAnalysisProjected.Distance();
+                        vectorMaxSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
 
-                    expressiveness = baseExpressiveness +
-                                     (1 - baseExpressiveness) * (baseDistance - resultDistance) / baseDistance;
+                    severity = baseSeverity +
+                                     (1 - baseSeverity) * (baseDistance - resultDistance) / baseDistance;
                 }
                 else
                 {
-                    var baseDistance = vectorMinExpressivenessProjected.Distance() - vectorRequired.Distance();
+                    var baseDistance = vectorMinSeverityProjected.Distance() - vectorRequired.Distance();
                     var resultDistance =
-                        vectorMinExpressivenessProjected.Distance() - vectorAnalysisProjected.Distance();
+                        vectorMinSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
 
-                    expressiveness = baseExpressiveness * (baseDistance - resultDistance) / baseDistance;
+                    severity = baseSeverity * (baseDistance - resultDistance) / baseDistance;
                 }
             }
             else
             {
-                expressiveness = null;
+                severity = null;
             }
 
             return new AnalysisSymptom 
             {
                 Symptom = symptom,
                 SymptomId = symptom.Id, 
-                Expressiveness = (decimal?) expressiveness?.RoundTo(3), 
+                Severity = (decimal?) severity?.RoundTo(3), 
                 AnalysisId = analysisId,
                 MatchedIndicatorIds = matchedIndicators[symptom.Id]
                     .Select(x => x.IndicatorId)

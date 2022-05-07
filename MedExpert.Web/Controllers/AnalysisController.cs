@@ -221,7 +221,7 @@ namespace MedExpert.Web.Controllers
                     {
                         AnalysisId = analysis.Id,
                         SymptomId = x.SymptomId,
-                        Expressiveness = x.Expressiveness
+                        Severity = x.Severity
                     }).ToList();
                 var toInsertMatchedIndicators = symptomsList.SelectMany(x => x.MatchedIndicatorIds.Select(y =>
                     new AnalysisSymptomIndicator
@@ -356,7 +356,7 @@ namespace MedExpert.Web.Controllers
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
                 Name = analysisSymptom.Symptom.Name,
-                Expressiveness = analysisSymptom.Expressiveness,
+                Severity = analysisSymptom.Severity,
                 RecommendedAnalyses = 
                     recommendedIndicators.Select(x => new IndicatorModel
                     {
@@ -436,7 +436,7 @@ namespace MedExpert.Web.Controllers
                         {
                             SymptomId = 1, 
                             Name = "Воспалительные заболевания носа, горла и уха", 
-                            Expressiveness = 0.8m, 
+                            Severity = 0.8m, 
                             RecommendedAnalyses = new List<IndicatorModel>
                             {
                                 new() {Id = 1, ShortName = "CHOLES", Name = "CHOLES"},
@@ -452,7 +452,7 @@ namespace MedExpert.Web.Controllers
                                 {
                                     SymptomId = 2, 
                                     Name = "Ринит", 
-                                    Expressiveness = 0.76m, 
+                                    Severity = 0.76m, 
                                     RecommendedAnalyses = new List<IndicatorModel>
                                     {
                                         new() {Id = 4, ShortName = "Hb", Name = "Гемоглобин"},
@@ -468,7 +468,7 @@ namespace MedExpert.Web.Controllers
                                         {
                                             SymptomId = 3, 
                                             Name = "Ринит не аллергический", 
-                                            Expressiveness = 0.88m, RecommendedAnalyses =
+                                            Severity = 0.88m, RecommendedAnalyses =
                                             new List<IndicatorModel>
                                             {
                                                 new() {Id = 6, ShortName = "RBC", Name = "RBC"},
@@ -483,7 +483,7 @@ namespace MedExpert.Web.Controllers
                                         {
                                             SymptomId = 4, 
                                             Name = "Хронический ринит", 
-                                            Expressiveness = 0.79m
+                                            Severity = 0.79m
                                         }
                                     }
                                 }
@@ -494,7 +494,7 @@ namespace MedExpert.Web.Controllers
                     {
                         Item = new()
                         {
-                            SymptomId = 5, Name = "Аллергические заболевания", Expressiveness = 0.56m, RecommendedAnalyses =
+                            SymptomId = 5, Name = "Аллергические заболевания", Severity = 0.56m, RecommendedAnalyses =
                             new List<IndicatorModel>
                             {
                                 new() {Id = 8, ShortName = "AAA", Name = "AAA"},
@@ -508,7 +508,7 @@ namespace MedExpert.Web.Controllers
                             {
                                 Item = new()
                                 {
-                                    SymptomId = 6, Name = "Респираторные аллергические заболевания", Expressiveness = 0.6m
+                                    SymptomId = 6, Name = "Респираторные аллергические заболевания", Severity = 0.6m
                                 },
                                 Children = new List<TreeItem<MedicalStateModel>>
                                 {
@@ -516,7 +516,7 @@ namespace MedExpert.Web.Controllers
                                     {
                                         Item = new()
                                         {
-                                            SymptomId = 7, Name = "Астма", Expressiveness = 0.7m
+                                            SymptomId = 7, Name = "Астма", Severity = 0.7m
                                         },
                                         Children = new List<TreeItem<MedicalStateModel>>
                                         {
@@ -524,7 +524,7 @@ namespace MedExpert.Web.Controllers
                                             {
                                                 Item = new()
                                                 {
-                                                    SymptomId = 8, Name = "Варианты астмы", Expressiveness = 0.4m
+                                                    SymptomId = 8, Name = "Варианты астмы", Severity = 0.4m
                                                 },
                                                 Children = new List<TreeItem<MedicalStateModel>>
                                                 {
@@ -532,7 +532,7 @@ namespace MedExpert.Web.Controllers
                                                     {
                                                         Item = new()
                                                         {
-                                                            SymptomId = 9, Name = "Аллергическая астма", Expressiveness = 0.48m
+                                                            SymptomId = 9, Name = "Аллергическая астма", Severity = 0.48m
                                                         },
                                                         Children = new List<TreeItem<MedicalStateModel>>
                                                         {
@@ -540,7 +540,7 @@ namespace MedExpert.Web.Controllers
                                                             {
                                                                 Item = new()
                                                                 {
-                                                                    SymptomId = 10, Name = "Обострение алергической астмы", Expressiveness = 0.95m
+                                                                    SymptomId = 10, Name = "Обострение алергической астмы", Severity = 0.95m
                                                                 }
                                                             }
                                                         }
@@ -555,7 +555,7 @@ namespace MedExpert.Web.Controllers
                             {
                                 Item = new()
                                 {
-                                    SymptomId = 3, Name = "Анафилаксия", Expressiveness = 0.55m
+                                    SymptomId = 3, Name = "Анафилаксия", Severity = 0.55m
                                 }
                             }
                         }

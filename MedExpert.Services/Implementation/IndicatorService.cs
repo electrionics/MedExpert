@@ -28,7 +28,7 @@ namespace MedExpert.Services.Implementation
 
         public async Task<List<Indicator>> GetAnalysisIndicators()
         {
-            return await _dataContext.Set<Indicator>().Where(x => x.InAnalysis).ToListAsync();
+            return await _dataContext.Set<Indicator>().Where(x => x.InAnalysis).OrderBy(x => x.Sort).ToListAsync();
         }
 
         public async Task<List<string>> GetShortNamesNotExists(List<string> shortNames)
