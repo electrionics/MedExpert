@@ -27,10 +27,10 @@ export class AnalysesCheckComponent implements OnInit {
   public indicatorsFormDirty = false;
 
   public readonly patientForm = this.formBuilder.group({
-    sex: [null, { validators: Validators.required, updateOn: 'blur' }],
+    sex: [null, { validators: Validators.required, updateOn: 'change' }],
     age: [null, {
       validators: [Validators.required, Validators.min(0), Validators.max(100)],
-      updateOn: 'blur'
+      updateOn: 'change'
     }]
   })
 
