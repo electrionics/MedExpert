@@ -10,8 +10,8 @@ import {
 } from '../../store/actions/analyses.actions';
 import {combineLatest, Observable} from 'rxjs';
 import {AnalysesState} from '../../store/state/analyses.state';
-import {ISelectOptions, SelectOptionsDTO} from '../../store/model/select-option.model';
-import {IIndicators, IndicatorsDTO} from '../../store/model/indicator.model';
+import {ISelectOption, ISelectOptions, SelectOptionsDTO} from '../../store/model/select-option.model';
+import {IIndicator, IIndicators, IndicatorsDTO} from '../../store/model/indicator.model';
 import {debounceTime, filter, switchMap, tap} from 'rxjs/operators';
 import {conditionalValidator, FormsService, FormStateEnum} from '../../services/forms.service';
 import {ProfileDTO} from "../../store/model/profile.model";
@@ -184,28 +184,35 @@ export class AnalysesCheckComponent implements OnInit {
       return;
     }
 
-    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
-    const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
+    const specialistIds = this.specialists.map(x => x.id);
     const profile = new ProfileDTO().fromForm(this.patientForm);
 
     // send request to retrieve analysis id
-    this.store.dispatch(new SaveAnalysisResultAction(profile, indicators.items, specialistIds));
+    this.store.dispatch(new SaveAnalysisResultAction(profile, this.indicators, specialistIds));
   }
 
   public getAnalysisResult() {
-    const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
+    const specialistIds = this.specialists.map(x => x.id);
     this.store.dispatch(new GetAnalysisResultByIdAction(this.analysisId, this.selectedFilterButton.value, specialistIds));
   }
 
   public getComputedIndicators(): void {
     // generate proper body for ComputeIndicators request
-    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
-    const indicatorValues: IComputedIndicator[] = indicators.items.map(indicator => {
+    const indicatorValues: IComputedIndicator[] = this.indicators.map(indicator => {
       return {id: indicator.id, value: indicator.value}
     });
     // send the request to server
     this.store.dispatch(new GetComputedIndicatorsAction(indicatorValues))
       .subscribe();
+  }
+
+  get specialists() : ISelectOption[] {
+    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items;
+  }
+
+  get indicators(): IIndicator[] {
+    // TODO move all methods properties and getters according to style guide
+    return new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators')).items;
   }
 
   get showSaveButton() {
@@ -229,9 +236,9 @@ export class AnalysesCheckComponent implements OnInit {
   }
 
   public indicatorValueChanged(changedIndicatorId: number, changedIndicatorValue: number) {
-    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
+    const indicators = this.indicators;
     // check if changed indicator is a dependency for any of calculated indicators
-    const isDependency = indicators.items.some(indicator => {
+    const isDependency = indicators.some(indicator => {
       return indicator.dependencyIndicatorIds && indicator.dependencyIndicatorIds.includes(changedIndicatorId);
     });
     // only if changed indicator is a dependency, send request to server to calculate computed indicators
