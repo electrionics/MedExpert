@@ -25,6 +25,8 @@ import {IFilterButton} from "../../store/model/filter-button.model";
   styleUrls: ['./analyses-check.component.css']
 })
 export class AnalysesCheckComponent implements OnInit {
+  private analysisId: number;
+
   @Select(AnalysesState.GetSexes) public readonly sexes$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetSpecialists) public readonly specialists$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetIndicators) private readonly indicators$: Observable<IIndicators>;
@@ -37,7 +39,6 @@ export class AnalysesCheckComponent implements OnInit {
   public indicatorsFormDirty = false;
   public readonly filterButtons: IFilterButton[];
   public isAnalysisResultReceived = false;
-  private analysisId: number;
 
   public readonly patientForm = this.formBuilder.group({
     sex: [null, { validators: Validators.required, updateOn: 'change' }],
@@ -56,6 +57,31 @@ export class AnalysesCheckComponent implements OnInit {
       updateOn: 'change',
     }],
   })
+
+  get specialists() : ISelectOption[] {
+    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items;
+  }
+
+  get indicators(): IIndicator[] {
+    // TODO move all methods properties and getters according to style guide
+    return new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators')).items;
+  }
+
+  get showSaveButton() {
+    return this.patientFormState & this.patientFormStateEnum.pristine;
+  }
+
+  get showChangeButton() {
+    return this.patientFormState & this.patientFormStateEnum.saved;
+  }
+
+  get showResaveButton() {
+    return this.patientFormState & this.patientFormStateEnum.changing;
+  }
+
+  get selectedFilterButton(): IFilterButton {
+    return this.filterButtons.find(filterButton => filterButton.isSelected);
+  }
 
   constructor(
     private readonly store: Store,
@@ -204,31 +230,6 @@ export class AnalysesCheckComponent implements OnInit {
     // send the request to server
     this.store.dispatch(new GetComputedIndicatorsAction(indicatorValues))
       .subscribe();
-  }
-
-  get specialists() : ISelectOption[] {
-    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items;
-  }
-
-  get indicators(): IIndicator[] {
-    // TODO move all methods properties and getters according to style guide
-    return new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators')).items;
-  }
-
-  get showSaveButton() {
-    return this.patientFormState & this.patientFormStateEnum.pristine;
-  }
-
-  get showChangeButton() {
-    return this.patientFormState & this.patientFormStateEnum.saved;
-  }
-
-  get showResaveButton() {
-    return this.patientFormState & this.patientFormStateEnum.changing;
-  }
-
-  get selectedFilterButton(): IFilterButton {
-    return this.filterButtons.find(filterButton => filterButton.isSelected);
   }
 
   public hasError(name: string): boolean {
