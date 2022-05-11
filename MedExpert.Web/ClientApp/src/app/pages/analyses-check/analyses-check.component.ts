@@ -10,8 +10,8 @@ import {
 } from '../../store/actions/analyses.actions';
 import {combineLatest, Observable} from 'rxjs';
 import {AnalysesState} from '../../store/state/analyses.state';
-import {ISelectOptions, SelectOptionsDTO} from '../../store/model/select-option.model';
-import {IIndicators, IndicatorsDTO} from '../../store/model/indicator.model';
+import {ISelectOption, ISelectOptions, SelectOptionsDTO} from '../../store/model/select-option.model';
+import {IIndicator, IIndicators, IndicatorsDTO} from '../../store/model/indicator.model';
 import {debounceTime, filter, switchMap, tap} from 'rxjs/operators';
 import {conditionalValidator, FormsService, FormStateEnum} from '../../services/forms.service';
 import {ProfileDTO} from "../../store/model/profile.model";
@@ -25,6 +25,8 @@ import {IFilterButton} from "../../store/model/filter-button.model";
   styleUrls: ['./analyses-check.component.css']
 })
 export class AnalysesCheckComponent implements OnInit {
+  private analysisId: number;
+
   @Select(AnalysesState.GetSexes) public readonly sexes$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetSpecialists) public readonly specialists$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetIndicators) private readonly indicators$: Observable<IIndicators>;
@@ -37,7 +39,6 @@ export class AnalysesCheckComponent implements OnInit {
   public indicatorsFormDirty = false;
   public readonly filterButtons: IFilterButton[];
   public isAnalysisResultReceived = false;
-  private analysisId: number;
 
   public readonly patientForm = this.formBuilder.group({
     sex: [null, { validators: Validators.required, updateOn: 'change' }],
@@ -56,6 +57,31 @@ export class AnalysesCheckComponent implements OnInit {
       updateOn: 'change',
     }],
   })
+
+  get specialists() : ISelectOption[] {
+    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items;
+  }
+
+  get indicators(): IIndicator[] {
+    // TODO move all methods properties and getters according to style guide
+    return new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators')).items;
+  }
+
+  get showSaveButton() {
+    return this.patientFormState & this.patientFormStateEnum.pristine;
+  }
+
+  get showChangeButton() {
+    return this.patientFormState & this.patientFormStateEnum.saved;
+  }
+
+  get showResaveButton() {
+    return this.patientFormState & this.patientFormStateEnum.changing;
+  }
+
+  get selectedFilterButton(): IFilterButton {
+    return this.filterButtons.find(filterButton => filterButton.isSelected);
+  }
 
   constructor(
     private readonly store: Store,
@@ -184,23 +210,21 @@ export class AnalysesCheckComponent implements OnInit {
       return;
     }
 
-    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
-    const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
+    const specialistIds = this.specialists.map(x => x.id);
     const profile = new ProfileDTO().fromForm(this.patientForm);
 
     // send request to retrieve analysis id
-    this.store.dispatch(new SaveAnalysisResultAction(profile, indicators.items, specialistIds));
+    this.store.dispatch(new SaveAnalysisResultAction(profile, this.indicators, specialistIds));
   }
 
   public getAnalysisResult() {
-    const specialistIds = new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items.map(x => x.id);
+    const specialistIds = this.specialists.map(x => x.id);
     this.store.dispatch(new GetAnalysisResultByIdAction(this.analysisId, this.selectedFilterButton.value, specialistIds));
   }
 
   public getComputedIndicators(): void {
     // generate proper body for ComputeIndicators request
-    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
-    const indicatorValues: IComputedIndicator[] = indicators.items.map(indicator => {
+    const indicatorValues: IComputedIndicator[] = this.indicators.map(indicator => {
       return {id: indicator.id, value: indicator.value}
     });
     // send the request to server
@@ -208,30 +232,14 @@ export class AnalysesCheckComponent implements OnInit {
       .subscribe();
   }
 
-  get showSaveButton() {
-    return this.patientFormState & this.patientFormStateEnum.pristine;
-  }
-
-  get showChangeButton() {
-    return this.patientFormState & this.patientFormStateEnum.saved;
-  }
-
-  get showResaveButton() {
-    return this.patientFormState & this.patientFormStateEnum.changing;
-  }
-
-  get selectedFilterButton(): IFilterButton {
-    return this.filterButtons.find(filterButton => filterButton.isSelected);
-  }
-
   public hasError(name: string): boolean {
     return this.formsService.hasError(this.patientForm, name);
   }
 
   public indicatorValueChanged(changedIndicatorId: number, changedIndicatorValue: number) {
-    const indicators = new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators'));
+    const indicators = this.indicators;
     // check if changed indicator is a dependency for any of calculated indicators
-    const isDependency = indicators.items.some(indicator => {
+    const isDependency = indicators.some(indicator => {
       return indicator.dependencyIndicatorIds && indicator.dependencyIndicatorIds.includes(changedIndicatorId);
     });
     // only if changed indicator is a dependency, send request to server to calculate computed indicators
