@@ -39,6 +39,7 @@ export class AnalysesCheckComponent implements OnInit {
   public indicatorsFormDirty = false;
   public readonly filterButtons: IFilterButton[];
   public isAnalysisResultReceived = false;
+  public allSpecialists: ISelectOption[];
 
   public readonly patientForm = this.formBuilder.group({
     sex: [null, { validators: Validators.required, updateOn: 'change' }],
@@ -167,6 +168,10 @@ export class AnalysesCheckComponent implements OnInit {
       // TODO implement displaying results
     });
 
+    this.specialists$.subscribe(specialists => {
+      this.allSpecialists = specialists.items;
+    });
+
     combineLatest([
       this.patientForm.get('sex').valueChanges,
       this.patientForm.get('age').valueChanges.pipe(debounceTime(300))
@@ -254,5 +259,11 @@ export class AnalysesCheckComponent implements OnInit {
     });
     selectedButton.isSelected = true;
     this.getAnalysisResult();
+  }
+
+  public selectAllSpecialists() {
+    this.indicatorsForm.patchValue({
+      specialists: this.allSpecialists,
+    });
   }
 }

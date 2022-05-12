@@ -90,9 +90,9 @@
         <label for="specialists">Специалисты</label>
         <div class="specialists-input-container">
           <ng-select id="specialists" formControlName="specialists" class="form-select specialists-input" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
-            <ng-option *ngFor="let specialist of (specialists$ | async).items" [value]="specialist">{{specialist.name}}</ng-option>
+            <ng-option *ngFor="let specialist of allSpecialists" [value]="specialist">{{specialist.name}}</ng-option>
           </ng-select>
-          <button class="specialists-select-all-button btn btn-">
+          <button class="specialists-select-all-button btn" (click)="selectAllSpecialists()">
             <i class="bi bi-check-all"></i>
             <span>ВСЕ</span>
           </button>
