@@ -21,6 +21,8 @@ namespace MedExpert.Web.Controllers
     public class AnalysisController:ControllerBase
     {
         private static readonly List<IComputedIndicator> ComputedIndicators = new() { new ELR(), new EMR(), new LMR(), new MLR(), new NLR(), new PLR(), new SII()};
+        private const string CommonTreatmentSpecialistLookupName = "CommonTreatmentSpecialist";
+        private const string CommonAnalysisSpecialistLookupName = "CommonAnalysisSpecialist";
         
         private readonly IIndicatorService _indicatorService;
         private readonly IReferenceIntervalService _referenceIntervalService;
@@ -91,15 +93,24 @@ namespace MedExpert.Web.Controllers
         
         #endregion
 
-        #region Specialists
+        #region Public Specialists
 
         [HttpPost]
         [ApiRoute("Analysis/Specialists")]
         public async Task<List<LookupModel>> Specialists([FromBody] ProfileModel model)
         {
             var specialists = await _specialistService.GetSpecialistsByCriteria(model.Sex);
+            
+            var lookup1 = await _lookupService.GetByName(CommonTreatmentSpecialistLookupName);
+            var lookup2 = await _lookupService.GetByName(CommonAnalysisSpecialistLookupName);
+            var specialist1 = await _specialistService.GetSpecialistById(int.Parse(lookup1.Value));
+            var specialist2 = await _specialistService.GetSpecialistById(int.Parse(lookup2.Value));
 
-            var result = specialists.Select(x => new LookupModel
+            // ReSharper disable once ConvertToLocalFunction
+            Func<Specialist, bool> excludeCommonSpecialists =
+                x => x.Id != specialist1?.Id && x.Id != specialist2?.Id;
+            
+            var result = specialists.Where(excludeCommonSpecialists).Select(x => new LookupModel
             {
                 Id = x.Id,
                 Name = x.Name
@@ -269,14 +280,14 @@ namespace MedExpert.Web.Controllers
                         break;
                     case MedicalStateFilter.CommonAnalysis:
                         categoryName = "Analysis";
-                        specialistLookupName = "CommonAnalysisSpecialist";
+                        specialistLookupName = CommonAnalysisSpecialistLookupName;
                         break;
                     case MedicalStateFilter.SpecialAnalysis:
                         categoryName = "Analysis";
                         break;
                     case MedicalStateFilter.CommonTreatment:
                         categoryName = "Treatment";
-                        specialistLookupName = "CommonTreatmentSpecialist";
+                        specialistLookupName = CommonTreatmentSpecialistLookupName;
                         break;
                     case MedicalStateFilter.SpecialTreatment:
                         categoryName = "Treatment";
