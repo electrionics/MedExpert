@@ -86,14 +86,16 @@
 
       <hr />
 
-      <div class="row d-flex mb-3">
-        <div class="col-2 d-flex align-items-center justify-content-end pr-3 text-right">
-          <label class="mb-0" for="specialists">Специалисты</label>
-        </div>
-        <div class="col-10">
-          <ng-select id="specialists" formControlName="specialists" class="form-select" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
+      <div class="mb-3">
+        <label for="specialists">Специалисты</label>
+        <div class="specialists-input-container">
+          <ng-select id="specialists" formControlName="specialists" class="form-select specialists-input" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
             <ng-option *ngFor="let specialist of (specialists$ | async).items" [value]="specialist">{{specialist.name}}</ng-option>
           </ng-select>
+          <button class="specialists-select-all-button btn btn-">
+            <i class="bi bi-check-all"></i>
+            <span>ВСЕ</span>
+          </button>
         </div>
       </div>
 

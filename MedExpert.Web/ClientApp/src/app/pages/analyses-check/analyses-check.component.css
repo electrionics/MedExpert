@@ -40,3 +40,31 @@
 .indicators td:first-child {
   width: 100%;
 }
+
+.specialists-input-container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+}
+
+.specialists-input {
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  margin-bottom: 0;
+}
+
+.specialists-select-all-button {
+  display: flex;
+  border: 1px solid #ccc;
+  padding-top: 0;
+  padding-bottom: 0;
+  background-color: #f3f3f3;
+  margin-left: 5px;
+}
+
+.specialists-select-all-button > * {
+  align-self: center;
+}
