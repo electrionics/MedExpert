@@ -20,7 +20,7 @@ namespace MedExpert.Web.Controllers
     [ApiController]
     public class AnalysisController:ControllerBase
     {
-        private static readonly List<IComputedIndicator> ComputedIndicators = new() { new ELR(), new EMR(), new LMR(), new MLR(), new NLR(), new PLR(), new SII()};
+        private static readonly List<IComputedIndicator> ComputedIndicators = new() { new ELR(), new EMR(), new LMR(), new MLR(), new NLR(), new PLR(), new PNR(), new BLR(), new SII()};
         private const string CommonTreatmentSpecialistLookupName = "CommonTreatmentSpecialist";
         private const string CommonAnalysisSpecialistLookupName = "CommonAnalysisSpecialist";
         

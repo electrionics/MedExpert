@@ -3,18 +3,19 @@ using MedExpert.Services.Interfaces;
 
 namespace MedExpert.Services.Implementation.ComputedIndicators
 {
-    // ReSharper disable once InconsistentNaming
-    public class PLR:IComputedIndicator
+    public class PNR : IComputedIndicator
     {
-        public string ShortName => "PLR";
-        public List<string> DependentShortNames => new() {"PLT", "L"};
+        public string ShortName => "PNR";
+        public List<string> DependentShortNames => new() {"PLT", "N"};
+
         public decimal Compute(Dictionary<string, decimal> indicatorValues)
         {
-            var l = indicatorValues["L"];
+            var l = indicatorValues["N"];
             if (l == 0)
             {
                 l = 0.01m;
             }
+
             return indicatorValues["PLT"] / l;
         }
     }

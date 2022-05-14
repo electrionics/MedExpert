@@ -3,11 +3,10 @@ using MedExpert.Services.Interfaces;
 
 namespace MedExpert.Services.Implementation.ComputedIndicators
 {
-    // ReSharper disable once InconsistentNaming
-    public class PLR:IComputedIndicator
+    public class BLR:IComputedIndicator
     {
-        public string ShortName => "PLR";
-        public List<string> DependentShortNames => new() {"PLT", "L"};
+        public string ShortName => "BLR";
+        public List<string> DependentShortNames => new() {"B", "L"};
         public decimal Compute(Dictionary<string, decimal> indicatorValues)
         {
             var l = indicatorValues["L"];
@@ -15,7 +14,7 @@ namespace MedExpert.Services.Implementation.ComputedIndicators
             {
                 l = 0.01m;
             }
-            return indicatorValues["PLT"] / l;
+            return indicatorValues["B"] / l;
         }
     }
 }
