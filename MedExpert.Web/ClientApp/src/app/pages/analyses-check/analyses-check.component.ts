@@ -266,4 +266,36 @@ export class AnalysesCheckComponent implements OnInit {
       specialists: this.allSpecialists,
     });
   }
+
+  // Easter egg for easier testing
+  // Populates values of all unset indicators, their mins and maxes.
+  // Activates on Shift + click on "Показатели" title
+  public fillIndicatorsWithTestData(event: MouseEvent) {
+
+    if (event.shiftKey) {
+      const indicatorsForm = this.indicatorsForm.get('indicators') as FormArray;
+      const indicatorFormControls = indicatorsForm.controls;
+      for (let i = 1; i < indicatorFormControls.length; i++) {
+        let indicatorFormGroup = indicatorFormControls[i] as FormGroup;
+        let isComputed = indicatorFormGroup.controls.item.value.dependencyIndicatorIds && indicatorFormGroup.controls.item.value.dependencyIndicatorIds.length;
+        // populate result value only if it's not a computed indicator
+        if (!isComputed) {
+          indicatorFormGroup.controls.result.setValue(i);
+        }
+        const minValue = indicatorFormGroup.controls.min.value;
+        const maxValue = indicatorFormGroup.controls.max.value;
+        // populate minValue if it's not set
+        if (!minValue && minValue != 0) {
+          indicatorFormGroup.controls.min.setValue(i * 2);
+        }
+        // populate maxValue if it's not set
+        if (!maxValue && maxValue != 0) {
+          indicatorFormGroup.controls.max.setValue(i * 3);
+        }
+      }
+      indicatorsForm.markAllAsTouched();
+      // calculate indicators
+      this.getComputedIndicators();
+    }
+  }
 }

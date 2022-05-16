@@ -46,7 +46,7 @@
 
 <div class="box my-5" *ngIf="indicatorsForm.get('indicators').value.length">
   <div class="header">
-    <h5 class="mb-0">Показатели</h5>
+    <h5 class="mb-0" (click)="fillIndicatorsWithTestData($event)">Показатели</h5>
   </div>
   <div class="body">
     <form [formGroup]="indicatorsForm">
