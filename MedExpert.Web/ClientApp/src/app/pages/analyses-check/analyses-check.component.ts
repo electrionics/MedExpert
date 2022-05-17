@@ -40,6 +40,7 @@ export class AnalysesCheckComponent implements OnInit {
   public readonly filterButtons: IFilterButton[];
   public isAnalysisResultReceived = false;
   public allSpecialists: ISelectOption[];
+  public analysesResult: IAnalysesResult;
 
   public readonly patientForm = this.formBuilder.group({
     sex: [null, { validators: Validators.required, updateOn: 'change' }],
@@ -164,8 +165,7 @@ export class AnalysesCheckComponent implements OnInit {
     this.analysisResult$.subscribe(analysesResult => {
       if (!analysesResult) return;
       this.isAnalysisResultReceived = true;
-      console.log('Analyses Result received', analysesResult);
-      // TODO implement displaying results
+      this.analysesResult = analysesResult;
     });
 
     this.specialists$.subscribe(specialists => {

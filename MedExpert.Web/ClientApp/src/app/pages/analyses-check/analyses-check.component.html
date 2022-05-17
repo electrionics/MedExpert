@@ -127,5 +127,8 @@
     <div class="filter-results">
       <h5 class="mt-5 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
     </div>
+    <div>
+      <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates" [medicalState]="medicalState"></app-medical-state-tree>
+    </div>
   </div>
 </div>
