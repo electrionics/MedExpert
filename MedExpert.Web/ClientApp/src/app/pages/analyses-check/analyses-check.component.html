@@ -127,10 +127,19 @@
     <div class="filter-results">
       <h5 class="mt-5 mb-4 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
     </div>
-    <div>
-      <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
-                              [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">
-      </app-medical-state-tree>
+    <div class="medical-states">
+      <div class="medical-states-header">
+        <div>Диагноз</div>
+        <div class="medical-states-header-numbers-titles">
+          <div>Количество дополнительных показателей</div>
+          <div>Уровень влияния показателей крови</div>
+        </div>
+      </div>
+      <div class="medical-states-tree">
+        <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
+                                [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">
+        </app-medical-state-tree>
+      </div>
     </div>
   </div>
 </div>

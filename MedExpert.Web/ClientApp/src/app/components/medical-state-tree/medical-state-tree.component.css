@@ -4,6 +4,7 @@
 
 .medical-state-name {
   margin-left: -20px;
+  padding-right: 300px;
 }
 
 .medical-state-children {
@@ -18,6 +19,8 @@
 
 .toggle-children-button {
   cursor: pointer;
+  margin-left: -5px;
+  margin-right: 5px;
 }
 
 .toggle-children-button.no-children {
@@ -28,8 +31,34 @@
   display: inline-block;
   width: 20px;
   height: 1px;
-  margin-left: -20px;
+  margin-left: -25px;
+  margin-right: 5px;
   background-color: grey;
   vertical-align: middle;
 }
 
+.medical-state-numbers {
+  display: flex;
+  width: 300px;
+  position: absolute;
+  height: 100%;
+  right: 0;
+  top: 0;
+  align-items: center;
+}
+
+.medical-state-recommended-analysis-count {
+  text-align: center;
+}
+
+.medical-state-severity {
+  text-align: center;
+}
+
+.medical-state-self {
+  position: relative;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  padding: 5px;
+  background-color: #faf9f9;
+}

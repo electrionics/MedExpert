@@ -68,3 +68,23 @@
 .specialists-select-all-button > * {
   align-self: center;
 }
+
+.medical-states-header {
+  display: flex;
+  padding: 10px 8px 10px 25px;
+  margin-bottom: 15px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  background: #dedede;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+}
+
+.medical-states-header-numbers-titles {
+  width: 300px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
