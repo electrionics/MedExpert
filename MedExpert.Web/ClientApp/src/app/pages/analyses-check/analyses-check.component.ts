@@ -279,8 +279,8 @@ export class AnalysesCheckComponent implements OnInit {
     if (event.shiftKey) {
       const indicatorsForm = this.indicatorsForm.get('indicators') as FormArray;
       const indicatorFormControls = indicatorsForm.controls;
-      for (let i = 1; i < indicatorFormControls.length; i++) {
-        let indicatorFormGroup = indicatorFormControls[i] as FormGroup;
+      for (let i = 1; i < indicatorFormControls.length + 1; i++) {
+        let indicatorFormGroup = indicatorFormControls[i - 1] as FormGroup;
         let isComputed = indicatorFormGroup.controls.item.value.dependencyIndicatorIds && indicatorFormGroup.controls.item.value.dependencyIndicatorIds.length;
         // populate result value only if it's not a computed indicator
         if (!isComputed) {
