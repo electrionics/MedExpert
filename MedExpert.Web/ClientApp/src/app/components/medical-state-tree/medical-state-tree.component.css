@@ -7,9 +7,29 @@
 }
 
 .medical-state-children {
-  padding-left: 40px;
+  border-left: 1px solid grey;
+  padding-left: 20px;
+}
+
+.medical-state-specialists {
+  color: #b3b1b1;
+  font-size: 90%;
 }
 
 .toggle-children-button {
   cursor: pointer;
 }
+
+.toggle-children-button.no-children {
+  color: #e3e3e3;
+}
+
+.medical-state-child-line {
+  display: inline-block;
+  width: 20px;
+  height: 1px;
+  margin-left: -20px;
+  background-color: grey;
+  vertical-align: middle;
+}
+

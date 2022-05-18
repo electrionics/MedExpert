@@ -18,6 +18,9 @@ export class MedicalStateTreeComponent implements OnInit {
   @Input()
   specialistsMap: Map<number, string>;
 
+  @Input()
+  nestingLevel?: number = 0;
+
 
   get hasChildren():boolean {
     return this.medicalState.children && this.medicalState.children.length != 0;

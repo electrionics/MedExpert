@@ -1,17 +1,19 @@
 <div class="medical-state">
   <div class="medical-state-name">
-  <span class="toggle-children-button bi"
-        [ngClass]="{'bi-caret-down-fill': isOpen || !hasChildren, 'bi-caret-right-fill': hasChildren && !isOpen, 'text-muted': !hasChildren}"
-        (click)="openChildren()">
-  </span>
+    <span class="medical-state-child-line" *ngIf="nestingLevel > 0"></span>
+    <span class="toggle-children-button bi"
+          [ngClass]="{'bi-caret-down-fill': isOpen, 'bi-caret-right-fill': !isOpen, 'no-children': !hasChildren}"
+          (click)="openChildren()">
+    </span>
     {{medicalState.item.name}}
   </div>
   <div class="medical-state-specialists">
-    <span class="badge badge-pill badge-secondary">{{specialistsMap.get(medicalState.item.specialistId)}}</span>
+    Специалист: <span>{{specialistsMap.get(medicalState.item.specialistId)}}</span>
   </div>
   <div class="medical-state-children" *ngIf="isOpen">
     <app-medical-state-tree *ngFor="let medicalStateChild of medicalState.children"
-                            [medicalState]="medicalStateChild" [specialistsMap]="specialistsMap">
+                            [medicalState]="medicalStateChild" [specialistsMap]="specialistsMap"
+                            [nestingLevel]="nestingLevel + 1">
     </app-medical-state-tree>
   </div>
 </div>
