@@ -300,6 +300,7 @@ export class AnalysesCheckComponent implements OnInit {
       indicatorsForm.markAllAsTouched();
       // calculate indicators
       this.getComputedIndicators();
+      this.selectAllSpecialists();
     }
   }
 }
