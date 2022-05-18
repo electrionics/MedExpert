@@ -90,7 +90,7 @@
         <label for="specialists">Специалисты</label>
         <div class="specialists-input-container">
           <ng-select id="specialists" formControlName="specialists" class="form-select specialists-input" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
-            <ng-option *ngFor="let specialist of allSpecialists" [value]="specialist">{{specialist.name}}</ng-option>
+            <ng-option *ngFor="let specialist of allSpecialistsList" [value]="specialist">{{specialist.name}}</ng-option>
           </ng-select>
           <button class="specialists-select-all-button btn" (click)="selectAllSpecialists()">
             <i class="bi bi-check-all"></i>
@@ -128,7 +128,9 @@
       <h5 class="mt-5 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
     </div>
     <div>
-      <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates" [medicalState]="medicalState"></app-medical-state-tree>
+      <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
+                              [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">
+      </app-medical-state-tree>
     </div>
   </div>
 </div>

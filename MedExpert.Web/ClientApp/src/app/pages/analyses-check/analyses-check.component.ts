@@ -39,7 +39,8 @@ export class AnalysesCheckComponent implements OnInit {
   public indicatorsFormDirty = false;
   public readonly filterButtons: IFilterButton[];
   public isAnalysisResultReceived = false;
-  public allSpecialists: ISelectOption[];
+  public allSpecialistsList: ISelectOption[];
+  public allSpecialistsMap: Map<number, string> = new Map<number, string>();
   public analysesResult: IAnalysesResult;
 
   public readonly patientForm = this.formBuilder.group({
@@ -169,7 +170,10 @@ export class AnalysesCheckComponent implements OnInit {
     });
 
     this.specialists$.subscribe(specialists => {
-      this.allSpecialists = specialists.items;
+      this.allSpecialistsList = specialists.items;
+      this.allSpecialistsList.forEach( specialist => {
+        this.allSpecialistsMap.set(specialist.id, specialist.name);
+      });
     });
 
     combineLatest([
@@ -263,7 +267,7 @@ export class AnalysesCheckComponent implements OnInit {
 
   public selectAllSpecialists() {
     this.indicatorsForm.patchValue({
-      specialists: this.allSpecialists,
+      specialists: this.allSpecialistsList,
     });
   }
 

@@ -15,6 +15,9 @@ export class MedicalStateTreeComponent implements OnInit {
   @Input()
   isOpen?: boolean;
 
+  @Input()
+  specialistsMap: Map<number, string>;
+
 
   get hasChildren():boolean {
     return this.medicalState.children && this.medicalState.children.length != 0;

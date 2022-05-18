@@ -1,3 +1,11 @@
+.medical-state {
+  padding-left: 20px;
+}
+
+.medical-state-name {
+  margin-left: -20px;
+}
+
 .medical-state-children {
   padding-left: 40px;
 }
