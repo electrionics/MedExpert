@@ -1,9 +1,9 @@
 .medical-state {
-  padding-left: 20px;
+  padding-left: 30px;
 }
 
 .medical-state-name {
-  margin-left: -20px;
+  position: relative;
   padding-right: 300px;
 }
 
@@ -18,23 +18,26 @@
 }
 
 .toggle-children-button {
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  margin-top: -12px;
   cursor: pointer;
-  margin-left: -5px;
-  margin-right: 5px;
 }
 
 .toggle-children-button.no-children {
   color: #e3e3e3;
+  cursor: default;
 }
 
 .medical-state-child-line {
-  display: inline-block;
+  position: absolute;
+  left: -55px;
+  top: 50%;
+  margin-top: -1px;
   width: 20px;
   height: 1px;
-  margin-left: -25px;
-  margin-right: 5px;
   background-color: grey;
-  vertical-align: middle;
 }
 
 .medical-state-numbers {
