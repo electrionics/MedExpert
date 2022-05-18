@@ -77,7 +77,7 @@
   justify-content: space-between;
   align-items: center;
   font-weight: bold;
-  background: #dedede;
+  background: #f3f3f3;
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
 }
@@ -87,4 +87,10 @@
   display: flex;
   align-items: center;
   text-align: center;
+}
+
+.no-medical-states-message {
+  text-align: center;
+  color: #ccc;
+  padding: 20px;
 }

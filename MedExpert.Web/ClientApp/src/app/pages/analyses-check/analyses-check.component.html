@@ -120,7 +120,7 @@
       <button class="btn"
               *ngFor="let filterButton of filterButtons"
               (click)="selectFilter(filterButton)"
-              [ngClass]="{'btn-secondary': filterButton.isSelected, 'btn-outline-secondary': !filterButton.isSelected}">
+              [ngClass]="{'btn-primary': filterButton.isSelected, 'btn-outline-primary': !filterButton.isSelected}">
         {{filterButton.name}}
       </button>
     </div>
@@ -134,6 +134,9 @@
           <div>Количество дополнительных показателей</div>
           <div>Уровень влияния показателей крови</div>
         </div>
+      </div>
+      <div class="no-medical-states-message" *ngIf="analysesResult.foundMedicalStates.length === 0">
+        Нет диагнозов по заданным критериям
       </div>
       <div class="medical-states-tree">
         <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
