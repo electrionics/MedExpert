@@ -55,18 +55,17 @@ export class AnalysesCheckComponent implements OnInit {
     indicators: this.formBuilder.array([], {
       updateOn: 'change'
     }),
-    specialists: [null, {
+    specialistsForCalculation: [null, {
       validators: [Validators.required],
       updateOn: 'change',
     }],
   })
 
-  get specialists() : ISelectOption[] {
-    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items;
+  get specialistsForCalculation() : ISelectOption[] {
+    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialistsForCalculation')).items;
   }
 
   get indicators(): IIndicator[] {
-    // TODO move all methods properties and getters according to style guide
     return new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators')).items;
   }
 
@@ -219,7 +218,7 @@ export class AnalysesCheckComponent implements OnInit {
       return;
     }
 
-    const specialistIds = this.specialists.map(x => x.id);
+    const specialistIds = this.specialistsForCalculation.map(x => x.id);
     const profile = new ProfileDTO().fromForm(this.patientForm);
 
     // send request to retrieve analysis id
@@ -227,7 +226,7 @@ export class AnalysesCheckComponent implements OnInit {
   }
 
   public getAnalysisResult() {
-    const specialistIds = this.specialists.map(x => x.id);
+    const specialistIds = this.specialistsForCalculation.map(x => x.id);
     this.store.dispatch(new GetAnalysisResultByIdAction(this.analysisId, this.selectedFilterButton.value, specialistIds));
   }
 
@@ -267,7 +266,7 @@ export class AnalysesCheckComponent implements OnInit {
 
   public selectAllSpecialists() {
     this.indicatorsForm.patchValue({
-      specialists: this.allSpecialistsList,
+      specialistsForCalculation: this.allSpecialistsList,
     });
   }
 

@@ -87,9 +87,10 @@
       <hr />
 
       <div class="mb-3">
-        <label for="specialists">Специалисты</label>
+        <label for="specialistsForCalculation">Специалисты для расчета</label>
         <div class="specialists-input-container">
-          <ng-select id="specialists" formControlName="specialists" class="form-select specialists-input" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
+          <ng-select id="specialistsForCalculation" formControlName="specialistsForCalculation" class="form-select specialists-input"
+                     labelForId="specialistsForCalculation" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
             <ng-option *ngFor="let specialist of allSpecialistsList" [value]="specialist">{{specialist.name}}</ng-option>
           </ng-select>
           <button class="specialists-select-all-button btn" (click)="selectAllSpecialists()">
