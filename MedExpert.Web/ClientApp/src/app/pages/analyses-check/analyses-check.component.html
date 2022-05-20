@@ -94,7 +94,7 @@
                      notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
             <ng-option *ngFor="let specialist of allSpecialistsList" [value]="specialist">{{specialist.name}}</ng-option>
           </ng-select>
-          <button class="specialists-select-all-button btn" (click)="selectAllSpecialists()">
+          <button class="specialists-select-all-button btn" (click)="selectAllSpecialistsForCalculation()">
             <i class="bi bi-check-all"></i>
             <span>ВСЕ</span>
           </button>
