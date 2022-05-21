@@ -5,4 +5,5 @@ export interface IMedicalState {
   name: string;
   severity: number;
   recommendedAnalyses: IIndicator[];
+  specialistId: number;
 }

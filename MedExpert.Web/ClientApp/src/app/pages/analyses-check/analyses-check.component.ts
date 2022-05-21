@@ -39,7 +39,10 @@ export class AnalysesCheckComponent implements OnInit {
   public indicatorsFormDirty = false;
   public readonly filterButtons: IFilterButton[];
   public isAnalysisResultReceived = false;
-  public allSpecialists: ISelectOption[];
+  public allSpecialistsList: ISelectOption[];
+  public allSpecialistsMap: Map<number, string> = new Map<number, string>();
+  public analysesResult: IAnalysesResult;
+  public loadingAnalysisResult: boolean;
 
   public readonly patientForm = this.formBuilder.group({
     sex: [null, { validators: Validators.required, updateOn: 'change' }],
@@ -53,18 +56,28 @@ export class AnalysesCheckComponent implements OnInit {
     indicators: this.formBuilder.array([], {
       updateOn: 'change'
     }),
-    specialists: [null, {
+    specialistsForCalculation: [null, {
       validators: [Validators.required],
       updateOn: 'change',
     }],
   })
 
-  get specialists() : ISelectOption[] {
-    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialists')).items;
+  public analysesResultFiltersForm = this.formBuilder.group({
+    specialistsForDisplay: [this.specialistsForCalculation, {
+      validators: [Validators.required],
+      updateOn: 'change',
+    }]
+  });
+
+  get specialistsForCalculation() : ISelectOption[] {
+    return new SelectOptionsDTO().fromForm(this.indicatorsForm.get('specialistsForCalculation')).items;
+  }
+
+  get specialistsForDisplay() : ISelectOption[] {
+    return new SelectOptionsDTO().fromForm(this.analysesResultFiltersForm.get('specialistsForDisplay')).items;
   }
 
   get indicators(): IIndicator[] {
-    // TODO move all methods properties and getters according to style guide
     return new IndicatorsDTO().fromForm(this.indicatorsForm.get('indicators')).items;
   }
 
@@ -158,18 +171,32 @@ export class AnalysesCheckComponent implements OnInit {
     this.analysisId$.subscribe((analysisId) => {
       if (!analysisId) return;
       this.analysisId = analysisId;
-      this.getAnalysisResult();
+      this.getAnalysisResult(this.specialistsForCalculation);
     });
 
     this.analysisResult$.subscribe(analysesResult => {
       if (!analysesResult) return;
       this.isAnalysisResultReceived = true;
-      console.log('Analyses Result received', analysesResult);
-      // TODO implement displaying results
+      this.analysesResult = analysesResult;
+      this.loadingAnalysisResult = false;
+      // TODO: find better solution for setting default value for "Specialists for display" select
+
+      // check if Specialists for display value is not defined - that means it was not set manually yet
+      if (!this.specialistsForDisplay || !this.specialistsForDisplay.length) {
+        // set default value of "Specialists for display" select when it's rendered
+        // problem: without setTimeout Analysis Result Filter form is not rendered yet.
+        //  And when we select all specialists for "Specialists for display" select it throws and error "cannot set property of undefined"
+        setTimeout(() => {
+          this.selectAllSpecialistsForDisplay();
+        }, 0);
+      }
     });
 
     this.specialists$.subscribe(specialists => {
-      this.allSpecialists = specialists.items;
+      this.allSpecialistsList = specialists.items;
+      this.allSpecialistsList.forEach( specialist => {
+        this.allSpecialistsMap.set(specialist.id, specialist.name);
+      });
     });
 
     combineLatest([
@@ -215,15 +242,19 @@ export class AnalysesCheckComponent implements OnInit {
       return;
     }
 
-    const specialistIds = this.specialists.map(x => x.id);
+    const specialistIds = this.specialistsForCalculation.map(x => x.id);
     const profile = new ProfileDTO().fromForm(this.patientForm);
 
     // send request to retrieve analysis id
-    this.store.dispatch(new SaveAnalysisResultAction(profile, this.indicators, specialistIds));
+    this.store.dispatch(new SaveAnalysisResultAction(profile, this.indicators, specialistIds))
+      .subscribe(() => {
+        this.indicatorsForm.disable();
+      });
   }
 
-  public getAnalysisResult() {
-    const specialistIds = this.specialists.map(x => x.id);
+  public getAnalysisResult(specialists: ISelectOption[]) {
+    this.loadingAnalysisResult = true;
+    const specialistIds = specialists.map(x => x.id);
     this.store.dispatch(new GetAnalysisResultByIdAction(this.analysisId, this.selectedFilterButton.value, specialistIds));
   }
 
@@ -258,12 +289,18 @@ export class AnalysesCheckComponent implements OnInit {
       filterButton.isSelected = false;
     });
     selectedButton.isSelected = true;
-    this.getAnalysisResult();
+    this.getAnalysisResult(this.specialistsForDisplay);
   }
 
-  public selectAllSpecialists() {
+  public selectAllSpecialistsForCalculation() {
     this.indicatorsForm.patchValue({
-      specialists: this.allSpecialists,
+      specialistsForCalculation: this.allSpecialistsList,
+    });
+  }
+
+  public selectAllSpecialistsForDisplay() {
+    this.analysesResultFiltersForm.patchValue({
+      specialistsForDisplay: this.specialistsForCalculation,
     });
   }
 
@@ -275,8 +312,8 @@ export class AnalysesCheckComponent implements OnInit {
     if (event.shiftKey) {
       const indicatorsForm = this.indicatorsForm.get('indicators') as FormArray;
       const indicatorFormControls = indicatorsForm.controls;
-      for (let i = 1; i < indicatorFormControls.length; i++) {
-        let indicatorFormGroup = indicatorFormControls[i] as FormGroup;
+      for (let i = 1; i < indicatorFormControls.length + 1; i++) {
+        let indicatorFormGroup = indicatorFormControls[i - 1] as FormGroup;
         let isComputed = indicatorFormGroup.controls.item.value.dependencyIndicatorIds && indicatorFormGroup.controls.item.value.dependencyIndicatorIds.length;
         // populate result value only if it's not a computed indicator
         if (!isComputed) {
@@ -296,6 +333,15 @@ export class AnalysesCheckComponent implements OnInit {
       indicatorsForm.markAllAsTouched();
       // calculate indicators
       this.getComputedIndicators();
+      this.selectAllSpecialistsForCalculation();
+    }
+  }
+
+  public filterResults() {
+    const specialistsForDisplay = this.specialistsForDisplay;
+    if (specialistsForDisplay.length !== 0) {
+      this.getAnalysisResult(specialistsForDisplay);
+
     }
   }
 }

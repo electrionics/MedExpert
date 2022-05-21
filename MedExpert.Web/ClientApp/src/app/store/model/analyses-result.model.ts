@@ -4,7 +4,7 @@ import {IComment} from "./comment.model";
 
 export interface IAnalysesResult {
   analysisId: number;
-  medicalStates: TreeItem<IMedicalState>[]
+  foundMedicalStates: TreeItem<IMedicalState>[]
   comments: IComment[];
 }
 

@@ -87,12 +87,14 @@
       <hr />
 
       <div class="mb-3">
-        <label for="specialists">Специалисты</label>
+        <label for="specialistsForCalculation">Специалисты для расчета</label>
         <div class="specialists-input-container">
-          <ng-select id="specialists" formControlName="specialists" class="form-select specialists-input" labelForId="specialists" [multiple]="true" notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
-            <ng-option *ngFor="let specialist of allSpecialists" [value]="specialist">{{specialist.name}}</ng-option>
+          <ng-select id="specialistsForCalculation" formControlName="specialistsForCalculation" class="form-select specialists-input"
+                     labelForId="specialistsForCalculation" [multiple]="true" [closeOnSelect]="false"
+                     notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
+            <ng-option *ngFor="let specialist of allSpecialistsList" [value]="specialist">{{specialist.name}}</ng-option>
           </ng-select>
-          <button class="specialists-select-all-button btn" (click)="selectAllSpecialists()">
+          <button class="specialists-select-all-button btn" (click)="selectAllSpecialistsForCalculation()">
             <i class="bi bi-check-all"></i>
             <span>ВСЕ</span>
           </button>
@@ -120,12 +122,29 @@
       <button class="btn"
               *ngFor="let filterButton of filterButtons"
               (click)="selectFilter(filterButton)"
-              [ngClass]="{'btn-secondary': filterButton.isSelected, 'btn-outline-secondary': !filterButton.isSelected}">
+              [ngClass]="{'btn-primary': filterButton.isSelected, 'btn-outline-primary': !filterButton.isSelected}">
         {{filterButton.name}}
       </button>
     </div>
     <div class="filter-results">
-      <h5 class="mt-5 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
+      <h5 class="mt-5 mb-4 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
+    </div>
+    <div class="medical-states">
+      <div class="medical-states-header">
+        <div>Диагноз</div>
+        <div class="medical-states-header-numbers-titles">
+          <div>Количество дополнительных показателей</div>
+          <div>Уровень влияния показателей крови</div>
+        </div>
+      </div>
+      <div class="no-medical-states-message" *ngIf="analysesResult.foundMedicalStates.length === 0">
+        Нет диагнозов по заданным критериям
+      </div>
+      <div class="medical-states-tree">
+        <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
+                                [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">
+        </app-medical-state-tree>
+      </div>
     </div>
   </div>
 </div>
