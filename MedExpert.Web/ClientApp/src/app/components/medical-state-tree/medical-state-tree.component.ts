@@ -35,7 +35,7 @@ export class MedicalStateTreeComponent implements OnInit {
 
   public openChildren() {
     // TODO uncomment this
-    // this.isOpen = !this.isOpen;
+    this.isOpen = !this.isOpen;
   }
 
 }

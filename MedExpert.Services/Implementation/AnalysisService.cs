@@ -68,9 +68,18 @@ namespace MedExpert.Services.Implementation
                     !x.Symptom.IsDeleted &&
                     x.Indicator.InAnalysis)
                 .ToListAsync();
+            var alwaysMatchedSymptoms = await _dataContext.Set<Symptom>()
+                .Where(x =>
+                    specialistIds.Contains(x.SpecialistId) &&
+                    (x.ApplyToSexOnly == null || x.ApplyToSexOnly == analysis.Sex) &&
+                    (x.Specialist.ApplyToSexOnly == null ||
+                     x.Specialist.ApplyToSexOnly == analysis.Sex) &&
+                    !x.IsDeleted &&
+                    !x.SymptomIndicatorDeviationLevels.Any(y => y.Indicator.InAnalysis))
+                .ToListAsync();
             var matchedSymptoms = sidls
                 .GroupBy(x => x.SymptomId)
-                .Where(x => //TODO: from cache
+                .Where(x =>
                     x.Count(matcher) >= Math.Min((x.Count() + 1) / 2, 3))
                 .Select(x => new
                 {
@@ -79,6 +88,11 @@ namespace MedExpert.Services.Implementation
                         .Where(matcher)
                         .ToList()
                 }).ToDictionary(x => x.Key, x => x.MatchedIndicators);
+            
+            foreach (var matchedSymptom in alwaysMatchedSymptoms)
+            {
+                matchedSymptoms.Add(matchedSymptom.Id, new List<SymptomIndicatorDeviationLevel>());
+            }
 
             var symptomsTree = await _symptomService.GetSymptomsTree();
 
@@ -95,8 +109,9 @@ namespace MedExpert.Services.Implementation
             var calculatedTree = matchedSymptomsTree.VisitAndConvert(x =>
                 CalculateSeverity(x, analysisIndicatorDict, analysisId, matchedSymptoms));
 
-            var filteredCalculatedTree =
-                calculatedTree.GetMatched(x => x.Severity is null or > 0.2m, new HashSet<bool> {true});
+            var filteredCalculatedTree = calculatedTree
+                .GetMatched(x => x.Severity is null or > 0.2m, new HashSet<bool> {true})
+                .GetMatchedBranch(x => x.Any(y => y.Severity is not null), new HashSet<bool?> {true});
             
             return filteredCalculatedTree;
         }
@@ -145,7 +160,8 @@ namespace MedExpert.Services.Implementation
             var mathcedSymptomIds = matchedAnalysisSymptoms.Keys.ToHashSet();
             var matchedSymptomsTree = symptomsTree.GetMatched(x => x.Id, mathcedSymptomIds);
 
-            var result = matchedSymptomsTree.VisitAndConvert(x => matchedAnalysisSymptoms[x.Id]);
+            var result = matchedSymptomsTree.VisitAndConvert(x => matchedAnalysisSymptoms[x.Id])
+                .VisitAndSort(x => x.Severity ?? 0, false);
 
             return result;
         }
