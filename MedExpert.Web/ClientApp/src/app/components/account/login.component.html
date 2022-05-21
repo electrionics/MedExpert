@@ -1,0 +1,81 @@
+﻿<h1>Войти</h1>
+<div class="row">
+  <div class="col-md-4">
+    <section>
+      <form id="account" method="post">
+        <h4>Используйте учетную запись MedExpert, чтобы войти.</h4>
+        <hr />
+        <div class="text-danger">{{errorMessage}}</div>
+        <div class="form-group">
+          <label for="Email">Электронная почта</label>
+          <input [(ngModel)]="model.email" [ngModelOptions]="{standalone: true}" id="Email" type="text" class="form-control" />
+          <div *ngIf="Email.invalid && Email.dirty"
+               class="alert alert-danger">
+            <div *ngIf="Email.errors?.required">
+              Введите электронную почту.
+            </div>
+            <div *ngIf="Email.errors?.email">
+              Некорректый формат электронной почты.
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-group">
+            <label for="Password">Пароль</label>
+            <input [(ngModel)]="model.password" [ngModelOptions]="{standalone: true}" id="Password" type="password" class="form-control" />
+            <div *ngIf="Password.invalid && Password.dirty"
+                 class="alert alert-danger">
+              <div *ngIf="Password.errors?.required">
+                Введите пароль.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="checkbox">
+            <label for="RememberMe">
+              <input [(ngModel)]="model.rememberMe" [ngModelOptions]="{standalone: true}" id="RememberMe" type="checkbox" />
+              Запомнить меня
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <button type="submit" (click)="login()" class="btn btn-primary">Войти</button>
+        </div>
+<!--        <div class="form-group">-->
+<!--          <p>-->
+<!--            <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>-->
+<!--          </p>-->
+<!--          <p>-->
+<!--            <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>-->
+<!--          </p>-->
+<!--          <p>-->
+<!--            <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>-->
+<!--          </p>-->
+<!--        </div>-->
+      </form>
+    </section>
+  </div>
+  <div class="col-md-6 col-md-offset-2">
+    <section>
+      <h4>Использовать сторонний сервис, чтобы войти.</h4>
+      <hr />
+      <div *ngIf="!model.externalLogins || !model.externalLogins.length">
+        <p>
+          Сторонние сервисы для входа не подключены к приложению или на данный момент находятся в разработке.
+        </p>
+      </div>
+      <form *ngIf="model.externalLogins && model.externalLogins.length" id="external-account" class="form-horizontal">
+        <div>
+          <p>
+            <button *ngFor="let provider of model.externalLogins" type="submit" class="btn btn-primary" name="provider" [value]="provider.Name" title="Войти, используя ваш @provider.DisplayName аккаунт.">{{provider.DisplayName}}</button>
+          </p>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<!--@section Scripts {-->
+<!--<partial name="_ValidationScriptsPartial" />-->
+<!--}-->
