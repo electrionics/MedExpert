@@ -19,6 +19,8 @@ import { ImportReferenceIntervalsComponent } from './components/import/importRef
 import { ImportSymptomsComponent } from "./components/import/importSymptoms.component";
 import { ImportAnalysisComponent } from "./components/import/importAnalysis.component";
 
+import { LoginComponent } from "./components/account/login.component";
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { MAT_DIALOG_DEFAULT_OPTIONS, MatDialogModule } from "@angular/material/dialog";
@@ -43,6 +45,7 @@ import {AnalysesState} from './store/state/analyses.state';
         ImportIndicatorsComponent,
         ImportSymptomsComponent,
         ImportAnalysisComponent,
+        LoginComponent,
         ConfirmDialogComponent,
         AlertDialogComponent
     ],
@@ -59,7 +62,8 @@ import {AnalysesState} from './store/state/analyses.state';
             { path: 'import/reference-intervals', component: ImportReferenceIntervalsComponent },
             { path: 'import/indicators', component: ImportIndicatorsComponent },
             { path: 'import/symptoms', component: ImportSymptomsComponent },
-            { path: 'import/analysis', component: ImportAnalysisComponent }
+            { path: 'import/analysis', component: ImportAnalysisComponent },
+            { path: 'account/login', component: LoginComponent },
         ]),
         AnalysesCheckModule,
         BrowserAnimationsModule,

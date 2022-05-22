@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MedExpert.Domain;
+using MedExpert.Domain.Identity;
 using MedExpert.Excel;
 using MedExpert.Web.Configuration;
 using MedExpert.Web.Validators;
@@ -14,8 +15,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MedExpert.Services.Implementation;
 using MedExpert.Services.Interfaces;
+using MedExpert.Web.Services;
+using MedExpert.Web.ViewModels.Account;
 using MedExpert.Web.ViewModels.Analysis;
 using MedExpert.Web.ViewModels.Import;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace MedExpert.Web
 {
@@ -61,10 +66,30 @@ namespace MedExpert.Web
                         .AllowCredentials());
             });
             
+            services.AddScoped<UserManager<User>>();
+            services.AddScoped<IEmailSender, EmailSender>();
+
+            services.AddDbContext<IdentityContext>(options =>
+                options.UseSqlServer(Configuration.GetSection("Database").Get<DatabaseConfig>().ConnectionString)
+            );
+
+            services.AddIdentity<User, Role>()//options =>
+                // {
+                //     options.Password.RequiredLength = 1;
+                //     options.Password.RequireLowercase = false;
+                //     options.Password.RequireUppercase = false;
+                //     options.Password.RequireNonAlphanumeric = false;
+                //     options.Password.RequireDigit = false;
+                // })
+                .AddEntityFrameworkStores<IdentityContext>()
+                .AddDefaultTokenProviders();
+            
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
             services.AddTransient<IValidator<ImportSymptomForm>, ImportSymptomFormValidator>();
             services.AddTransient<IValidator<AnalysisFormModel>, AnalysisFormModelValidator>();
-            
+            services.AddTransient<IValidator<LoginFormModel>, AccountLoginFormModelValidator>();
+            services.AddTransient<IValidator<RegisterFormModel>, AccountRegisterFormModelValidator>();
+
             services.AddScoped<ISpecialistService, SpecialistService>();
             services.AddScoped<IReferenceIntervalService, ReferenceIntervalService>();
             services.AddScoped<IIndicatorService, IndicatorService>();
@@ -76,7 +101,6 @@ namespace MedExpert.Web
             services.AddScoped<IAnalysisSymptomService, AnalysisSymptomService>();
             services.AddScoped<IAnalysisSymptomIndicatorService, AnalysisSymptomIndicatorService>();
             services.AddScoped<ILookupService, LookupService>();
-            
 
             services.AddScoped<ExcelParser, ExcelParser>();
         }
@@ -108,6 +132,9 @@ namespace MedExpert.Web
             {
                 app.UseCors("CorsPolicy");
             }
+            
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

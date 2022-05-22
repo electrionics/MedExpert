@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Mvc;
 using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
 using MedExpert.Web.ViewModels.Import;
+using Microsoft.AspNetCore.Authorization;
 
 // ReSharper disable CommentTypo
 
@@ -59,6 +60,7 @@ namespace MedExpert.Web.Controllers
         
         #region Indicators
 
+        [Authorize]
         [HttpPost]
         [ApiRoute("Import/Indicators")]
         public async Task<ImportReport> ImportIndicators()
@@ -162,6 +164,7 @@ namespace MedExpert.Web.Controllers
         
         #region ReferenceIntervals
         
+        [Authorize]
         [HttpPost]
         [ApiRoute("Import/ReferenceIntervals")]
         public async Task<ImportReport> ImportReferenceIntervals()
@@ -287,6 +290,7 @@ namespace MedExpert.Web.Controllers
         
         #region Symptoms
         
+        [Authorize]
         [HttpPost]
         [ApiRoute("Import/Symptoms")]
         public async Task<ImportReport> ImportSymptoms([FromForm]ImportSymptomForm model)
@@ -571,6 +575,7 @@ namespace MedExpert.Web.Controllers
 
         #region Analysis
 
+        [Authorize]
         [HttpPost]
         [ApiRoute("Import/Analysis")]
         public async Task<ImportReport> ImportAnalysis([FromQuery] int? specialistId)

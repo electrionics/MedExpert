@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,6 +42,59 @@ namespace MedExpert.Core.Helpers
                 .ToList();
         }
 
+        //TODO: test it
+        public static IList<TreeItem<TEntity>> GetMatchedBranch<TEntity, TMatchItem>(
+            this IEnumerable<TreeItem<TEntity>> tree, Func<IEnumerable<TEntity>, TMatchItem> matcher,
+            HashSet<TMatchItem> itemsToMatch)
+        {
+            return tree.CollectBranches(matcher, itemsToMatch).VisitAndConvert(x => x);
+        }
+
+        private static IList<TreeItemExtended<TEntity, KeyValuePair<IEnumerable<TEntity>, TMatchItem>>> CollectBranches<TEntity, TMatchItem>(
+            this IEnumerable<TreeItem<TEntity>> tree, Func<IEnumerable<TEntity>, TMatchItem> matcher, HashSet<TMatchItem> itemsToMatch)
+        {
+            return tree
+                .Select(p => new TreeItemExtended<TEntity, KeyValuePair<IEnumerable<TEntity>, TMatchItem>>
+                {
+                    Item = p.Item,
+                    ExtendedProperty = p is TreeItemExtended<TEntity, KeyValuePair<IEnumerable<TEntity>, TMatchItem>> pExtended
+                        ? pExtended.ExtendedProperty
+                        : new KeyValuePair<IEnumerable<TEntity>, TMatchItem>(
+                            Enumerable.Repeat(p.Item, 1),
+                            default),
+                    Children = !p.Children?.Any() ?? true
+                        ? null
+                        : p.Children.Select(c =>
+                        {
+                            var cResult =
+                                new TreeItemExtended<TEntity, KeyValuePair<IEnumerable<TEntity>, TMatchItem>>
+                                {
+                                    Item = c.Item,
+                                    Children = c.Children,
+                                    ExtendedProperty = new KeyValuePair<IEnumerable<TEntity>, TMatchItem>(
+                                        p is TreeItemExtended<TEntity, KeyValuePair<IEnumerable<TEntity>, TMatchItem>> p2Extended
+                                            ? p2Extended.ExtendedProperty.Key.Append(c.Item)
+                                            : Enumerable.Repeat(p.Item, 1).Append(c.Item),
+                                        default)
+                                };
+
+                            if (cResult.Children == null || !cResult.Children.Any())
+                            {
+                                cResult.ExtendedProperty = new KeyValuePair<IEnumerable<TEntity>, TMatchItem>(
+                                    cResult.ExtendedProperty.Key,
+                                    matcher(cResult.ExtendedProperty.Key));
+                            }
+
+                            return cResult;
+                        }).CollectBranches(matcher, itemsToMatch)
+                })
+                .Where(p => 
+                    EqualityComparer<TMatchItem>.Default.Equals(p.ExtendedProperty.Value, default) || 
+                    itemsToMatch.Contains(p.ExtendedProperty.Value))
+                .Where(x => x.Children == null || x.Children.Any())
+                .ToList();
+        }
+
         public static IList<TreeItem<TResult>> VisitAndConvert<TEntity, TResult>(this IEnumerable<TreeItem<TEntity>> tree,
             Func<TEntity, TResult> converter)
         {
@@ -60,6 +112,23 @@ namespace MedExpert.Core.Helpers
                     .Prepend(p.Item))
                 .Where(x => x != null)
                 .ToList();
+        }
+
+        public static IList<TreeItem<TEntity>> VisitAndSort<TEntity, TResult>(
+            this IEnumerable<TreeItem<TEntity>> tree,
+            Func<TEntity, TResult> sortFunc, bool sortByAsc)
+        {
+            var result = tree?.Select(p => new TreeItem<TEntity>
+            {
+                Item = p.Item,
+                Children = VisitAndSort(p.Children, sortFunc, sortByAsc)
+            });
+
+            return result == null
+                ? null
+                : sortByAsc
+                    ? result.OrderBy(x => sortFunc(x.Item)).ToList()
+                    : result.OrderByDescending(x => sortFunc(x.Item)).ToList();
         }
     }
 }
