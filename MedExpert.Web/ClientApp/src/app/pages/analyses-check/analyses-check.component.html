@@ -105,7 +105,7 @@
         <div class="col-12 text-right">
           <div *ngIf="indicatorsFormDirty && indicatorsForm.invalid" class="text-danger mb-3">Форма заполнена неправильно</div>
 
-          <button class="btn btn-primary" (click)="saveAnalysisResult()">Узнать результаты</button>
+          <button class="btn btn-primary" (click)="saveAnalysisResult()" [disabled]="indicatorsForm.disabled">Узнать результаты</button>
         </div>
       </div>
     </form>
@@ -118,17 +118,45 @@
     <h5 class="mb-0">Результаты</h5>
   </div>
   <div class="body">
-    <div class="filter-buttons btn-group">
-      <button class="btn"
-              *ngFor="let filterButton of filterButtons"
-              (click)="selectFilter(filterButton)"
-              [ngClass]="{'btn-primary': filterButton.isSelected, 'btn-outline-primary': !filterButton.isSelected}">
-        {{filterButton.name}}
-      </button>
+    <div class="analyses-result-filters">
+      <div class="filter-buttons btn-group">
+        <button class="btn"
+                *ngFor="let filterButton of filterButtons"
+                (click)="selectFilter(filterButton)"
+                [ngClass]="{'btn-primary': filterButton.isSelected, 'btn-outline-primary': !filterButton.isSelected}">
+          {{filterButton.name}}
+        </button>
+      </div>
+      <form [formGroup]="analysesResultFiltersForm">
+        <div class="mt-4 mb-3">
+          <!--TODO: reuse specialists select code by creating separate component for specialists select?-->
+          <label for="specialistsForDisplay">Специалисты для отображения</label>
+          <div class="specialists-input-container">
+            <ng-select id="specialistsForDisplay" formControlName="specialistsForDisplay"
+                       class="form-select specialists-input" labelForId="specialistsForDisplay"
+                       [multiple]="true" [closeOnSelect]="false"
+                       notFoundText="совпадений не найдено" placeholder="Выберите специалистов">
+              <ng-option *ngFor="let specialist of specialistsForCalculation"
+                         [value]="specialist">{{specialist.name}}</ng-option>
+            </ng-select>
+            <button class="specialists-select-all-button btn" (click)="selectAllSpecialistsForDisplay()">
+              <i class="bi bi-check-all"></i>
+              <span>ВСЕ</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="text-right">
+          <div *ngIf="analysesResultFiltersForm.dirty && analysesResultFiltersForm.invalid" class="text-danger mb-3">
+            Форма фильтрации заполнена неправильно
+          </div>
+          <button class="btn btn-primary" (click)="filterResults()" [disabled]="analysesResultFiltersForm.invalid">
+            Отфильтровать
+          </button>
+        </div>
+      </form>
     </div>
-    <div class="filter-results">
-      <h5 class="mt-5 mb-4 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
-    </div>
+    <h5 class="mt-5 mb-4 text-center">{{selectedFilterButton && selectedFilterButton.name}}</h5>
     <div class="medical-states">
       <div class="medical-states-header">
         <div>Диагноз</div>
@@ -137,13 +165,23 @@
           <div>Уровень влияния показателей крови</div>
         </div>
       </div>
-      <div class="no-medical-states-message" *ngIf="analysesResult.foundMedicalStates.length === 0">
-        Нет диагнозов по заданным критериям
+      <div class="spinner-container text-muted" *ngIf="loadingAnalysisResult">
+        <div class="spinners">
+          <div class="spinner spinner-grow" role="status"></div>
+          <div class="spinner spinner-grow" role="status"></div>
+          <div class="spinner spinner-grow" role="status"></div>
+        </div>
+        <span class="spinner-message mt-2">Результаты загружаются...</span>
       </div>
-      <div class="medical-states-tree">
-        <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
-                                [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">
-        </app-medical-state-tree>
+      <div class="filtered-results" [ngClass]="{'is-loading': loadingAnalysisResult}">
+        <div class="no-medical-states-message" *ngIf="analysesResult.foundMedicalStates.length === 0">
+          Нет диагнозов по заданным критериям
+        </div>
+        <div class="medical-states-tree">
+          <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
+                                  [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">
+          </app-medical-state-tree>
+        </div>
       </div>
     </div>
   </div>
