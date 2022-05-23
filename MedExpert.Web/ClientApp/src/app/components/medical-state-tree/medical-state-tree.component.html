@@ -5,7 +5,7 @@
       <div class="medical-state-severity col-6">{{medicalState.item.severity}}</div>
     </div>
     <div class="medical-state-name">
-      <span class="medical-state-child-line" *ngIf="nestingLevel > 0"></span>
+      <span class="medical-state-child-line" [ngClass]="{'d-none': nestingLevel == 0}"></span>
       <span class="toggle-children-button bi"
             [ngClass]="{'bi-caret-down-fill': isOpen, 'bi-caret-right-fill': !isOpen, 'no-children': !hasChildren}"
             (click)="openChildren()">
@@ -16,7 +16,7 @@
       Специалист: <span>{{specialistsMap.get(medicalState.item.specialistId)}}</span>
     </div>
   </div>
-  <div class="medical-state-children" *ngIf="isOpen">
+  <div class="medical-state-children" [ngClass]="{'d-none': !isOpen}">
     <app-medical-state-tree *ngFor="let medicalStateChild of medicalState.children"
                             [medicalState]="medicalStateChild" [specialistsMap]="specialistsMap"
                             [nestingLevel]="nestingLevel + 1">
