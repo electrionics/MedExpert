@@ -9,6 +9,8 @@ import {TreeItem} from "../../store/model/tree-item";
 })
 
 export class MedicalStateTreeComponent implements OnInit {
+  public recommendedAnalysesListShown: boolean;
+
   @Input()
   medicalState: TreeItem<IMedicalState>;
 
@@ -26,7 +28,6 @@ export class MedicalStateTreeComponent implements OnInit {
     return this.medicalState.children && this.medicalState.children.length != 0;
   }
   constructor() {
-    // TODO remove this line
     this.isOpen = true;
   }
 
@@ -34,8 +35,13 @@ export class MedicalStateTreeComponent implements OnInit {
   }
 
   public openChildren() {
-    // TODO uncomment this
     this.isOpen = !this.isOpen;
+  }
+
+  public toggleRecommendedAnalysesList() {
+    if (this.medicalState.item.recommendedAnalyses.length > 0) {
+      this.recommendedAnalysesListShown = !this.recommendedAnalysesListShown;
+    }
   }
 
 }

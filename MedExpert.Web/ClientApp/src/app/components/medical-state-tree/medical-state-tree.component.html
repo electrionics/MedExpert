@@ -1,7 +1,23 @@
+<!--TODO rename all css classes to be shorter (omit 'medical-state' parts)-->
 <div class="medical-state">
   <div class="medical-state-self">
     <div class="medical-state-numbers">
-      <div class="medical-state-recommended-analysis-count col-6">{{medicalState.item.recommendedAnalyses.length}}</div>
+      <div class="medical-state-recommended-analyses col-6">
+        <div class="medical-state-recommended-analyses-count" title="Нажмите чтобы увидеть рекомендованные анализы"
+             [ngClass]="medicalState.item.recommendedAnalyses.length === 0 ? 'no-recommended-analyses' : 'has-recommended-analyses'"
+             (click)="toggleRecommendedAnalysesList()">
+          {{medicalState.item.recommendedAnalyses.length || '-'}}
+        </div>
+        <div class="medical-state-recommended-analyses-list" [ngClass]="{'d-none': !recommendedAnalysesListShown}">
+          <span class="pointer bi bi-caret-up-fill"></span>
+          <span class="close-button bi-x" (click)="toggleRecommendedAnalysesList()"></span>
+          <ul>
+            <li *ngFor="let recommendedAnalysis of medicalState.item.recommendedAnalyses">
+              {{recommendedAnalysis.shortName}}
+            </li>
+          </ul>
+        </div>
+      </div>
       <div class="medical-state-severity col-6">{{medicalState.item.severity}}</div>
     </div>
     <div class="medical-state-name">
