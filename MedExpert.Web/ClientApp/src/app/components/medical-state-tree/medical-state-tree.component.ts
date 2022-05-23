@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, ElementRef, Input, OnInit, QueryList, Renderer2, ViewChild, ViewChildren} from '@angular/core';
 import {IMedicalState} from "../../store/model/medical-state.model";
 import {TreeItem} from "../../store/model/tree-item";
 
@@ -9,6 +9,10 @@ import {TreeItem} from "../../store/model/tree-item";
 })
 
 export class MedicalStateTreeComponent implements OnInit {
+  @ViewChild('toggleContextualPopupButton') toggleContextualPopupButton: ElementRef;
+  @ViewChild('contextualPopup') contextualPopup: ElementRef;
+  @ViewChildren(MedicalStateTreeComponent) medicalStateTreeComponents!: QueryList<MedicalStateTreeComponent>;
+
   public recommendedAnalysesListShown: boolean;
 
   @Input()
@@ -24,10 +28,11 @@ export class MedicalStateTreeComponent implements OnInit {
   nestingLevel?: number = 0;
 
 
-  get hasChildren():boolean {
+  get hasChildren(): boolean {
     return this.medicalState.children && this.medicalState.children.length != 0;
   }
-  constructor() {
+
+  constructor(private renderer: Renderer2) {
     this.isOpen = true;
   }
 
@@ -43,5 +48,23 @@ export class MedicalStateTreeComponent implements OnInit {
       this.recommendedAnalysesListShown = !this.recommendedAnalysesListShown;
     }
   }
+
+  // method to track clicks outside of contextual menu with recommended analyses
+  public onWindowClick(event: PointerEvent) {
+    const isClickOutsideToggleButton = !this.toggleContextualPopupButton.nativeElement.contains(event.target);
+    const isClickOutsidePopup = !this.contextualPopup.nativeElement.contains(event.target);
+    // Only close contextual popup if the click was made outside of toggle button and contextual popup
+    // we need to omit toggle button so that popup won't be closed right after it was opened with toggle button
+    if (isClickOutsideToggleButton && isClickOutsidePopup) {
+      this.recommendedAnalysesListShown = false;
+      if (this.medicalStateTreeComponents) {
+        // call same method for all child nodes
+        this.medicalStateTreeComponents.toArray().forEach(component => {
+          component.onWindowClick(event);
+        });
+      }
+    }
+  }
+
 
 }

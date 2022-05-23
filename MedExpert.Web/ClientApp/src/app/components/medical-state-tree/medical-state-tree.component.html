@@ -3,12 +3,12 @@
   <div class="medical-state-self">
     <div class="medical-state-numbers">
       <div class="medical-state-recommended-analyses col-6">
-        <div class="medical-state-recommended-analyses-count" title="Нажмите чтобы увидеть рекомендованные анализы"
+        <div #toggleContextualPopupButton class="medical-state-recommended-analyses-count" title="Нажмите чтобы увидеть рекомендованные анализы"
              [ngClass]="medicalState.item.recommendedAnalyses.length === 0 ? 'no-recommended-analyses' : 'has-recommended-analyses'"
              (click)="toggleRecommendedAnalysesList()">
           {{medicalState.item.recommendedAnalyses.length || '-'}}
         </div>
-        <div class="medical-state-recommended-analyses-list" [ngClass]="{'d-none': !recommendedAnalysesListShown}">
+        <div #contextualPopup class="medical-state-recommended-analyses-list" [ngClass]="{'d-none': !recommendedAnalysesListShown}">
           <span class="pointer bi bi-caret-up-fill"></span>
           <span class="close-button bi-x" (click)="toggleRecommendedAnalysesList()"></span>
           <ul>

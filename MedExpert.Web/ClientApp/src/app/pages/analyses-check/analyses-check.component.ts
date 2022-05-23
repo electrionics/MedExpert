@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit, QueryList, Renderer2, ViewChildren} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Select, Store} from '@ngxs/store';
 import {
@@ -18,6 +18,7 @@ import {ProfileDTO} from "../../store/model/profile.model";
 import {IComputedIndicator} from "../../store/model/computed-indicator.model";
 import {IAnalysesResult, MedicalStateFilterType} from "../../store/model/analyses-result.model";
 import {IFilterButton} from "../../store/model/filter-button.model";
+import {MedicalStateTreeComponent} from "../../components/medical-state-tree/medical-state-tree.component";
 
 @Component({
   selector: 'app-analyses-check',
@@ -25,7 +26,10 @@ import {IFilterButton} from "../../store/model/filter-button.model";
   styleUrls: ['./analyses-check.component.css']
 })
 export class AnalysesCheckComponent implements OnInit {
+  @ViewChildren(MedicalStateTreeComponent) medicalStateTreeComponents!: QueryList<MedicalStateTreeComponent>;
+
   private analysisId: number;
+  private unsubscribeFromWindowClick: () => void;
 
   @Select(AnalysesState.GetSexes) public readonly sexes$: Observable<ISelectOptions>;
   @Select(AnalysesState.GetSpecialists) public readonly specialists$: Observable<ISelectOptions>;
@@ -101,7 +105,8 @@ export class AnalysesCheckComponent implements OnInit {
     private readonly store: Store,
     private readonly formBuilder: FormBuilder,
     private readonly formsService: FormsService,
-    private readonly cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
+    private readonly renderer: Renderer2,
   ) {
     this.filterButtons = [
       {
@@ -208,6 +213,21 @@ export class AnalysesCheckComponent implements OnInit {
         switchMap(([ sex, age ]) => this.store.dispatch(new GetSpecialistsAction(sex.id, age)))
       )
       .subscribe();
+
+    // we subscribe to window click not in MedicalStateTreeComponent, but here - because we want to subscribe to it only in one place, not in every tree node
+    this.unsubscribeFromWindowClick = this.renderer.listen('window', 'click', (event) => {
+      if (this.isAnalysisResultReceived && this.medicalStateTreeComponents) {
+        this.medicalStateTreeComponents.toArray().forEach((medicalStateTreeComponent) => {
+          medicalStateTreeComponent.onWindowClick(event);
+        })
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.unsubscribeFromWindowClick) {
+      this.unsubscribeFromWindowClick();
+    }
   }
 
   public savePatientForm(): void {
