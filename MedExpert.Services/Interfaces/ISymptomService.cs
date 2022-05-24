@@ -8,6 +8,7 @@ namespace MedExpert.Services.Interfaces
     public interface ISymptomService:IImportService<Symptom>
     {
         Task<IList<TreeItem<Symptom>>> GetSymptomsTree();
+        Task<List<Symptom>> GetAlwaysMatchedSymptoms();
         void RefreshSymptomsCache();
         Task DeleteAllSymptomIndicatorDeviationLevels(int specialistId, int symptomCategoryId);
         Task TryDeleteAllSymptoms(int specialistId, int symptomCategoryId);

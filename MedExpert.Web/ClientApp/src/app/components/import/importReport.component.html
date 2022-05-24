@@ -1,5 +1,5 @@
 <div class="form-group" *ngIf="Report">
-  <h1>Отчёт импорта</h1>
+  <h1 class="h3 mb-3">Отчёт импорта</h1>
   <ul>
     <li class="text-danger" *ngIf="Report.error">Ошибка: {{Report.error}}</li>
     <ng-container *ngIf="!Report.error">
@@ -19,7 +19,7 @@
   </ul>
 
   <div class="legend" *ngIf="Report.countInvalidRows">
-    <h1>Ошибки импорта <span *ngIf="Report.countErrors">({{Report.countErrors}})</span></h1>
+    <h1 class="h3 mb-3">Ошибки импорта <span *ngIf="Report.countErrors">({{Report.countErrors}})</span></h1>
     <button (click)="toggleErrorsByColumns()" style="float: right;" class="btn btn-primary btn-xs expand-button">
       {{Options.showErrorsByColumns ? "Группировать по строкам" : "Группировать по столбцам"}}
     </button>

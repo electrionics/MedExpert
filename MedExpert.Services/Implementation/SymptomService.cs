@@ -112,9 +112,26 @@ namespace MedExpert.Services.Implementation
             return _symptomsCache;
         }
 
+        private static List<Symptom> _alwaysMatchedSymptoms;
+        
+        public async Task<List<Symptom>> GetAlwaysMatchedSymptoms()
+        {
+            if (_alwaysMatchedSymptoms != null) return _alwaysMatchedSymptoms;
+
+            _alwaysMatchedSymptoms = await _dataContext.Set<Symptom>()
+                .Include(x => x.Specialist)
+                .Where(x =>
+                    !x.IsDeleted &&
+                    !x.SymptomIndicatorDeviationLevels.Any(y => y.Indicator.InAnalysis))
+                .ToListAsync();
+
+            return _alwaysMatchedSymptoms;
+        }
+
         public void RefreshSymptomsCache()
         {
             _symptomsCache = null;
+            _alwaysMatchedSymptoms = null;
         }
     }
 }

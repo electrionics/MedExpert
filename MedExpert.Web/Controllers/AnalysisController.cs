@@ -177,6 +177,11 @@ namespace MedExpert.Web.Controllers
                 throw new ValidationException(validationResult.Errors);
             }
             
+            var lookup1 = await _lookupService.GetByName(CommonTreatmentSpecialistLookupName);
+            var lookup2 = await _lookupService.GetByName(CommonAnalysisSpecialistLookupName);
+            var specialist1 = await _specialistService.GetSpecialistById(int.Parse(lookup1.Value));
+            var specialist2 = await _specialistService.GetSpecialistById(int.Parse(lookup2.Value));
+            
             var now = DateTime.Now;
             var analysis = new Analysis
             {
@@ -213,8 +218,6 @@ namespace MedExpert.Web.Controllers
 
             try
             {
-
-
                 using (var transaction1 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 {
                     await _analysisService.Insert(analysis);
@@ -224,6 +227,12 @@ namespace MedExpert.Web.Controllers
                     transaction1.Complete();
                 }
 
+                formModel.SpecialistIds.AddRange(new[]
+                {
+                    specialist1?.Id ?? default,
+                    specialist2?.Id ?? default
+                });
+                
                 var symptomsTree = await _analysisService.CalculateNewAnalysis(analysis.Id, formModel.SpecialistIds);
                 var symptomsList = symptomsTree.MakeFlat();
 

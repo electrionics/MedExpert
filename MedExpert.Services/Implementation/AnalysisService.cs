@@ -7,6 +7,7 @@ using MedExpert.Core;
 using MedExpert.Core.Helpers;
 using MedExpert.Domain;
 using MedExpert.Domain.Entities;
+using MedExpert.Domain.Enums;
 using MedExpert.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -62,21 +63,23 @@ namespace MedExpert.Services.Implementation
                 .ThenInclude(x => x.AnalysisIndicators.Where(y => y.AnalysisId == analysisId))
                 .Where(x =>
                     specialistIds.Contains(x.Symptom.SpecialistId) &&
-                    (x.Symptom.ApplyToSexOnly == null || x.Symptom.ApplyToSexOnly == analysis.Sex) &&
+                    (x.Symptom.ApplyToSexOnly == null || 
+                     x.Symptom.ApplyToSexOnly == analysis.Sex) &&
                     (x.Symptom.Specialist.ApplyToSexOnly == null ||
                      x.Symptom.Specialist.ApplyToSexOnly == analysis.Sex) &&
                     !x.Symptom.IsDeleted &&
                     x.Indicator.InAnalysis)
                 .ToListAsync();
-            var alwaysMatchedSymptoms = await _dataContext.Set<Symptom>()
+
+            var alwaysMatchedSymptoms = (await _symptomService.GetAlwaysMatchedSymptoms())
                 .Where(x =>
                     specialistIds.Contains(x.SpecialistId) &&
-                    (x.ApplyToSexOnly == null || x.ApplyToSexOnly == analysis.Sex) &&
+                    (x.ApplyToSexOnly == null || 
+                     x.ApplyToSexOnly == analysis.Sex) &&
                     (x.Specialist.ApplyToSexOnly == null ||
-                     x.Specialist.ApplyToSexOnly == analysis.Sex) &&
-                    !x.IsDeleted &&
-                    !x.SymptomIndicatorDeviationLevels.Any(y => y.Indicator.InAnalysis))
-                .ToListAsync();
+                     x.Specialist.ApplyToSexOnly == analysis.Sex))
+                .ToList();
+            
             var matchedSymptoms = sidls
                 .GroupBy(x => x.SymptomId)
                 .Where(x =>
