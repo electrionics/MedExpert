@@ -24,6 +24,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.IdentityModel.Tokens;
+using Z.EntityFramework.Extensions;
 
 namespace MedExpert.Web
 {
@@ -51,6 +52,13 @@ namespace MedExpert.Web
             {
                 options.UseSqlServer(databaseConfig.ConnectionString);
             });
+            
+            EntityFrameworkManager.ContextFactory = _ =>
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<MedExpertDataContext>();
+                optionsBuilder.UseSqlServer(databaseConfig.ConnectionString);
+                return new MedExpertDataContext(optionsBuilder.Options);
+            };
 
             services.Configure<CookiePolicyOptions>(options =>
             {

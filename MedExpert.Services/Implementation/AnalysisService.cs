@@ -132,10 +132,10 @@ namespace MedExpert.Services.Implementation
                 .Include(x => x.Symptom)
                 .ThenInclude(x => x.SymptomIndicatorDeviationLevels.Where(y => !y.Indicator.InAnalysis))
                 .ThenInclude(x => x.Indicator)
+                .In(specialistIds, x => x.Symptom.SpecialistId)
                 .Where(x =>
                     x.AnalysisId == analysisId &&
                     x.Symptom.CategoryId == categoryId)
-                .In(specialistIds, x => x.Symptom.SpecialistId)
                 .ToListAsync();
             var matchedIndicators = await _dataContext.Set<AnalysisSymptomIndicator>().AsNoTracking()
                 .Where(x => x.AnalysisId == analysisId)
@@ -205,65 +205,109 @@ namespace MedExpert.Services.Implementation
 
             if (symptomIndicators.Any())
             {
-                var vectorMaxSeverity = new double[symptomIndicators.Count];
-                var vectorMinSeverity = new double[symptomIndicators.Count];
-                var vectorRequired = new double[symptomIndicators.Count];
-                var vectorAnalysis = new double[symptomIndicators.Count];
-
-                for (var i = 0; i < symptomIndicators.Count; i++)
+                try
                 {
-                    var symptomIndicator = symptomIndicators[i];
+                    var vectorMaxSeverity = new double[symptomIndicators.Count];
+                    var vectorMinSeverity = new double[symptomIndicators.Count];
+                    var vectorRequired = new double[symptomIndicators.Count];
+                    var vectorAnalysis = new double[symptomIndicators.Count];
 
-                    if (!analysisIndicatorDict.ContainsKey(symptomIndicator.Indicator.Id))
+                    for (var i = 0; i < symptomIndicators.Count; i++)
                     {
-                        analysisIndicatorDict[symptomIndicator.Indicator.Id] = 0; //TODO: is it necessary?
+                        var symptomIndicator = symptomIndicators[i];
+
+                        if (!analysisIndicatorDict.ContainsKey(symptomIndicator.Indicator.Id))
+                        {
+                            analysisIndicatorDict[symptomIndicator.Indicator.Id] = 0; //TODO: is it necessary?
+                        }
+
+                        vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
+                                                .MultiplySign(symptomIndicator.DeviationLevelId)
+                                            * Math.Sqrt(
+                                                IndicatorWeightsDict.GetValueOrDefault(
+                                                    symptomIndicator.Indicator.ShortName, 1));
+                        vectorAnalysis[i] =
+                            AbsoluteDeviationLevelMeasure[
+                                    Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
+                                .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id])
+                            * Math.Sqrt(
+                                IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                        vectorMaxSeverity[i] = AbsoluteDeviationLevelMeasure[5]
+                                                   .MultiplySign(symptomIndicator.DeviationLevelId)
+                                               * Math.Sqrt(
+                                                   IndicatorWeightsDict.GetValueOrDefault(
+                                                       symptomIndicator.Indicator.ShortName, 1));
+                        vectorMinSeverity[i] = AbsoluteDeviationLevelMeasure[5]
+                                                   .MultiplySign(symptomIndicator.DeviationLevelId * -1)
+                                               * Math.Sqrt(
+                                                   IndicatorWeightsDict.GetValueOrDefault(
+                                                       symptomIndicator.Indicator.ShortName, 1));
                     }
 
-                    vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
-                                            .MultiplySign(symptomIndicator.DeviationLevelId)
-                                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorAnalysis[i] = AbsoluteDeviationLevelMeasure[Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
-                                            .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id]) 
-                                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorMaxSeverity[i] = AbsoluteDeviationLevelMeasure[5]
-                                                     .MultiplySign(symptomIndicator.DeviationLevelId) 
-                                                 * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorMinSeverity[i] = AbsoluteDeviationLevelMeasure[5]
-                                                     .MultiplySign(symptomIndicator.DeviationLevelId * -1)
-                                                 * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                    var vectorMaxSeverityProjected = vectorRequired.Project(vectorMaxSeverity);
+                    var vectorMinSeverityProjected = vectorRequired.Project(vectorMinSeverity);
+                    var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
+
+                    var baseSeverity =
+                        BaseSeverityForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
+
+                    if (vectorAnalysisProjected.Subtract(vectorMaxSeverityProjected).Distance() <
+                        vectorAnalysisProjected.Subtract(vectorMinSeverityProjected).Distance())
+                    {
+                        var baseDistance = vectorMaxSeverityProjected.Distance() - vectorRequired.Distance();
+                        var resultDistance =
+                            vectorMaxSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
+
+                        if (baseDistance == 0)
+                        {
+                            if (resultDistance == 0)
+                            {
+                                severity = 1;
+                            }
+                            else
+                            {
+                                severity = baseSeverity;
+                            }
+                        }
+                        else
+                        {
+                            severity = baseSeverity +
+                                       (1 - baseSeverity) * (baseDistance - resultDistance) / baseDistance;
+                        }
+                    }
+                    else
+                    {
+                        var baseDistance = vectorMinSeverityProjected.Distance() - vectorRequired.Distance();
+                        var resultDistance =
+                            vectorMinSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
+
+                        if (baseDistance == 0)
+                        {
+                            if (resultDistance == 0)
+                            {
+                                severity = baseSeverity;
+                            }
+                            else
+                            {
+                                severity = 0;
+                            }
+                        }
+                        else
+                        {
+                            severity = baseSeverity * (baseDistance - resultDistance) / baseDistance;
+                        }
+                    }
                 }
-
-                var vectorMaxSeverityProjected = vectorRequired.Project(vectorMaxSeverity);
-                var vectorMinSeverityProjected = vectorRequired.Project(vectorMinSeverity);
-                var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
-
-                var baseSeverity =
-                    BaseSeverityForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
-
-                if (vectorAnalysisProjected.Subtract(vectorMaxSeverityProjected).Distance() <
-                    vectorAnalysisProjected.Subtract(vectorMinSeverityProjected).Distance())
+                catch(OverflowException e)
                 {
-                    var baseDistance = vectorMaxSeverityProjected.Distance() - vectorRequired.Distance();
-                    var resultDistance =
-                        vectorMaxSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
-
-                    severity = baseSeverity +
-                                     (1 - baseSeverity) * (baseDistance - resultDistance) / baseDistance;
-                }
-                else
-                {
-                    var baseDistance = vectorMinSeverityProjected.Distance() - vectorRequired.Distance();
-                    var resultDistance =
-                        vectorMinSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
-
-                    severity = baseSeverity * (baseDistance - resultDistance) / baseDistance;
+                    severity = null;
                 }
             }
             else
             {
                 severity = null;
             }
-
+            
             return new AnalysisSymptom 
             {
                 Symptom = symptom,

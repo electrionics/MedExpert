@@ -9,6 +9,10 @@ namespace MedExpert.Domain
         {
         }
         
+        public MedExpertDataContext()
+        {
+        }
+        
         private static readonly OptionRecompileInterceptor Interceptor = new();
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

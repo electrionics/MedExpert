@@ -30,8 +30,8 @@ namespace MedExpert.Services.Implementation
         {
             await _dataContext.BulkInsertAsync(entities,options => 
             {
-                options.IncludeGraph = false;
-                options.BatchSize = 5000;
+                options.IncludeGraph = true;
+                options.BatchSize = 2000;
             });
             RefreshSymptomsCache();
         }
@@ -49,7 +49,7 @@ namespace MedExpert.Services.Implementation
             await _dataContext.BulkDeleteAsync(entities, options =>
             {
                 options.IncludeGraph = false;
-                options.BatchSize = 5000;
+                options.BatchSize = 200;
             });
         }
 
@@ -131,7 +131,7 @@ namespace MedExpert.Services.Implementation
         {
             if (_alwaysMatchedSymptoms != null) return _alwaysMatchedSymptoms;
 
-            _alwaysMatchedSymptoms = await _dataContext.Set<Symptom>()
+            _alwaysMatchedSymptoms = await _dataContext.Set<Symptom>().AsNoTracking()
                 .Include(x => x.Specialist)
                 .Where(x =>
                     !x.IsDeleted &&
