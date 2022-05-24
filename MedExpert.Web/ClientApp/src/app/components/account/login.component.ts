@@ -1,6 +1,9 @@
 ﻿import {Component, Inject} from '@angular/core';
 import {ApiService} from "../../services/api.service";
 import {FormControl, Validators} from "@angular/forms";
+import {ActivatedRoute, Router} from "@angular/router";
+import {AuthService} from "../../services/auth.service";
+import {filter} from 'rxjs/operators';
 
 @Component({
   selector: 'app-import-analysis',
@@ -15,7 +18,7 @@ export class LoginComponent{
   public Email: FormControl;
   public Password: FormControl;
 
-  constructor(apiService: ApiService) {
+  constructor(apiService: ApiService, private router: Router, private authService: AuthService, private route: ActivatedRoute) {
     this.apiService = apiService;
 
     this.model = new LoginFormModel();
@@ -25,23 +28,33 @@ export class LoginComponent{
   }
 
   ngOnInit() {
-    this.apiService.get<LoginFormModel>('Account/Login').subscribe(result =>{
-      this.model = result;
-    }, error => console.error(error) );
+    this.route.queryParams
+      .pipe(
+        filter(params => params.returnUrl))
+      .subscribe(params => {
+        this.apiService.get<LoginFormModel>('Account/Login?returnUrl=' + params.returnUrl).subscribe(result =>{
+          this.model = result;
+        }, error => console.error(error) );
+    });
   }
 
   public login(){
     this.updateControls();
 
     if (this.Email.valid && this.Password.valid){
-      this.apiService.post<LoginResultModel>('Account/Login', this.model).subscribe(result => {
+      this.authService.login(this.model, (result) => {
         if (result.success){
-          //result.RedirectUrl
+          if (!result.redirectUrl){
+            this.router.navigate(['/import/symptoms']);
+          }
+          else{
+            this.router.navigate([result.redirectUrl]);
+          }
         }
         else {
           this.errorMessage = result.errorMessage;
         }
-      }, error => console.error(error) );
+      });
     }
   }
 
@@ -66,10 +79,4 @@ class LoginFormModel{
 interface AuthenticationScheme{
   Name: string;
   DisplayName: string;
-}
-
-class LoginResultModel{
-  success: boolean;
-  errorMessage: string;
-  redirectUrl: string;
 }

@@ -3,7 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import {AnalysesCheckComponent} from './analyses-check.component';
 
 const routes: Routes = [
-  { path: 'analyses-check', component: AnalysesCheckComponent }
+  { path: '', component: AnalysesCheckComponent, pathMatch: 'full' } //analyses-check
 ];
 
 @NgModule({

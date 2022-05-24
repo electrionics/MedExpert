@@ -20,13 +20,13 @@
         [ngClass]="{ show: isExpanded }"
       >
         <ul class="navbar-nav flex-grow">
-          <li class="nav-item"
-              [routerLinkActive]="['link-active']"
-              [routerLinkActiveOptions]="{ exact: true }">
-            <a class="nav-link text-dark" [routerLink]="['/']">Главная</a>
-          </li>
-          <li class="nav-item" [routerLinkActive]="['link-active']">
-            <a class="nav-link text-dark" (click)="toggleSubMenu()">Импорт</a>
+<!--          <li class="nav-item"-->
+<!--              [routerLinkActive]="['link-active']"-->
+<!--              [routerLinkActiveOptions]="{ exact: true }">-->
+<!--            <a class="nav-link text-dark" [routerLink]="['/']">Главная</a>-->
+<!--          </li>-->
+          <li *appIfLogged="true" class="nav-item" [routerLinkActive]="['link-active']">
+            <a class="nav-link text-dark" (click)="toggleSubMenu()" style="width: 200px;">Импорт файлов</a>
             <ul *ngIf="subMenuExpanded" class="navbar-nav flex-grow" style="flex-direction: column">
               <li class="nav-item">
                 <a class="nav-link text-dark" [routerLink]="['/import/indicators']">Показатели</a>
@@ -43,12 +43,15 @@
             </ul>
           </li>
           <li class="nav-item" [routerLinkActive]="['link-active']">
-            <a class="nav-link text-dark" [routerLink]="['/analyses-check']">Проверка анализов</a>
+            <a class="nav-link text-dark" [routerLink]="['/']">Проверка анализов</a><!-- analyses-check -->
           </li>
-          <li class="nav-item" [routerLinkActive]="['link-active']">
-            <a class="nav-link text-dark" [routerLink]="['/about']">О системе</a>
+<!--          <li class="nav-item" [routerLinkActive]="['link-active']">-->
+<!--            <a class="nav-link text-dark" [routerLink]="['/about']">О системе</a>-->
+<!--          </li>-->
+          <li *appIfLogged="true" class="nav-item" [routerLinkActive]="['link-active']">
+            <a class="nav-link text-dark" (click)="logout()" style="cursor: pointer;">Выйти</a>
           </li>
-          <li class="nav-item" [routerLinkActive]="['link-active']">
+          <li *appIfLogged="false" class="nav-item" [routerLinkActive]="['link-active']">
             <a class="nav-link text-dark" [routerLink]="['/account/login']">Войти</a>
           </li>
         </ul>

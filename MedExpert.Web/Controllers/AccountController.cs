@@ -4,6 +4,7 @@ using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using FluentValidation;
 using MedExpert.Domain.Identity;
+using MedExpert.Web.Services;
 using MedExpert.Web.ViewModels.Account;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -25,15 +26,17 @@ namespace MedExpert.Web.Controllers
         private readonly ILogger<LoginModel> _logger;
         private readonly IValidator<LoginFormModel> _loginFormModelValidator;
         private readonly IValidator<RegisterFormModel> _registerFormModelValidator;
+        private readonly IJwtGenerator _jwtGenerator;
         
         public AccountController(SignInManager<User> signInManager, 
             ILogger<LoginModel> logger,
-            UserManager<User> userManager, IValidator<LoginFormModel> loginFormModelValidator, IValidator<RegisterFormModel> registerFormModelValidator, IEmailSender emailSender)
+            UserManager<User> userManager, IValidator<LoginFormModel> loginFormModelValidator, IValidator<RegisterFormModel> registerFormModelValidator, IEmailSender emailSender, IJwtGenerator jwtGenerator)
         {
             _userManager = userManager;
             _loginFormModelValidator = loginFormModelValidator;
             _registerFormModelValidator = registerFormModelValidator;
             _emailSender = emailSender;
+            _jwtGenerator = jwtGenerator;
             _signInManager = signInManager;
             _logger = logger;
         }
@@ -46,8 +49,6 @@ namespace MedExpert.Web.Controllers
             // {
             //     ModelState.AddModelError(string.Empty, ErrorMessage);
             // }
-
-            returnUrl ??= Url.Content("~/");
 
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -67,7 +68,7 @@ namespace MedExpert.Web.Controllers
         {
             var result = new LoginResultModel
             {
-                RedirectUrl = model.ReturnUrl ?? "",
+                RedirectUrl = model.ReturnUrl,
                 ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList()
             };
 
@@ -76,26 +77,39 @@ namespace MedExpert.Web.Controllers
             {
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var signInResult = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
-                result.Success = signInResult.Succeeded;
                 
-                if (signInResult.Succeeded)
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
                 {
-                    _logger.LogInformation("User logged in.");
-                }
-                else if (signInResult.RequiresTwoFactor)
-                {
-                    result.RedirectUrl = $"account/loginWih2fa?ReturnUrl={model.ReturnUrl}&RememberMe={model.RememberMe}";
-                }
-                else if (signInResult.IsLockedOut)
-                {
-                    _logger.LogWarning("User account locked out.");
-                    result.RedirectUrl = "account/lockout";
+                    result.ErrorMessage = "Пользователь с таким именем не существует.";
                 }
                 else
                 {
-                    result.ErrorMessage = "Неудачная попытка входа в систему.";
+                    var signInResult = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+                    result.Success = signInResult.Succeeded;
+
+                    if (signInResult.Succeeded)
+                    {
+                        result.DisplayName = user.Email[..user.Email.IndexOf('@')];
+                        result.UserName = user.UserName;
+                        result.Token = _jwtGenerator.CreateToken(user);
+                        _logger.LogInformation("User logged in.");
+                    }
+                    else if (signInResult.RequiresTwoFactor)
+                    {
+                        result.RedirectUrl = $"account/loginWih2fa?ReturnUrl={model.ReturnUrl}&RememberMe={model.RememberMe}";
+                    }
+                    else if (signInResult.IsLockedOut)
+                    {
+                        _logger.LogWarning("User account locked out.");
+                        result.RedirectUrl = "account/lockout";
+                    }
+                    else
+                    {
+                        result.ErrorMessage = "Неудачная попытка входа в систему.";
+                    }
                 }
+                
 
                 return result;
             }

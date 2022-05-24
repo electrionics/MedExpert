@@ -1,3 +1,4 @@
+using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MedExpert.Domain;
@@ -19,8 +20,10 @@ using MedExpert.Web.Services;
 using MedExpert.Web.ViewModels.Account;
 using MedExpert.Web.ViewModels.Analysis;
 using MedExpert.Web.ViewModels.Import;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.IdentityModel.Tokens;
 
 namespace MedExpert.Web
 {
@@ -38,12 +41,15 @@ namespace MedExpert.Web
         {
             // In production, the Angular files will be served from this directory
             services.AddSpaStaticFiles(configuration => { configuration.RootPath = "ClientApp/dist"; });
-            
-            services.AddSingleton(Configuration.GetSection("Database").Get<DatabaseConfig>());
+
+            var databaseConfig = Configuration.GetSection("Database").Get<DatabaseConfig>();
+            var authorizationConfig = Configuration.GetSection("Authorization").Get<AuthorizationConfig>();
+            services.AddSingleton(databaseConfig);
+            services.AddSingleton(authorizationConfig);
 
             services.AddDbContext<MedExpertDataContext>(options => 
             {
-                options.UseSqlServer(Configuration.GetSection("Database").Get<DatabaseConfig>().ConnectionString);
+                options.UseSqlServer(databaseConfig.ConnectionString);
             });
 
             services.Configure<CookiePolicyOptions>(options =>
@@ -60,17 +66,17 @@ namespace MedExpert.Web
             {
                 options.AddPolicy("CorsPolicy",
                     bld => bld
-                        .WithOrigins("http://localhost:4200")
+                        .WithOrigins("https://localhost:4200")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials());
             });
-            
+            services.AddScoped<IJwtGenerator, JwtGenerator>();
             services.AddScoped<UserManager<User>>();
             services.AddScoped<IEmailSender, EmailSender>();
 
             services.AddDbContext<IdentityContext>(options =>
-                options.UseSqlServer(Configuration.GetSection("Database").Get<DatabaseConfig>().ConnectionString)
+                options.UseSqlServer(databaseConfig.ConnectionString)
             );
 
             services.AddIdentity<User, Role>()//options =>
@@ -83,6 +89,20 @@ namespace MedExpert.Web
                 // })
                 .AddEntityFrameworkStores<IdentityContext>()
                 .AddDefaultTokenProviders();
+            
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authorizationConfig.TokenKey));
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(
+                    opt =>
+                    {
+                        opt.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = key,
+                            ValidateAudience = false,
+                            ValidateIssuer = false
+                        };
+                    });
             
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
             services.AddTransient<IValidator<ImportSymptomForm>, ImportSymptomFormValidator>();

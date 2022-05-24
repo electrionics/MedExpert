@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve -c development",
+    "start": "ng serve -c development --ssl true",
     "build": "ng build -c production",
     "build:ssr": "ng run NiceNumber.Web:server:dev",
     "test": "ng test",

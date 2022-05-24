@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { NgxsModule } from '@ngxs/store';
 
@@ -32,6 +32,10 @@ import { CookieService } from "./services/cookieService.component";
 import {AnalysesCheckModule} from './pages/analyses-check/analyses-check.module';
 import {environment} from '../environments/environment';
 import {AnalysesState} from './store/state/analyses.state';
+import {IfLoggedDirective} from "./directives/if-logged.directive";
+import {WithCredentialsInterceptor} from "./interceptors/withCredentials.interceptor";
+import {AuthInteceptor} from "./interceptors/auth.interceptor";
+import {AuthGuard} from "./services/auth.guard";
 
 @NgModule({
     declarations: [
@@ -47,7 +51,8 @@ import {AnalysesState} from './store/state/analyses.state';
         ImportAnalysisComponent,
         LoginComponent,
         ConfirmDialogComponent,
-        AlertDialogComponent
+        AlertDialogComponent,
+        IfLoggedDirective
     ],
     imports: [
         BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -57,12 +62,12 @@ import {AnalysesState} from './store/state/analyses.state';
         HttpClientModule,
         FormsModule,
         RouterModule.forRoot([
-            { path: '', component: HomeComponent, pathMatch: 'full' },
-            { path: 'about', component: AboutComponent },
-            { path: 'import/reference-intervals', component: ImportReferenceIntervalsComponent },
-            { path: 'import/indicators', component: ImportIndicatorsComponent },
-            { path: 'import/symptoms', component: ImportSymptomsComponent },
-            { path: 'import/analysis', component: ImportAnalysisComponent },
+            //{ path: '', component: HomeComponent, pathMatch: 'full' },
+            //{ path: 'about', component: AboutComponent },
+            { path: 'import/reference-intervals', component: ImportReferenceIntervalsComponent, canActivate: [AuthGuard] },
+            { path: 'import/indicators', component: ImportIndicatorsComponent, canActivate: [AuthGuard] },
+            { path: 'import/symptoms', component: ImportSymptomsComponent, canActivate: [AuthGuard] },
+            { path: 'import/analysis', component: ImportAnalysisComponent, canActivate: [AuthGuard] },
             { path: 'account/login', component: LoginComponent },
         ]),
         AnalysesCheckModule,
@@ -73,7 +78,9 @@ import {AnalysesState} from './store/state/analyses.state';
     ],
     providers: [
         { provide: MAT_DIALOG_DEFAULT_OPTIONS, useValue: { hasBackdrop: true, disableClose: true } },
-        CookieService
+        CookieService,
+        { provide: HTTP_INTERCEPTORS, useClass: WithCredentialsInterceptor, multi: true },
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInteceptor, multi: true }
     ],
     bootstrap: [AppComponent]
 })
