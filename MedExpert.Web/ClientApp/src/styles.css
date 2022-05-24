@@ -62,7 +62,7 @@ code {
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background: #8eadc3;
+  background: #cbdce8;
 }
 
 body.mat-typography{
@@ -77,6 +77,7 @@ body.mat-typography{
 header {
   background: linear-gradient(#49b2fc,#49b2fc);
   box-shadow: 0 20px 10px -10px #525252;
+  border-radius: 0 0 50px 50px;
 }
 
 
