@@ -28,8 +28,11 @@ namespace MedExpert.Services.Implementation
 
         public async Task InsertBulk(List<Symptom> entities)
         {
-            await _dataContext.Set<Symptom>().AddRangeAsync(entities);
-            await _dataContext.SaveChangesAsync();
+            await _dataContext.BulkInsertAsync(entities,options => 
+            {
+                options.IncludeGraph = false;
+                options.BatchSize = 5000;
+            });
             RefreshSymptomsCache();
         }
 
@@ -43,9 +46,11 @@ namespace MedExpert.Services.Implementation
             var entities = _dataContext.Set<SymptomIndicatorDeviationLevel>()
                 .Where(x => x.Symptom.SpecialistId == specialistId && x.Symptom.CategoryId == symptomCategoryId);
             
-            _dataContext.Set<SymptomIndicatorDeviationLevel>().RemoveRange(entities);
-
-            await _dataContext.SaveChangesAsync();
+            await _dataContext.BulkDeleteAsync(entities, options =>
+            {
+                options.IncludeGraph = false;
+                options.BatchSize = 5000;
+            });
         }
 
         public async Task TryDeleteAllSymptoms(int specialistId, int symptomCategoryId)
@@ -83,15 +88,23 @@ namespace MedExpert.Services.Implementation
 
                 i++;
             }
-
-            _dataContext.Set<Symptom>().RemoveRange(entitiesToRemove);
             
             foreach (var symptom in entitiesToMark)
             {
                 symptom.IsDeleted = true;
             }
 
-            await _dataContext.SaveChangesAsync();
+            await _dataContext.BulkDeleteAsync(entitiesToRemove, options =>
+            {
+                options.IncludeGraph = false;
+                options.BatchSize = 5000;
+            });
+            
+            await _dataContext.BulkUpdateAsync(entitiesToMark, options =>
+            {
+                options.IncludeGraph = false;
+                options.BatchSize = 5000;
+            });
         }
 
         private static IList<TreeItem<Symptom>> _symptomsCache;
