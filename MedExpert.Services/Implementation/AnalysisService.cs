@@ -58,11 +58,11 @@ namespace MedExpert.Services.Implementation
                 y.DeviationLevelId * y.Indicator.AnalysisIndicators.First().DeviationLevelId > 0 &&
                 Math.Abs(y.DeviationLevelId) <= Math.Abs(y.Indicator.AnalysisIndicators.First().DeviationLevelId);
 
-            var sidls = await _dataContext.Set<SymptomIndicatorDeviationLevel>()
+            var sidls = await _dataContext.Set<SymptomIndicatorDeviationLevel>().AsNoTracking()
                 .Include(x => x.Indicator)
                 .ThenInclude(x => x.AnalysisIndicators.Where(y => y.AnalysisId == analysisId))
+                .In(specialistIds, x => x.Symptom.SpecialistId)
                 .Where(x =>
-                    specialistIds.Contains(x.Symptom.SpecialistId) &&
                     (x.Symptom.ApplyToSexOnly == null || 
                      x.Symptom.ApplyToSexOnly == analysis.Sex) &&
                     (x.Symptom.Specialist.ApplyToSexOnly == null ||
@@ -128,16 +128,16 @@ namespace MedExpert.Services.Implementation
                 throw new InvalidDataException("Анализ еще не рассчитан.");
             }
             
-            var filteredAnalysisSymptoms = await _dataContext.Set<AnalysisSymptom>()
+            var filteredAnalysisSymptoms = await _dataContext.Set<AnalysisSymptom>().AsNoTracking()
                 .Include(x => x.Symptom)
                 .ThenInclude(x => x.SymptomIndicatorDeviationLevels.Where(y => !y.Indicator.InAnalysis))
                 .ThenInclude(x => x.Indicator)
                 .Where(x =>
                     x.AnalysisId == analysisId &&
-                    specialistIds.Contains(x.Symptom.SpecialistId) &&
                     x.Symptom.CategoryId == categoryId)
+                .In(specialistIds, x => x.Symptom.SpecialistId)
                 .ToListAsync();
-            var matchedIndicators = await _dataContext.Set<AnalysisSymptomIndicator>()
+            var matchedIndicators = await _dataContext.Set<AnalysisSymptomIndicator>().AsNoTracking()
                 .Where(x => x.AnalysisId == analysisId)
                 .ToListAsync();
 

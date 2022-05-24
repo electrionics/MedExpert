@@ -7,160 +7,90 @@ namespace MedExpert.Core.Helpers
 {
     public static class QueryableExtensions
     {
-        public static IQueryable<TResult> LeftOuterJoin<TOuter, TInner, TKey, TResult>(
-            this IQueryable<TOuter> outer,
-            IQueryable<TInner> inner,
-            Expression<Func<TOuter, TKey>> outerKeySelector,
-            Expression<Func<TInner, TKey>> innerKeySelector,
-            Expression<Func<TOuter, TInner, TResult>> resultSelector)
+        public static IQueryable<TQuery> In<TKey, TQuery>(
+            this IQueryable<TQuery> queryable,
+            IEnumerable<TKey> values,
+            Expression<Func<TQuery, TKey>> keySelector)
         {
+            if (values == null)
+            {
+                throw new ArgumentNullException(nameof(values));
+            }
+            
+            if (keySelector == null)
+            {
+                throw new ArgumentNullException(nameof(keySelector));
+            }
 
-            // generic methods
-            var selectManies = typeof(Queryable).GetMethods()
-                .Where(x => x.Name == "SelectMany" && x.GetParameters().Length == 3)
-                .OrderBy(x => x.ToString().Length)
+            if (!values.Any())
+            {
+                return queryable.Take(0);
+            }
+            
+            var distinctValues = Bucketize(values);
+
+            if (distinctValues.Length > 2048)
+            {
+                throw new ArgumentException("Too many parameters for SQL Server, reduce the number of parameters", nameof(keySelector));
+            }
+            
+            var predicates = distinctValues
+                .Select(v =>
+                {
+                    // Create an expression that captures the variable so EF can turn this into a parameterized SQL query
+                    Expression<Func<TKey>> valueAsExpression = () => v;
+                    return Expression.Equal(keySelector.Body, valueAsExpression.Body);
+                })
                 .ToList();
-            var selectMany = selectManies.First();
-            var select = typeof(Queryable).GetMethods().First(x => x.Name == "Select" && x.GetParameters().Length == 2);
-            var where = typeof(Queryable).GetMethods().First(x => x.Name == "Where" && x.GetParameters().Length == 2);
-            var groupJoin = typeof(Queryable).GetMethods()
-                .First(x => x.Name == "GroupJoin" && x.GetParameters().Length == 5);
-            var defaultIfEmpty = typeof(Queryable).GetMethods()
-                .First(x => x.Name == "DefaultIfEmpty" && x.GetParameters().Length == 1);
 
-            // need anonymous type here or let's use Tuple
-            // prepares for:
-            // var q2 = Queryable.GroupJoin(db.A, db.B, a => a.Id, b => b.IdA, (a, b) => new { a, groupB = b.DefaultIfEmpty() });
-            var tuple = typeof(Tuple<,>).MakeGenericType(
-                typeof(TOuter),
-                typeof(IQueryable<>).MakeGenericType(
-                    typeof(TInner)
-                )
-            );
-            var paramOuter = Expression.Parameter(typeof(TOuter));
-            var paramInner = Expression.Parameter(typeof(IEnumerable<TInner>));
-            var groupJoinExpression = Expression.Call(
-                null,
-                groupJoin.MakeGenericMethod(typeof(TOuter), typeof(TInner), typeof(TKey), tuple),
-                new Expression[]
-                {
-                    Expression.Constant(outer),
-                    Expression.Constant(inner),
-                    outerKeySelector,
-                    innerKeySelector,
-                    Expression.Lambda(
-                        Expression.New(
-                            tuple.GetConstructor(tuple.GetGenericArguments()),
-                            new Expression[]
-                            {
-                                paramOuter,
-                                Expression.Call(
-                                    null,
-                                    defaultIfEmpty.MakeGenericMethod(typeof(TInner)),
-                                    new Expression[]
-                                    {
-                                        Expression.Convert(paramInner, typeof(IQueryable<TInner>))
-                                    }
-                                )
-                            },
-                            tuple.GetProperties()
-                        ),
-                        new[] {paramOuter, paramInner}
-                    )
-                }
-            );
+            while (predicates.Count > 1)
+            {
+                predicates = PairWise(predicates).Select(p => Expression.OrElse(p.Item1, p.Item2)).ToList();
+            }
 
-            // prepares for:
-            // var q3 = Queryable.SelectMany(q2, x => x.groupB, (a, b) => new { a.a, b });
-            var tuple2 = typeof(Tuple<,>).MakeGenericType(typeof(TOuter), typeof(TInner));
-            var paramTuple2 = Expression.Parameter(tuple);
-            var paramInner2 = Expression.Parameter(typeof(TInner));
-            var paramGroup = Expression.Parameter(tuple);
-            var selectMany1Result = Expression.Call(
-                null,
-                selectMany.MakeGenericMethod(tuple, typeof(TInner), tuple2),
-                new Expression[]
-                {
-                    groupJoinExpression,
-                    Expression.Lambda(
-                        Expression.Convert(Expression.MakeMemberAccess(paramGroup, tuple.GetProperty("Item2")),
-                            typeof(IEnumerable<TInner>)),
-                        paramGroup
-                    ),
-                    Expression.Lambda(
-                        Expression.New(
-                            tuple2.GetConstructor(tuple2.GetGenericArguments()),
-                            new Expression[]
-                            {
-                                Expression.MakeMemberAccess(paramTuple2, paramTuple2.Type.GetProperty("Item1")),
-                                paramInner2
-                            },
-                            tuple2.GetProperties()
-                        ),
-                        new[]
-                        {
-                            paramTuple2,
-                            paramInner2
-                        }
-                    )
-                }
-            );
+            var body = predicates.Single();
 
-            // prepares for final step, combine all expressinos together and invoke:
-            // var q4 = Queryable.SelectMany(db.A, a => q3.Where(x => x.a == a).Select(x => x.b), (a, b) => new { a, b });
-            var paramTuple3 = Expression.Parameter(tuple2);
-            var paramTuple4 = Expression.Parameter(tuple2);
-            var paramOuter3 = Expression.Parameter(typeof(TOuter));
-            var selectManyResult2 = selectMany
-                .MakeGenericMethod(
-                    typeof(TOuter),
-                    typeof(TInner),
-                    typeof(TResult)
-                )
-                .Invoke(
-                    null,
-                    new object[]
-                    {
-                        outer,
-                        Expression.Lambda(
-                            Expression.Convert(
-                                Expression.Call(
-                                    null,
-                                    select.MakeGenericMethod(tuple2, typeof(TInner)),
-                                    new Expression[]
-                                    {
-                                        Expression.Call(
-                                            null,
-                                            where.MakeGenericMethod(tuple2),
-                                            new Expression[]
-                                            {
-                                                selectMany1Result,
-                                                Expression.Lambda(
-                                                    Expression.Equal(
-                                                        paramOuter3,
-                                                        Expression.MakeMemberAccess(paramTuple4,
-                                                            paramTuple4.Type.GetProperty("Item1"))
-                                                    ),
-                                                    paramTuple4
-                                                )
-                                            }
-                                        ),
-                                        Expression.Lambda(
-                                            Expression.MakeMemberAccess(paramTuple3,
-                                                paramTuple3.Type.GetProperty("Item2")),
-                                            paramTuple3
-                                        )
-                                    }
-                                ),
-                                typeof(IEnumerable<TInner>)
-                            ),
-                            paramOuter3
-                        ),
-                        resultSelector
-                    }
-                );
+            var clause = Expression.Lambda<Func<TQuery, bool>>(body, keySelector.Parameters);
 
-            return (IQueryable<TResult>) selectManyResult2;
+            return queryable.Where(clause);
+        }
+
+        /// <summary>
+        /// Break a list of items tuples of pairs.
+        /// </summary>
+        private static IEnumerable<(T, T)> PairWise<T>(this IEnumerable<T> source)
+        {
+            var sourceEnumerator = source.GetEnumerator();
+            while (sourceEnumerator.MoveNext())
+            {
+                var a = sourceEnumerator.Current;
+                sourceEnumerator.MoveNext();
+                var b = sourceEnumerator.Current;
+
+                yield return (a, b);
+            }
+        }
+
+        private static TKey[] Bucketize<TKey>(IEnumerable<TKey> values)
+        {
+            var distinctValueList = values.Distinct().ToList();
+
+            // Calculate bucket size as 1,2,4,8,16,32,64,...
+            var bucket = 1;
+            while (distinctValueList.Count > bucket)
+            {
+                bucket *= 2;
+            }
+
+            // Fill all slots.
+            var lastValue = distinctValueList.Last();
+            for (var index = distinctValueList.Count; index < bucket; index++)
+            {
+                distinctValueList.Add(lastValue);
+            }
+
+            var distinctValues = distinctValueList.ToArray();
+            return distinctValues;
         }
     }
 }

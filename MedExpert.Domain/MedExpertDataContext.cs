@@ -9,6 +9,11 @@ namespace MedExpert.Domain
         {
         }
         
+        private static readonly OptionRecompileInterceptor Interceptor = new();
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            => optionsBuilder.AddInterceptors(Interceptor);
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             #region Base
