@@ -12,6 +12,8 @@ namespace MedExpert.Web.ViewModels.Analysis
         
         public decimal? Severity { get; set; }
         
+        public decimal? CombinedSubtreeSeverity { get; set; }
+        
         public List<IndicatorModel> RecommendedAnalyses { get; set; } // can present at each tree node at any level 
     }
 }

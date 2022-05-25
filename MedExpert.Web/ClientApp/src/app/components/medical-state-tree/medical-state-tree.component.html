@@ -2,7 +2,7 @@
 <div class="medical-state">
   <div class="medical-state-self">
     <div class="medical-state-numbers">
-      <div class="medical-state-recommended-analyses col-6">
+      <div class="medical-state-recommended-analyses col-4">
         <div #toggleContextualPopupButton class="medical-state-recommended-analyses-count" title="Нажмите чтобы увидеть рекомендованные анализы"
              [ngClass]="medicalState.item.recommendedAnalyses.length === 0 ? 'no-recommended-analyses' : 'has-recommended-analyses'"
              (click)="toggleRecommendedAnalysesList()">
@@ -18,7 +18,8 @@
           </ul>
         </div>
       </div>
-      <div class="medical-state-severity col-6">{{medicalState.item.severity}}</div>
+      <div class="medical-state-severity col-4">{{medicalState.item.severity}}</div>
+      <div class="medical-state-severity col-4">{{medicalState.item.combinedSubtreeSeverity}}</div>
     </div>
     <div class="medical-state-name">
       <span class="medical-state-child-line" [ngClass]="{'d-none': nestingLevel == 0}"></span>

@@ -114,7 +114,8 @@ namespace MedExpert.Services.Implementation
 
             var filteredCalculatedTree = calculatedTree
                 .GetMatched(x => x.Severity is null or > 0.2m, new HashSet<bool> {true})
-                .GetMatchedBranch(x => x.Any(y => y.Severity is not null), new HashSet<bool?> {true});
+                .GetMatchedBranch(x => x.Any(y => y.Severity is not null), new HashSet<bool?> {true})
+                .VisitAndConvert(CalculateCombinedSeverity);
             
             return filteredCalculatedTree;
         }
@@ -164,7 +165,7 @@ namespace MedExpert.Services.Implementation
             var matchedSymptomsTree = symptomsTree.GetMatched(x => x.Id, mathcedSymptomIds);
 
             var result = matchedSymptomsTree.VisitAndConvert(x => matchedAnalysisSymptoms[x.Id])
-                .VisitAndSort(x => x.Severity ?? 0, false);
+                .VisitAndSort(x => x.CombinedSubtreeSeverity ?? 0, false);
 
             return result;
         }
@@ -318,6 +319,28 @@ namespace MedExpert.Services.Implementation
                     .Select(x => x.IndicatorId)
                     .ToHashSet()
             };
+        }
+
+        private static readonly List<decimal?> EmptySeverityList = new(0);
+        
+        private static AnalysisSymptom CalculateCombinedSeverity(AnalysisSymptom analysisSymptom,
+            IEnumerable<AnalysisSymptom> children)
+        {
+            var currentSeverity = analysisSymptom.Severity;
+            var childrenSeverities = children?
+                .Select(x => x.CombinedSubtreeSeverity ?? x.Severity)
+                .Where(x => x.HasValue)
+                .ToList() ?? EmptySeverityList;
+
+            const decimal higherLevelCoefficient = 2.5m;
+            analysisSymptom.CombinedSubtreeSeverity = currentSeverity.HasValue
+                ? (higherLevelCoefficient * currentSeverity.Value + childrenSeverities.Sum()) /
+                  (higherLevelCoefficient + childrenSeverities.Count)
+                : childrenSeverities.Count > 0
+                    ? childrenSeverities.Sum() / childrenSeverities.Count
+                    : null;
+
+            return analysisSymptom;
         }
     }
 }

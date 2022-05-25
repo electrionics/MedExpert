@@ -241,7 +241,8 @@ namespace MedExpert.Web.Controllers
                     {
                         AnalysisId = analysis.Id,
                         SymptomId = x.SymptomId,
-                        Severity = x.Severity
+                        Severity = x.Severity,
+                        CombinedSubtreeSeverity = x.CombinedSubtreeSeverity
                     }).ToList();
                 var toInsertMatchedIndicators = symptomsList.SelectMany(x => x.MatchedIndicatorIds.Select(y =>
                     new AnalysisSymptomIndicator
@@ -388,6 +389,7 @@ namespace MedExpert.Web.Controllers
                 SymptomId = symptomId,
                 Name = analysisSymptom.Symptom.Name,
                 Severity = analysisSymptom.Severity,
+                CombinedSubtreeSeverity = analysisSymptom.CombinedSubtreeSeverity,
                 RecommendedAnalyses = 
                     recommendedIndicators.Select(x => new IndicatorModel
                     {

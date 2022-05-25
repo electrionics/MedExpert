@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -102,6 +103,16 @@ namespace MedExpert.Core.Helpers
             {
                 Item = converter(p.Item), 
                 Children = VisitAndConvert(p.Children, converter)
+            }).ToList();
+        }
+
+        public static IList<TreeItem<TResult>> VisitAndConvert<TEntity, TResult>(this IEnumerable<TreeItem<TEntity>> tree,
+            Func<TEntity, IEnumerable<TEntity>, TResult> converter)
+        {
+            return tree?.Select(p => new TreeItem<TResult>
+            {
+                Children = VisitAndConvert(p.Children, converter),
+                Item = converter(p.Item, p.Children?.Select(x => x.Item))
             }).ToList();
         }
 
