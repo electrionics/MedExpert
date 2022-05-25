@@ -218,7 +218,7 @@ namespace MedExpert.Web.Controllers
 
             try
             {
-                using (var transaction1 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using (var transaction1 = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     await _analysisService.Insert(analysis);
                     await _analysisIndicatorService.InsertBulk(toInsertIndicators);
@@ -253,7 +253,7 @@ namespace MedExpert.Web.Controllers
 
                 analysis.Calculated = true;
 
-                using (var transaction2 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using (var transaction2 = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     await _analysisService.Update(analysis);
                     await _analysisSymptomService.InsertBulk(toInsertAnalysisSymptoms);

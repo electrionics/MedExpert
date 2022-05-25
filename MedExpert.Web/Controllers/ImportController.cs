@@ -99,7 +99,7 @@ namespace MedExpert.Web.Controllers
                         {
                             var keys = importCandidates.Values.Select(x => x.ShortName).ToList();
 
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
                             
                             var toUpdates = await _indicatorService.GetIndicators(keys);
 
@@ -215,7 +215,7 @@ namespace MedExpert.Web.Controllers
                                 .Select(x => x.CreateEntity(indicatorsDict))
                                 .ToList();
 
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
                             
                             await _referenceIntervalService.DeleteAllReferenceIntervalValues();
                             await _referenceIntervalService.DeleteAllReferenceIntervalApplyCriteria();
@@ -346,7 +346,7 @@ namespace MedExpert.Web.Controllers
                             var deviationLevels = await _deviationLevelService.GetAll();
                             var deviationLevelsDict = deviationLevels.ToDictionary(x => x.Alias, x => x, StringComparer.OrdinalIgnoreCase);
                             
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
                             
                             if (model.SpecialistId == null)
                             {
@@ -670,7 +670,7 @@ namespace MedExpert.Web.Controllers
                                     .ToList();
                             }
 
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
 
                             await SingleInsertAndSetReport(_analysisService, toInsertsAnalysis, report);
 

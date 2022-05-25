@@ -25,11 +25,18 @@ namespace MedExpert.Domain
             modelBuilder.Entity<DeviationLevel>(entity =>
             {
                 entity.HasKey(x => x.Id);
+                
+                entity.HasIndex(index => new {index.Alias},
+                    "UK_DeviationLevel_Alias");
             });
 
             modelBuilder.Entity<Indicator>(entity =>
             {
                 entity.HasKey(x => x.Id);
+                
+                entity.HasIndex(index => new {index.InAnalysis},
+                    "IX_Indicator");
+                entity.HasIndex(index => new {index.ShortName}, "UK_Indicator_ShortName");
             });
 
             modelBuilder.Entity<Specialist>(entity =>
@@ -71,6 +78,8 @@ namespace MedExpert.Domain
                 entity.HasOne(x => x.DeviationLevel)
                     .WithMany(x => x.AnalysisIndicators)
                     .HasForeignKey(x => x.DeviationLevelId);
+                
+                entity.HasIndex(index => new {index.AnalysisId}, "IX_AnalysisIndicator");
             });
             
             modelBuilder.Entity<AnalysisDeviationLevel>(entity =>
@@ -94,6 +103,9 @@ namespace MedExpert.Domain
                     .WithMany(x => x.AnalysisSymptoms)
                     .HasForeignKey(x => x.SymptomId);
                 entity.Ignore(x => x.MatchedIndicatorIds);
+                
+                entity.HasIndex(index => new {index.AnalysisId, index.SymptomId}, "IX_AnalysisSymptom");
+                entity.HasIndex(index => new {index.SymptomId}, "IX_AnalysisSymptom_SymptomId");
             });
             
             modelBuilder.Entity<AnalysisSymptomIndicator>(entity =>
@@ -108,6 +120,8 @@ namespace MedExpert.Domain
                 entity.HasOne(x => x.Indicator)
                     .WithMany(x => x.AnalysisSymptomIndicators)
                     .HasForeignKey(x => x.IndicatorId);
+                
+                entity.HasIndex(index => new {index.SymptomId}, "IX_AnalysisSymptomIndicator_SymptomId");
             });
             
 
@@ -150,6 +164,9 @@ namespace MedExpert.Domain
                 entity.HasOne(x => x.Category)
                     .WithMany(x => x.Symptoms)
                     .HasForeignKey(x => x.CategoryId);
+                
+                entity.HasIndex(index => new {index.SpecialistId, index.ApplyToSexOnly, index.IsDeleted},
+                    "IX_Symptom");
             });
 
             modelBuilder.Entity<SymptomIndicatorDeviationLevel>(entity =>
@@ -164,6 +181,9 @@ namespace MedExpert.Domain
                 entity.HasOne(x => x.DeviationLevel)
                     .WithMany(x => x.SymptomIndicatorDeviationLevels)
                     .HasForeignKey(x => x.DeviationLevelId);
+
+                entity.HasIndex(index => new {index.SymptomId, index.IndicatorId},
+                    "IX_SymptomIndicatorDeviationLevel_SymptomIdIndicatorId");
             });
             
             #endregion
