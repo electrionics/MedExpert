@@ -361,7 +361,18 @@ export class AnalysesCheckComponent implements OnInit {
     const specialistsForDisplay = this.specialistsForDisplay;
     if (specialistsForDisplay.length !== 0) {
       this.getAnalysisResult(specialistsForDisplay);
-
     }
+  }
+
+  public openAllMedicalStates() {
+    this.medicalStateTreeComponents.toArray().forEach(medicalStateTreeComponent => {
+      medicalStateTreeComponent.openChildrenDeep()
+    });
+  }
+
+  public closeAllMedicalStates() {
+    this.medicalStateTreeComponents.toArray().forEach(medicalStateTreeComponent => {
+      medicalStateTreeComponent.closeChildrenDeep();
+    });
   }
 }

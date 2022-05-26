@@ -31,7 +31,7 @@
       <span class="medical-state-child-line" [ngClass]="{'d-none': nestingLevel == 0}"></span>
       <span class="toggle-children-button bi"
             [ngClass]="{'bi-caret-down-fill': isOpen, 'bi-caret-right-fill': !isOpen, 'no-children': !hasChildren}"
-            (click)="openChildren()">
+            (click)="toggleChildren()">
       </span>
       {{medicalState.item.name}}
     </div>

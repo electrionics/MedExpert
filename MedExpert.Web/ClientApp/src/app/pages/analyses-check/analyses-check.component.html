@@ -181,6 +181,16 @@
         <div class="no-medical-states-message" *ngIf="analysesResult.foundMedicalStates.length === 0">
           Нет диагнозов по заданным критериям
         </div>
+        <div class="medical-states-tree-buttons">
+          <button class="btn btn-sm btn-outline-primary" (click)="openAllMedicalStates()">
+            <span class="bi-chevron-expand"></span>
+            Развернуть все
+          </button>
+          <button class="btn btn-sm btn-outline-primary" (click)="closeAllMedicalStates()">
+            <span class="bi-chevron-contract"></span>
+            Свернуть все
+          </button>
+        </div>
         <div class="medical-states-tree">
           <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
                                   [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">

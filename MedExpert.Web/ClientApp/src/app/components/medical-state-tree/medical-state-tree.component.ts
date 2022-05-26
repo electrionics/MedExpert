@@ -51,8 +51,30 @@ export class MedicalStateTreeComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  public openChildren() {
+  public toggleChildren() {
     this.isOpen = !this.isOpen;
+  }
+
+  public openChildrenDeep() {
+    // open itself
+    this.isOpen = true;
+    // open all children
+    if (this.medicalStateTreeComponents) {
+      this.medicalStateTreeComponents.toArray().forEach(child => {
+        child.openChildrenDeep();
+      });
+    }
+  }
+
+  public closeChildrenDeep() {
+    // close itself
+    this.isOpen = false;
+    // close all children
+    if (this.medicalStateTreeComponents) {
+      this.medicalStateTreeComponents.toArray().forEach(child => {
+        child.closeChildrenDeep();
+      });
+    }
   }
 
   public toggleRecommendedAnalysesList() {
