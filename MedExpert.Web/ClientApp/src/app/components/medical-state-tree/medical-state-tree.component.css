@@ -4,7 +4,7 @@
 
 .medical-state-name {
   position: relative;
-  margin-right: 300px;
+  margin-right: 360px;
 }
 
 .medical-state-children {
@@ -15,7 +15,7 @@
 .medical-state-specialists {
   color: #b3b1b1;
   font-size: 90%;
-  margin-right: 300px;
+  margin-right: 360px;
 }
 
 .toggle-children-button {
@@ -60,11 +60,12 @@
   position: relative;
 }
 
-.medical-state-recommended-analyses-count.no-recommended-analyses {
-  color: lightgray;
+.medical-state-numbers .no-value:before {
+  content: '-';
+  color: grey;
 }
 
-.medical-state-recommended-analyses-count.has-recommended-analyses {
+.medical-state-recommended-analyses-count.has-value {
   text-decoration: underline;
   cursor: pointer;
 }
@@ -82,7 +83,7 @@
   position: absolute;
   top: 100%;
   left: 0;
-  z-index: 100;
+  z-index: 5;
   padding: 20px;
   background-color: #f9f9f9;
   border: 1px solid grey;

@@ -32,6 +32,18 @@ export class MedicalStateTreeComponent implements OnInit {
     return this.medicalState.children && this.medicalState.children.length != 0;
   }
 
+  get hasSeverity(): boolean {
+    return this.medicalState.item.severity !== null && this.medicalState.item.severity !== undefined;
+  }
+
+  get hasCombinedSubtreeSeverity(): boolean {
+    return this.medicalState.item.combinedSubtreeSeverity !== null && this.medicalState.item.combinedSubtreeSeverity !== undefined;
+  }
+
+  get hasRecommendedAnalyses(): boolean {
+    return this.medicalState.item.recommendedAnalyses.length !== 0
+  }
+
   constructor(private renderer: Renderer2) {
     this.isOpen = true;
   }

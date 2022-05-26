@@ -71,6 +71,10 @@
 
 .medical-states-header {
   display: flex;
+  position: -webkit-sticky; /* Safari */
+  position: sticky;
+  top: 0;
+  z-index: 10;
   padding: 10px 8px 10px 25px;
   margin-bottom: 15px;
   flex-wrap: nowrap;
@@ -127,7 +131,7 @@
 .filtered-results.is-loading {
   /*
     hide current results when new results are loading
-    not using display: none here in order to avoid
+    not using display: none here in order to avoid page jumping up when results are loading
   */
   opacity: 0;
 }
