@@ -375,4 +375,20 @@ export class AnalysesCheckComponent implements OnInit {
       medicalStateTreeComponent.closeChildrenDeep();
     });
   }
+
+  public getSpecialistName(specialistId: number): string {
+    if (!this.allSpecialistsMap) {
+      return;
+    }
+    return this.allSpecialistsMap.get(specialistId);
+  }
+
+  public getCommentTypeName(commentTypeId: number): string {
+    const commentTypeNamesMap = new Map<number, string>([
+      [1, 'Диагноз'],
+      [2, 'Показатель (измеренный)'],
+      [3, 'Показатель (рекомендуемый)']
+    ]);
+    return commentTypeNamesMap.get(commentTypeId);
+  }
 }

@@ -2,7 +2,7 @@ export interface IComment {
   symptomId: number;
   specialistId: number
   name: string;
-  commentType: CommentType;
+  type: CommentType;
   text: string;
 }
 

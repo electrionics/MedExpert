@@ -113,7 +113,7 @@
   </div>
 </div>
 
-<div class="box my-5 analysis-result" *ngIf="isAnalysisResultReceived">
+<div class="box my-5" *ngIf="isAnalysisResultReceived">
   <div class="header">
     <h5 class="mb-0">Результаты</h5>
   </div>
@@ -178,15 +178,16 @@
         <span class="spinner-message mt-2">Результаты загружаются...</span>
       </div>
       <div class="filtered-results" [ngClass]="{'is-loading': loadingAnalysisResult}">
-        <div class="no-medical-states-message" *ngIf="analysesResult.foundMedicalStates.length === 0">
-          Нет диагнозов по заданным критериям
+        <div class="no-data-message" *ngIf="analysesResult.foundMedicalStates.length === 0">
+          Нет данных по заданным критериям
         </div>
-        <div class="medical-states-tree-buttons">
-          <button class="btn btn-sm btn-outline-primary" (click)="openAllMedicalStates()">
+        <div class="medical-states-tree-buttons btn-group btn-group-sm mb-2"
+             *ngIf="!loadingAnalysisResult && analysesResult.foundMedicalStates.length !== 0">
+          <button class="btn btn-outline-primary" (click)="openAllMedicalStates()">
             <span class="bi-chevron-expand"></span>
             Развернуть все
           </button>
-          <button class="btn btn-sm btn-outline-primary" (click)="closeAllMedicalStates()">
+          <button class="btn btn-outline-primary" (click)="closeAllMedicalStates()">
             <span class="bi-chevron-contract"></span>
             Свернуть все
           </button>
@@ -195,6 +196,35 @@
           <app-medical-state-tree *ngFor="let medicalState of analysesResult.foundMedicalStates"
                                   [medicalState]="medicalState" [specialistsMap]="allSpecialistsMap">
           </app-medical-state-tree>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="box my-5" *ngIf="isAnalysisResultReceived">
+  <div class="header">
+    <h5 class="mb-0">Комментарии</h5>
+  </div>
+  <div class="body">
+    <div class="comments">
+      <div class="no-data-message" *ngIf="analysesResult.comments.length === 0">
+        Нет комментариев по заданным критериям
+      </div>
+      <div class="comment-container row" *ngFor="let comment of analysesResult.comments">
+        <div class="comment-specialist col-2">
+          <div class="comment-specialist-image">
+            <span class="bi-person-circle"></span>
+          </div>
+          <div class="comment-specialist-name">{{getSpecialistName(comment.specialistId)}}</div>
+        </div>
+        <div class="comment-content col-10">
+          <div class="comment-subject">{{getCommentTypeName(comment.type)}}: {{comment.name}}</div>
+          <div class="comment-text">
+            <p *ngFor="let paragraph of comment.text.split('\n')">
+              {{paragraph}}
+            </p>
+          </div>
         </div>
       </div>
     </div>

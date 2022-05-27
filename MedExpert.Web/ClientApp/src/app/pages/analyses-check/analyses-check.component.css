@@ -98,7 +98,7 @@
   padding-left: 5px;
 }
 
-.no-medical-states-message {
+.no-data-message {
   text-align: center;
   color: #ccc;
   padding: 20px;
@@ -134,4 +134,34 @@
     not using display: none here in order to avoid page jumping up when results are loading
   */
   opacity: 0;
+}
+
+.comment-specialist-image {
+  font-size: 40px;
+  color: #49b2fc;
+}
+
+.comment-specialist {
+  text-align: center;
+}
+
+.comment-container {
+  margin-bottom: 20px;
+}
+
+.comment-content {
+  border: 1px solid lightgrey;
+  padding: 20px;
+  border-radius: 10px;
+  background: #f9f9f9;
+}
+
+.comment-specialist-name {
+  color: grey;
+  font-size: 90%;
+}
+
+.comment-subject {
+  margin-bottom: 10px;
+  font-weight: bold;
 }
