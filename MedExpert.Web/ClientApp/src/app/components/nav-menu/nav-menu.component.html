@@ -1,9 +1,12 @@
 <header>
   <nav
-    class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light box-shadow mb-3 over-tutorial-overlay"
+    class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark box-shadow mb-3 over-tutorial-overlay"
   >
     <div class="container">
-      <a class="navbar-brand" [routerLink]="['/']">МедЭксперт</a>
+      <a class="navbar-brand" [routerLink]="['/']">
+        <span class="logo-icon bi-person-circle"></span>
+        МедЭксперт
+      </a>
       <button
         class="navbar-toggler"
         type="button"
@@ -23,36 +26,36 @@
 <!--          <li class="nav-item"-->
 <!--              [routerLinkActive]="['link-active']"-->
 <!--              [routerLinkActiveOptions]="{ exact: true }">-->
-<!--            <a class="nav-link text-dark" [routerLink]="['/']">Главная</a>-->
+<!--            <a class="nav-link text-light" [routerLink]="['/']">Главная</a>-->
 <!--          </li>-->
           <li *appIfLogged="true" class="nav-item" [routerLinkActive]="['link-active']">
-            <a class="nav-link text-dark" (click)="toggleSubMenu()" style="width: 200px;">Импорт файлов</a>
+            <a class="nav-link text-light" (click)="toggleSubMenu()" style="width: 200px;">Импорт файлов</a>
             <ul *ngIf="subMenuExpanded" class="navbar-nav flex-grow" style="flex-direction: column">
               <li class="nav-item">
-                <a class="nav-link text-dark" [routerLink]="['/import/indicators']">Показатели</a>
+                <a class="nav-link text-light" [routerLink]="['/import/indicators']">Показатели</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link text-dark" [routerLink]="['/import/reference-intervals']">Референсные интервалы</a>
+                <a class="nav-link text-light" [routerLink]="['/import/reference-intervals']">Референсные интервалы</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link text-dark" [routerLink]="['/import/symptoms']">Файлы специалистов</a>
+                <a class="nav-link text-light" [routerLink]="['/import/symptoms']">Файлы специалистов</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link text-dark" [routerLink]="['/import/analysis']">Файл анализа</a>
+                <a class="nav-link text-light" [routerLink]="['/import/analysis']">Файл анализа</a>
               </li>
             </ul>
           </li>
           <li class="nav-item" [routerLinkActive]="['link-active']">
-            <a class="nav-link text-dark" [routerLink]="['/']">Проверка анализов</a><!-- analyses-check -->
+            <a class="nav-link text-light" [routerLink]="['/']">Проверка анализов</a><!-- analyses-check -->
           </li>
 <!--          <li class="nav-item" [routerLinkActive]="['link-active']">-->
-<!--            <a class="nav-link text-dark" [routerLink]="['/about']">О системе</a>-->
+<!--            <a class="nav-link text-light" [routerLink]="['/about']">О системе</a>-->
 <!--          </li>-->
           <li *appIfLogged="true" class="nav-item" [routerLinkActive]="['link-active']">
-            <a class="nav-link text-dark" (click)="logout()" style="cursor: pointer;">Выйти</a>
+            <a class="nav-link text-light" (click)="logout()" style="cursor: pointer;">Выйти</a>
           </li>
           <li *appIfLogged="false" class="nav-item" [routerLinkActive]="['link-active']">
-            <a class="nav-link text-dark" [routerLink]="['/account/login']">Войти</a>
+            <a class="nav-link text-light" [routerLink]="['/account/login']">Войти</a>
           </li>
         </ul>
       </div>
