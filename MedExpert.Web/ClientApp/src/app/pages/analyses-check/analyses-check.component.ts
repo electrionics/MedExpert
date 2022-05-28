@@ -37,6 +37,7 @@ import {MedicalStateTreeComponent} from "../../components/medical-state-tree/med
 export class AnalysesCheckComponent implements OnInit {
   @ViewChildren(MedicalStateTreeComponent) medicalStateTreeComponents!: QueryList<MedicalStateTreeComponent>;
   @ViewChild('commentsSection') commentsSection: ElementRef<HTMLElement>;
+  @ViewChildren('resultsSection') resultsSection: QueryList<ElementRef<HTMLElement>>;
 
   private analysisId: number;
   private unsubscribeFromWindowClick: () => void;
@@ -200,6 +201,7 @@ export class AnalysesCheckComponent implements OnInit {
       this.analysesResult = analysesResult;
       this.loadingAnalysisResult = false;
       // TODO: find better solution for setting default value for "Specialists for display" select
+      // maybe in this.resultsSection.changes.subscribe ?
 
       // check if Specialists for display value is not defined - that means it was not set manually yet
       if (!this.specialistsForDisplay || !this.specialistsForDisplay.length) {
@@ -236,6 +238,15 @@ export class AnalysesCheckComponent implements OnInit {
           medicalStateTreeComponent.onWindowClick(event);
         })
       }
+    });
+  }
+
+  public ngAfterViewInit(): void
+  {
+    this.resultsSection.changes.subscribe((sectionQueryList: QueryList<ElementRef<HTMLElement>>) =>
+    {
+      // scroll to Results section when it's first rendered
+      this.scrollTo(sectionQueryList.first);
     });
   }
 
@@ -408,8 +419,8 @@ export class AnalysesCheckComponent implements OnInit {
   }
 
   public scrollTo(element: ElementRef<HTMLElement>) {
-    if (this.commentsSection) {
-      this.commentsSection.nativeElement.scrollIntoView({behavior: "smooth"});
+    if (element) {
+      element.nativeElement.scrollIntoView({behavior: "smooth"});
     }
   }
 }
