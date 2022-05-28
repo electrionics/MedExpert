@@ -1,4 +1,13 @@
-import {ChangeDetectorRef, Component, OnInit, QueryList, Renderer2, ViewChildren} from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnInit,
+  QueryList,
+  Renderer2,
+  ViewChild,
+  ViewChildren
+} from '@angular/core';
 import {FormArray, FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Select, Store} from '@ngxs/store';
 import {
@@ -27,6 +36,7 @@ import {MedicalStateTreeComponent} from "../../components/medical-state-tree/med
 })
 export class AnalysesCheckComponent implements OnInit {
   @ViewChildren(MedicalStateTreeComponent) medicalStateTreeComponents!: QueryList<MedicalStateTreeComponent>;
+  @ViewChild('commentsSection') commentsSection: ElementRef<HTMLElement>;
 
   private analysisId: number;
   private unsubscribeFromWindowClick: () => void;
@@ -390,5 +400,11 @@ export class AnalysesCheckComponent implements OnInit {
       [3, 'Показатель (рекомендуемый)']
     ]);
     return commentTypeNamesMap.get(commentTypeId);
+  }
+
+  public scrollTo(element: ElementRef<HTMLElement>) {
+    if (this.commentsSection) {
+      this.commentsSection.nativeElement.scrollIntoView({behavior: "smooth"});
+    }
   }
 }

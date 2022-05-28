@@ -183,13 +183,17 @@
         </div>
         <div class="medical-states-tree-buttons btn-group btn-group-sm mb-2"
              *ngIf="!loadingAnalysisResult && analysesResult.foundMedicalStates.length !== 0">
-          <button class="btn btn-outline-primary" (click)="openAllMedicalStates()">
+          <button class="btn btn-outline-secondary" (click)="openAllMedicalStates()">
             <span class="bi-chevron-expand"></span>
             Развернуть все
           </button>
-          <button class="btn btn-outline-primary" (click)="closeAllMedicalStates()">
+          <button class="btn btn-outline-secondary" (click)="closeAllMedicalStates()">
             <span class="bi-chevron-contract"></span>
             Свернуть все
+          </button>
+          <button class="btn btn-outline-secondary" (click)="scrollTo(commentsSection)">
+            <span class="bi-arrow-down-circle"></span>
+            Перейти к комментариям
           </button>
         </div>
         <div class="medical-states-tree">
@@ -202,9 +206,12 @@
   </div>
 </div>
 
-<div class="box my-5" *ngIf="isAnalysisResultReceived">
+<div #commentsSection class="box my-5" *ngIf="isAnalysisResultReceived">
   <div class="header">
-    <h5 class="mb-0">Комментарии</h5>
+    <h5 class="mb-0">
+      Комментарии
+      <span class="comments-count">({{analysesResult.comments.length}})</span>
+    </h5>
   </div>
   <div class="body">
     <div class="comments">

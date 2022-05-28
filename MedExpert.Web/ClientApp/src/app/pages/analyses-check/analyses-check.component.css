@@ -69,6 +69,11 @@
   align-self: center;
 }
 
+.medical-states-tree-buttons {
+  display: block;
+  text-align: center;
+}
+
 .medical-states-header {
   display: flex;
   position: -webkit-sticky; /* Safari */
@@ -165,3 +170,8 @@
   margin-bottom: 10px;
   font-weight: bold;
 }
+
+.comments-count {
+  font-weight: lighter;
+}
+
