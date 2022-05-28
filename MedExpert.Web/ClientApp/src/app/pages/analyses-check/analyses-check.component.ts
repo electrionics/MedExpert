@@ -37,6 +37,9 @@ import {MedicalStateTreeComponent} from "../../components/medical-state-tree/med
 export class AnalysesCheckComponent implements OnInit {
   @ViewChildren(MedicalStateTreeComponent) medicalStateTreeComponents!: QueryList<MedicalStateTreeComponent>;
   @ViewChild('commentsSection') commentsSection: ElementRef<HTMLElement>;
+  // using ViewChildren here not because there are multiple 'resultsSection' (there is only one of course),
+  // but because we need resultsSection.changes property (in order to scroll to element when it's shown)
+  // and ViewChild doesn't seem to have this property
   @ViewChildren('resultsSection') resultsSection: QueryList<ElementRef<HTMLElement>>;
 
   private analysisId: number;
