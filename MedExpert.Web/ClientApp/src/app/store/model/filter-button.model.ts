@@ -4,4 +4,5 @@ export interface IFilterButton {
   name: string;
   value: MedicalStateFilterType;
   isSelected?: boolean;
+  titleForResults: string,
 }

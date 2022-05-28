@@ -123,22 +123,27 @@ export class AnalysesCheckComponent implements OnInit {
         value: MedicalStateFilterType.Diseases,
         name: 'Болезни',
         isSelected: true,
+        titleForResults: 'Диагноз',
       },
       {
         value: MedicalStateFilterType.CommonAnalysis,
         name: 'Общие исследования',
+        titleForResults: 'Исследование',
       },
       {
         value: MedicalStateFilterType.SpecialAnalysis,
         name: 'Специальные исследования',
+        titleForResults: 'Исследование',
       },
       {
         value: MedicalStateFilterType.CommonTreatment,
         name: 'Общее лечение',
+        titleForResults: 'Лечение',
       },
       {
         value: MedicalStateFilterType.SpecialTreatment,
         name: 'Специальное лечение',
+        titleForResults: 'Лечение',
       },
     ];
   }
