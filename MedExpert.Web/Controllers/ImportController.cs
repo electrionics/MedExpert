@@ -20,6 +20,7 @@ using MedExpert.Excel.Model.Symptoms;
 using Microsoft.AspNetCore.Mvc;
 using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
+using MedExpert.Web.Filters;
 using MedExpert.Web.ViewModels.Import;
 using Microsoft.AspNetCore.Authorization;
 
@@ -57,10 +58,9 @@ namespace MedExpert.Web.Controllers
             _symptomCategoryService = symptomCategoryService;
         }
         
-        
         #region Indicators
 
-        [Authorize]
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/Indicators")]
         public async Task<ImportReport> ImportIndicators()
@@ -164,7 +164,7 @@ namespace MedExpert.Web.Controllers
         
         #region ReferenceIntervals
         
-        [Authorize]
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/ReferenceIntervals")]
         public async Task<ImportReport> ImportReferenceIntervals()
@@ -290,7 +290,7 @@ namespace MedExpert.Web.Controllers
         
         #region Symptoms
         
-        [Authorize]
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/Symptoms")]
         public async Task<ImportReport> ImportSymptoms([FromForm]ImportSymptomForm model)
@@ -575,7 +575,7 @@ namespace MedExpert.Web.Controllers
 
         #region Analysis
 
-        [Authorize]
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/Analysis")]
         public async Task<ImportReport> ImportAnalysis([FromQuery] int? specialistId)

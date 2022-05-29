@@ -76,7 +76,6 @@
 
     <ItemGroup>
       <Folder Include="ClientApp\dist" />
-      <Folder Include="Filters" />
     </ItemGroup>
 
     <ItemGroup>

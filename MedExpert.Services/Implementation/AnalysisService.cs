@@ -302,6 +302,7 @@ namespace MedExpert.Services.Implementation
                 catch(OverflowException e)
                 {
                     severity = null;
+                    //TODO: log as error!
                 }
             }
             else
