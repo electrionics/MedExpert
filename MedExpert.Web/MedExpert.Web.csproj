@@ -76,7 +76,7 @@
 
     <ItemGroup>
       <Folder Include="ClientApp\dist" />
-      <Folder Include="ClientApp\src\app\components\analyses-check" />
+      <Folder Include="ClientApp\src\app\components\analyses-check\comment" />
     </ItemGroup>
 
     <ItemGroup>

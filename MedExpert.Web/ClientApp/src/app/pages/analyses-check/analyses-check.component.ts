@@ -405,22 +405,6 @@ export class AnalysesCheckComponent implements OnInit {
     });
   }
 
-  public getSpecialistName(specialistId: number): string {
-    if (!this.allSpecialistsMap) {
-      return;
-    }
-    return this.allSpecialistsMap.get(specialistId);
-  }
-
-  public getCommentTypeName(commentTypeId: number): string {
-    const commentTypeNamesMap = new Map<number, string>([
-      [1, 'Диагноз'],
-      [2, 'Показатель (измеренный)'],
-      [3, 'Показатель (рекомендуемый)']
-    ]);
-    return commentTypeNamesMap.get(commentTypeId);
-  }
-
   public scrollTo(element: ElementRef<HTMLElement>) {
     if (element) {
       element.nativeElement.scrollIntoView({behavior: "smooth"});

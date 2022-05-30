@@ -214,26 +214,13 @@
     </h5>
   </div>
   <div class="body">
-    <div class="comments">
+    <div class="comments container">
       <div class="no-data-message" *ngIf="analysesResult.comments.length === 0">
         Нет комментариев по заданным критериям
       </div>
-      <div class="comment-container row" *ngFor="let comment of analysesResult.comments">
-        <div class="comment-specialist col-2">
-          <div class="comment-specialist-image">
-            <span class="bi-person-circle"></span>
-          </div>
-          <div class="comment-specialist-name">{{getSpecialistName(comment.specialistId)}}</div>
-        </div>
-        <div class="comment-content col-10">
-          <div class="comment-subject">{{getCommentTypeName(comment.type)}}: {{comment.name}}</div>
-          <div class="comment-text">
-            <p *ngFor="let paragraph of comment.text.split('\n')">
-              {{paragraph}}
-            </p>
-          </div>
-        </div>
-      </div>
+      <app-comment *ngFor="let comment of analysesResult.comments"
+                   [comment]="comment" [specialistsMap]="allSpecialistsMap">
+      </app-comment>
     </div>
   </div>
 </div>
