@@ -13,7 +13,24 @@ export class CommentComponent implements OnInit {
   @Input()
   specialistsMap: Map<number, string>;
 
-  constructor() { }
+  private readonly shortTextLength = 100;
+
+  public isOpen: boolean
+
+  public get shortParagraphList(): string[] {
+    return this.comment.text.slice(0, this.shortTextLength).split('\n');
+  }
+
+  public get fullParagraphList(): string[] {
+    return this.comment.text.split('\n');
+  }
+
+  public get shouldShorten() : boolean {
+    return this.comment.text.length >= this.shortTextLength;
+  }
+
+  constructor() {
+  }
 
   ngOnInit(): void {
   }
@@ -34,4 +51,11 @@ export class CommentComponent implements OnInit {
     return commentTypeNamesMap.get(commentTypeId);
   }
 
+  public openComment() {
+    this.isOpen = true;
+  }
+
+  public closeComment() {
+    this.isOpen = false;
+  }
 }

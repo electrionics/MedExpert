@@ -8,9 +8,16 @@
   <div class="comment-content col-10">
     <div class="comment-subject">{{getCommentTypeName(comment.type)}}: {{comment.name}}</div>
     <div class="comment-text">
-      <p *ngFor="let paragraph of comment.text.split('\n')">
+      <p *ngFor="let paragraph of isOpen ? fullParagraphList : shortParagraphList; last as isLastComment">
         {{paragraph}}
+        <ng-container *ngIf="!isOpen && isLastComment && shouldShorten">
+          <span>...</span>
+          <span class="btn btn-link" (click)="openComment()"> ещё</span>
+        </ng-container>
       </p>
+      <span class="close-comment-button btn-link" *ngIf="shouldShorten && isOpen" (click)="closeComment()">
+        <span *ngIf="isOpen"> Свернуть</span>
+      </span>
     </div>
   </div>
 </div>

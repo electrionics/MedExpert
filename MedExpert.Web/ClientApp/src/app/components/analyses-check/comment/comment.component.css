@@ -32,3 +32,7 @@
 .comments-count {
   font-weight: lighter;
 }
+
+.close-comment-button  {
+  cursor: pointer;
+}
