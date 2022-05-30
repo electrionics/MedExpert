@@ -99,10 +99,16 @@ namespace MedExpert.Web
                 .AddDefaultTokenProviders();
             
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authorizationConfig.TokenKey));
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            services.AddAuthentication((o) =>
+                {
+                    o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
                 .AddJwtBearer(
                     opt =>
                     {
+                        opt.RequireHttpsMetadata = true;
+                        opt.SaveToken = true;
                         opt.TokenValidationParameters = new TokenValidationParameters
                         {
                             ValidateIssuerSigningKey = true,
@@ -111,6 +117,7 @@ namespace MedExpert.Web
                             ValidateIssuer = false
                         };
                     });
+            
             
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
             services.AddTransient<IValidator<ImportSymptomForm>, ImportSymptomFormValidator>();
