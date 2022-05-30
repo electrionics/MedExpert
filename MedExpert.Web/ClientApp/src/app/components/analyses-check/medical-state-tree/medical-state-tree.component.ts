@@ -1,6 +1,6 @@
 import {Component, ElementRef, Input, OnInit, QueryList, Renderer2, ViewChild, ViewChildren} from '@angular/core';
-import {IMedicalState} from "../../store/model/medical-state.model";
-import {TreeItem} from "../../store/model/tree-item";
+import {IMedicalState} from "../../../store/model/medical-state.model";
+import {TreeItem} from "../../../store/model/tree-item";
 
 @Component({
   selector: 'app-medical-state-tree',

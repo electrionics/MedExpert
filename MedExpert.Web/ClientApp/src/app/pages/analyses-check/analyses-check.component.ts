@@ -27,7 +27,7 @@ import {ProfileDTO} from "../../store/model/profile.model";
 import {IComputedIndicator} from "../../store/model/computed-indicator.model";
 import {IAnalysesResult, MedicalStateFilterType} from "../../store/model/analyses-result.model";
 import {IFilterButton} from "../../store/model/filter-button.model";
-import {MedicalStateTreeComponent} from "../../components/medical-state-tree/medical-state-tree.component";
+import {MedicalStateTreeComponent} from "../../components/analyses-check/medical-state-tree/medical-state-tree.component";
 
 @Component({
   selector: 'app-analyses-check',
