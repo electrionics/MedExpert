@@ -320,14 +320,17 @@ namespace MedExpert.Web.Controllers
                     await _analysisService.FetchCalculatedAnalysis(model.AnalysisId, model.SpecialistIds, category.Id);
 
                 var commentsList = new List<CommentModel>();
+                var startOrder = 0;
+                var ordersForComments = new Dictionary<int, int>();
                 var toReturn = new AnalysisResultModel
                 {
                     AnalysisId = model.AnalysisId,
-                    FoundMedicalStates =
-                        symptomsTree.VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList)),
+                    FoundMedicalStates = symptomsTree
+                        .VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList))
+                        .VisitAndConvert(x => SetOrderInResultTree(x, ref startOrder, ordersForComments)),
                     Comments = commentsList
-                        .OrderBy(x => x.Type)
-                        .ThenBy(x => x.SpecialistId)
+                        .OrderBy(x => ordersForComments[x.SymptomId])
+                        .ThenBy(x => x.Type)
                         .ThenBy(x => x.Name)
                         .ToList()
                 };
@@ -350,6 +353,7 @@ namespace MedExpert.Web.Controllers
                 .ToList();
 
             var symptomId = analysisSymptom.SymptomId;
+            var symptomName = analysisSymptom.Symptom.Name;
             var specialistId = analysisSymptom.Symptom.SpecialistId;
 
             if (!string.IsNullOrEmpty(analysisSymptom.Symptom.Comment))
@@ -358,7 +362,8 @@ namespace MedExpert.Web.Controllers
                 {
                     SpecialistId = specialistId,
                     SymptomId = symptomId,
-                    Name = analysisSymptom.Symptom.Name,
+                    SymptomName = symptomName,
+                    Name = null,
                     Text = analysisSymptom.Symptom.Comment,
                     Type = CommentType.Symptom
                 });
@@ -368,6 +373,7 @@ namespace MedExpert.Web.Controllers
             {
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
+                SymptomName = symptomName,
                 Name = x.Indicator.Name,
                 Text = x.Comment,
                 Type = CommentType.MatchedIndicator
@@ -378,6 +384,7 @@ namespace MedExpert.Web.Controllers
             {
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
+                SymptomName = symptomName,
                 Name = x.Indicator.Name,
                 Text = x.Comment,
                 Type = CommentType.RecommendedForAnalysisIndicator
@@ -387,7 +394,7 @@ namespace MedExpert.Web.Controllers
             {
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
-                Name = analysisSymptom.Symptom.Name,
+                Name = symptomName,
                 Severity = analysisSymptom.Severity,
                 CombinedSubtreeSeverity = analysisSymptom.CombinedSubtreeSeverity,
                 RecommendedAnalyses = 
@@ -398,6 +405,13 @@ namespace MedExpert.Web.Controllers
                         ShortName = x.Indicator.ShortName
                     }).ToList()
             };
+        }
+
+        private static MedicalStateModel SetOrderInResultTree(MedicalStateModel model, ref int order, IDictionary<int, int> symptomIdsToOrders)
+        {
+            symptomIdsToOrders[model.SymptomId] = order++;
+            
+            return model;
         }
         
         #endregion

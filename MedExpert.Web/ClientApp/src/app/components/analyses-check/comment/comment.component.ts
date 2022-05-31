@@ -44,7 +44,7 @@ export class CommentComponent implements OnInit {
 
   public getCommentTypeName(commentTypeId: number): string {
     const commentTypeNamesMap = new Map<number, string>([
-      [1, 'Диагноз'],
+      [1, ''],
       [2, 'Показатель (измеренный)'],
       [3, 'Показатель (рекомендуемый)']
     ]);

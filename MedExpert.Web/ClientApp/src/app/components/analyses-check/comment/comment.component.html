@@ -6,7 +6,8 @@
     <div class="comment-specialist-name">{{getSpecialistName(comment.specialistId)}}</div>
   </div>
   <div class="comment-content col-10">
-    <div class="comment-subject">{{getCommentTypeName(comment.type)}}: {{comment.name}}</div>
+    <div class="comment-subject">Диагноз: {{comment.symptomName}}.
+      <ng-container *ngIf="comment.name"><br/>{{getCommentTypeName(comment.type)}}: {{comment.name}}</ng-container></div>
     <div class="comment-text">
       <p *ngFor="let paragraph of isOpen ? fullParagraphList : shortParagraphList; last as isLastComment">
         {{paragraph}}
