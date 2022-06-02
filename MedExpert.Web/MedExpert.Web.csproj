@@ -16,6 +16,8 @@
     <ItemGroup>
         <PackageReference Include="FluentValidation" Version="10.3.3" />
         <PackageReference Include="FluentValidation.AspNetCore" Version="10.3.3" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.17" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="5.0.17" />
         <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="5.0.4" />
         <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="4.5.3">
           <PrivateAssets>all</PrivateAssets>
@@ -57,13 +59,24 @@
       <TypeScriptCompile Remove="ClientApp\src\app\components\game\startGameDialog.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\components\game\startGameRedirect.component.ts" />
       <TypeScriptCompile Remove="ClientApp\src\app\services\passGameParametersService.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\components\account\login.component.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\directives\ifLogged.directive.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\interceptors\auth.interceptor.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\interceptors\withCredentials.interceptor.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\services\auth.service.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\services\auth.guard.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\store\model\analyses-result.model.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\store\model\comment.model.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\store\model\computed-indicator.model.ts" />
+      <None Include="ClientApp\src\app\store\model\medical-state.modelts" />
+      <TypeScriptCompile Include="ClientApp\src\app\store\model\filter-button.model.ts" />
       <TypeScriptCompile Include="ClientApp\src\app\store\model\profile.model.ts" />
+      <TypeScriptCompile Include="ClientApp\src\app\store\model\tree-item.ts" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="ClientApp\dist" />
-      <Folder Include="Filters" />
+      <Folder Include="ClientApp\src\app\components\analyses-check\comment" />
     </ItemGroup>
 
     <ItemGroup>

@@ -17,8 +17,11 @@ namespace MedExpert.Services.Implementation
         
         public async Task InsertBulk(List<AnalysisSymptom> entities)
         {
-            await _dataContext.Set<AnalysisSymptom>().AddRangeAsync(entities);
-            await _dataContext.SaveChangesAsync();
+            await _dataContext.BulkInsertAsync(entities, options => 
+            {
+                options.IncludeGraph = false;
+                options.BatchSize = 5000;
+            });
         }
     }
 }

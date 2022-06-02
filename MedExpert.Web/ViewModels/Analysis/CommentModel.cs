@@ -5,6 +5,8 @@
         public int SymptomId { get; set; }
         
         public int SpecialistId { get; set; }
+        
+        public string SymptomName { get; set; }
 
         public string Name { get; set; }
         

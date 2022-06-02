@@ -20,7 +20,9 @@ using MedExpert.Excel.Model.Symptoms;
 using Microsoft.AspNetCore.Mvc;
 using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
+using MedExpert.Web.Filters;
 using MedExpert.Web.ViewModels.Import;
+using Microsoft.AspNetCore.Authorization;
 
 // ReSharper disable CommentTypo
 
@@ -56,9 +58,9 @@ namespace MedExpert.Web.Controllers
             _symptomCategoryService = symptomCategoryService;
         }
         
-        
         #region Indicators
 
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/Indicators")]
         public async Task<ImportReport> ImportIndicators()
@@ -97,7 +99,7 @@ namespace MedExpert.Web.Controllers
                         {
                             var keys = importCandidates.Values.Select(x => x.ShortName).ToList();
 
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
                             
                             var toUpdates = await _indicatorService.GetIndicators(keys);
 
@@ -162,6 +164,7 @@ namespace MedExpert.Web.Controllers
         
         #region ReferenceIntervals
         
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/ReferenceIntervals")]
         public async Task<ImportReport> ImportReferenceIntervals()
@@ -212,7 +215,7 @@ namespace MedExpert.Web.Controllers
                                 .Select(x => x.CreateEntity(indicatorsDict))
                                 .ToList();
 
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
                             
                             await _referenceIntervalService.DeleteAllReferenceIntervalValues();
                             await _referenceIntervalService.DeleteAllReferenceIntervalApplyCriteria();
@@ -287,6 +290,7 @@ namespace MedExpert.Web.Controllers
         
         #region Symptoms
         
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/Symptoms")]
         public async Task<ImportReport> ImportSymptoms([FromForm]ImportSymptomForm model)
@@ -342,7 +346,7 @@ namespace MedExpert.Web.Controllers
                             var deviationLevels = await _deviationLevelService.GetAll();
                             var deviationLevelsDict = deviationLevels.ToDictionary(x => x.Alias, x => x, StringComparer.OrdinalIgnoreCase);
                             
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
                             
                             if (model.SpecialistId == null)
                             {
@@ -571,6 +575,7 @@ namespace MedExpert.Web.Controllers
 
         #region Analysis
 
+        [MedExpertAuthorize]
         [HttpPost]
         [ApiRoute("Import/Analysis")]
         public async Task<ImportReport> ImportAnalysis([FromQuery] int? specialistId)
@@ -665,7 +670,7 @@ namespace MedExpert.Web.Controllers
                                     .ToList();
                             }
 
-                            using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+                            using var transaction = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
 
                             await SingleInsertAndSetReport(_analysisService, toInsertsAnalysis, report);
 

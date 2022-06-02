@@ -1,4 +1,6 @@
 import { Component } from '@angular/core';
+import {AuthService} from "../../services/auth.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-nav-menu',
@@ -8,6 +10,9 @@ import { Component } from '@angular/core';
 export class NavMenuComponent {
   isExpanded = false;
   subMenuExpanded = false;
+
+  constructor(private authService: AuthService, private router: Router) {
+  }
 
   collapse() {
     this.isExpanded = false;
@@ -20,5 +25,9 @@ export class NavMenuComponent {
 
   toggleSubMenu(){
     this.subMenuExpanded = !this.subMenuExpanded;
+  }
+
+  logout(){
+    this.authService.logout();
   }
 }

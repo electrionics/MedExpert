@@ -7,6 +7,7 @@ using MedExpert.Core;
 using MedExpert.Core.Helpers;
 using MedExpert.Domain;
 using MedExpert.Domain.Entities;
+using MedExpert.Domain.Enums;
 using MedExpert.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,20 +58,31 @@ namespace MedExpert.Services.Implementation
                 y.DeviationLevelId * y.Indicator.AnalysisIndicators.First().DeviationLevelId > 0 &&
                 Math.Abs(y.DeviationLevelId) <= Math.Abs(y.Indicator.AnalysisIndicators.First().DeviationLevelId);
 
-            var sidls = await _dataContext.Set<SymptomIndicatorDeviationLevel>()
+            var sidls = await _dataContext.Set<SymptomIndicatorDeviationLevel>().AsNoTracking()
                 .Include(x => x.Indicator)
                 .ThenInclude(x => x.AnalysisIndicators.Where(y => y.AnalysisId == analysisId))
+                .In(specialistIds, x => x.Symptom.SpecialistId)
                 .Where(x =>
-                    specialistIds.Contains(x.Symptom.SpecialistId) &&
-                    (x.Symptom.ApplyToSexOnly == null || x.Symptom.ApplyToSexOnly == analysis.Sex) &&
+                    (x.Symptom.ApplyToSexOnly == null || 
+                     x.Symptom.ApplyToSexOnly == analysis.Sex) &&
                     (x.Symptom.Specialist.ApplyToSexOnly == null ||
                      x.Symptom.Specialist.ApplyToSexOnly == analysis.Sex) &&
                     !x.Symptom.IsDeleted &&
                     x.Indicator.InAnalysis)
                 .ToListAsync();
+
+            var alwaysMatchedSymptoms = (await _symptomService.GetAlwaysMatchedSymptoms())
+                .Where(x =>
+                    specialistIds.Contains(x.SpecialistId) &&
+                    (x.ApplyToSexOnly == null || 
+                     x.ApplyToSexOnly == analysis.Sex) &&
+                    (x.Specialist.ApplyToSexOnly == null ||
+                     x.Specialist.ApplyToSexOnly == analysis.Sex))
+                .ToList();
+            
             var matchedSymptoms = sidls
                 .GroupBy(x => x.SymptomId)
-                .Where(x => //TODO: from cache
+                .Where(x =>
                     x.Count(matcher) >= Math.Min((x.Count() + 1) / 2, 3))
                 .Select(x => new
                 {
@@ -79,6 +91,11 @@ namespace MedExpert.Services.Implementation
                         .Where(matcher)
                         .ToList()
                 }).ToDictionary(x => x.Key, x => x.MatchedIndicators);
+            
+            foreach (var matchedSymptom in alwaysMatchedSymptoms)
+            {
+                matchedSymptoms.Add(matchedSymptom.Id, new List<SymptomIndicatorDeviationLevel>());
+            }
 
             var symptomsTree = await _symptomService.GetSymptomsTree();
 
@@ -95,8 +112,10 @@ namespace MedExpert.Services.Implementation
             var calculatedTree = matchedSymptomsTree.VisitAndConvert(x =>
                 CalculateSeverity(x, analysisIndicatorDict, analysisId, matchedSymptoms));
 
-            var filteredCalculatedTree =
-                calculatedTree.GetMatched(x => x.Severity is null or > 0.2m, new HashSet<bool> {true});
+            var filteredCalculatedTree = calculatedTree
+                .GetMatched(x => x.Severity is null or > 0.2m, new HashSet<bool> {true})
+                .GetMatchedBranch(x => x.Any(y => y.Severity is not null), new HashSet<bool?> {true})
+                .VisitAndConvert(CalculateCombinedSeverity);
             
             return filteredCalculatedTree;
         }
@@ -110,24 +129,26 @@ namespace MedExpert.Services.Implementation
                 throw new InvalidDataException("Анализ еще не рассчитан.");
             }
             
-            var filteredAnalysisSymptoms = _dataContext.Set<AnalysisSymptom>()
+            var filteredAnalysisSymptoms = await _dataContext.Set<AnalysisSymptom>().AsNoTracking()
                 .Include(x => x.Symptom)
                 .ThenInclude(x => x.SymptomIndicatorDeviationLevels.Where(y => !y.Indicator.InAnalysis))
                 .ThenInclude(x => x.Indicator)
+                .In(specialistIds, x => x.Symptom.SpecialistId)
                 .Where(x =>
                     x.AnalysisId == analysisId &&
-                    specialistIds.Contains(x.Symptom.SpecialistId) &&
-                    x.Symptom.CategoryId == categoryId);
-            var matchedIndicators = _dataContext.Set<AnalysisSymptomIndicator>()
-                .Where(x => x.AnalysisId == analysisId);
+                    x.Symptom.CategoryId == categoryId)
+                .ToListAsync();
+            var matchedIndicators = await _dataContext.Set<AnalysisSymptomIndicator>().AsNoTracking()
+                .Where(x => x.AnalysisId == analysisId)
+                .ToListAsync();
 
-            var filteredAnalysisSymptomsWithIndicators = await filteredAnalysisSymptoms.GroupJoin(matchedIndicators,
+            var filteredAnalysisSymptomsWithIndicators = filteredAnalysisSymptoms.GroupJoin(matchedIndicators,
                 (ansy) => new {ansy.AnalysisId, ansy.SymptomId},
                 (ansyin) => new {ansyin.AnalysisId, ansyin.SymptomId}, (analysisSymptom, indicators) => new
                 {
                     AnalysisSymptom = analysisSymptom,
                     MatchedIndicatorIds = indicators.Select(x => x.IndicatorId).ToHashSet()
-                }).ToListAsync();
+                }).ToList();
 
             foreach (var smi in filteredAnalysisSymptomsWithIndicators)
             {
@@ -143,7 +164,8 @@ namespace MedExpert.Services.Implementation
             var mathcedSymptomIds = matchedAnalysisSymptoms.Keys.ToHashSet();
             var matchedSymptomsTree = symptomsTree.GetMatched(x => x.Id, mathcedSymptomIds);
 
-            var result = matchedSymptomsTree.VisitAndConvert(x => matchedAnalysisSymptoms[x.Id]);
+            var result = matchedSymptomsTree.VisitAndConvert(x => matchedAnalysisSymptoms[x.Id])
+                .VisitAndSort(x => x.CombinedSubtreeSeverity ?? 0, false);
 
             return result;
         }
@@ -184,65 +206,110 @@ namespace MedExpert.Services.Implementation
 
             if (symptomIndicators.Any())
             {
-                var vectorMaxSeverity = new double[symptomIndicators.Count];
-                var vectorMinSeverity = new double[symptomIndicators.Count];
-                var vectorRequired = new double[symptomIndicators.Count];
-                var vectorAnalysis = new double[symptomIndicators.Count];
-
-                for (var i = 0; i < symptomIndicators.Count; i++)
+                try
                 {
-                    var symptomIndicator = symptomIndicators[i];
+                    var vectorMaxSeverity = new double[symptomIndicators.Count];
+                    var vectorMinSeverity = new double[symptomIndicators.Count];
+                    var vectorRequired = new double[symptomIndicators.Count];
+                    var vectorAnalysis = new double[symptomIndicators.Count];
 
-                    if (!analysisIndicatorDict.ContainsKey(symptomIndicator.Indicator.Id))
+                    for (var i = 0; i < symptomIndicators.Count; i++)
                     {
-                        analysisIndicatorDict[symptomIndicator.Indicator.Id] = 0; //TODO: is it necessary?
+                        var symptomIndicator = symptomIndicators[i];
+
+                        if (!analysisIndicatorDict.ContainsKey(symptomIndicator.Indicator.Id))
+                        {
+                            analysisIndicatorDict[symptomIndicator.Indicator.Id] = 0; //TODO: is it necessary?
+                        }
+
+                        vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
+                                                .MultiplySign(symptomIndicator.DeviationLevelId)
+                                            * Math.Sqrt(
+                                                IndicatorWeightsDict.GetValueOrDefault(
+                                                    symptomIndicator.Indicator.ShortName, 1));
+                        vectorAnalysis[i] =
+                            AbsoluteDeviationLevelMeasure[
+                                    Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
+                                .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id])
+                            * Math.Sqrt(
+                                IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                        vectorMaxSeverity[i] = AbsoluteDeviationLevelMeasure[5]
+                                                   .MultiplySign(symptomIndicator.DeviationLevelId)
+                                               * Math.Sqrt(
+                                                   IndicatorWeightsDict.GetValueOrDefault(
+                                                       symptomIndicator.Indicator.ShortName, 1));
+                        vectorMinSeverity[i] = AbsoluteDeviationLevelMeasure[5]
+                                                   .MultiplySign(symptomIndicator.DeviationLevelId * -1)
+                                               * Math.Sqrt(
+                                                   IndicatorWeightsDict.GetValueOrDefault(
+                                                       symptomIndicator.Indicator.ShortName, 1));
                     }
 
-                    vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
-                                            .MultiplySign(symptomIndicator.DeviationLevelId)
-                                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorAnalysis[i] = AbsoluteDeviationLevelMeasure[Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
-                                            .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id]) 
-                                        * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorMaxSeverity[i] = AbsoluteDeviationLevelMeasure[5]
-                                                     .MultiplySign(symptomIndicator.DeviationLevelId) 
-                                                 * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
-                    vectorMinSeverity[i] = AbsoluteDeviationLevelMeasure[5]
-                                                     .MultiplySign(symptomIndicator.DeviationLevelId * -1)
-                                                 * Math.Sqrt(IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                    var vectorMaxSeverityProjected = vectorRequired.Project(vectorMaxSeverity);
+                    var vectorMinSeverityProjected = vectorRequired.Project(vectorMinSeverity);
+                    var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
+
+                    var baseSeverity =
+                        BaseSeverityForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
+
+                    if (vectorAnalysisProjected.Subtract(vectorMaxSeverityProjected).Distance() <
+                        vectorAnalysisProjected.Subtract(vectorMinSeverityProjected).Distance())
+                    {
+                        var baseDistance = vectorMaxSeverityProjected.Distance() - vectorRequired.Distance();
+                        var resultDistance =
+                            vectorMaxSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
+
+                        if (baseDistance == 0)
+                        {
+                            if (resultDistance == 0)
+                            {
+                                severity = 1;
+                            }
+                            else
+                            {
+                                severity = baseSeverity;
+                            }
+                        }
+                        else
+                        {
+                            severity = baseSeverity +
+                                       (1 - baseSeverity) * (baseDistance - resultDistance) / baseDistance;
+                        }
+                    }
+                    else
+                    {
+                        var baseDistance = vectorMinSeverityProjected.Distance() - vectorRequired.Distance();
+                        var resultDistance =
+                            vectorMinSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
+
+                        if (baseDistance == 0)
+                        {
+                            if (resultDistance == 0)
+                            {
+                                severity = baseSeverity;
+                            }
+                            else
+                            {
+                                severity = 0;
+                            }
+                        }
+                        else
+                        {
+                            severity = baseSeverity * (baseDistance - resultDistance) / baseDistance;
+                        }
+                    }
                 }
-
-                var vectorMaxSeverityProjected = vectorRequired.Project(vectorMaxSeverity);
-                var vectorMinSeverityProjected = vectorRequired.Project(vectorMinSeverity);
-                var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
-
-                var baseSeverity =
-                    BaseSeverityForCountOfIndicators.GetValueOrDefault(symptomIndicators.Count, 0.8);
-
-                if (vectorAnalysisProjected.Subtract(vectorMaxSeverityProjected).Distance() <
-                    vectorAnalysisProjected.Subtract(vectorMinSeverityProjected).Distance())
+                catch(OverflowException e)
                 {
-                    var baseDistance = vectorMaxSeverityProjected.Distance() - vectorRequired.Distance();
-                    var resultDistance =
-                        vectorMaxSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
-
-                    severity = baseSeverity +
-                                     (1 - baseSeverity) * (baseDistance - resultDistance) / baseDistance;
-                }
-                else
-                {
-                    var baseDistance = vectorMinSeverityProjected.Distance() - vectorRequired.Distance();
-                    var resultDistance =
-                        vectorMinSeverityProjected.Distance() - vectorAnalysisProjected.Distance();
-
-                    severity = baseSeverity * (baseDistance - resultDistance) / baseDistance;
+                    severity = null;
+                    //TODO: log as error!
                 }
             }
             else
             {
                 severity = null;
             }
-
+            
             return new AnalysisSymptom 
             {
                 Symptom = symptom,
@@ -253,6 +320,28 @@ namespace MedExpert.Services.Implementation
                     .Select(x => x.IndicatorId)
                     .ToHashSet()
             };
+        }
+
+        private static readonly List<decimal?> EmptySeverityList = new(0);
+        
+        private static AnalysisSymptom CalculateCombinedSeverity(AnalysisSymptom analysisSymptom,
+            IEnumerable<AnalysisSymptom> children)
+        {
+            var currentSeverity = analysisSymptom.Severity;
+            var childrenSeverities = children?
+                .Select(x => x.CombinedSubtreeSeverity ?? x.Severity)
+                .Where(x => x.HasValue)
+                .ToList() ?? EmptySeverityList;
+
+            const decimal higherLevelCoefficient = 2.5m;
+            analysisSymptom.CombinedSubtreeSeverity = currentSeverity.HasValue
+                ? (higherLevelCoefficient * currentSeverity.Value + childrenSeverities.Sum()) /
+                  (higherLevelCoefficient + childrenSeverities.Count)
+                : childrenSeverities.Count > 0
+                    ? childrenSeverities.Sum() / childrenSeverities.Count
+                    : null;
+
+            return analysisSymptom;
         }
     }
 }

@@ -1,0 +1,24 @@
+<div class="comment-container row">
+  <div class="comment-specialist col-2">
+    <div class="comment-specialist-image">
+      <span class="bi-person-circle"></span>
+    </div>
+    <div class="comment-specialist-name">{{getSpecialistName(comment.specialistId)}}</div>
+  </div>
+  <div class="comment-content col-10">
+    <div class="comment-subject">Диагноз: {{comment.symptomName}}.
+      <ng-container *ngIf="comment.name"><br/>{{getCommentTypeName(comment.type)}}: {{comment.name}}</ng-container></div>
+    <div class="comment-text">
+      <p *ngFor="let paragraph of isOpen ? fullParagraphList : shortParagraphList; last as isLastComment">
+        {{paragraph}}
+        <ng-container *ngIf="!isOpen && isLastComment && shouldShorten">
+          <span>...</span>
+          <span class="btn btn-link" (click)="openComment()"> ещё</span>
+        </ng-container>
+      </p>
+      <span class="close-comment-button btn-link" *ngIf="shouldShorten && isOpen" (click)="closeComment()">
+        <span *ngIf="isOpen"> Свернуть</span>
+      </span>
+    </div>
+  </div>
+</div>

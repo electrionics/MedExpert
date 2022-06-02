@@ -16,3 +16,11 @@ html {
 .box-shadow {
   box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
+
+.logo-icon {
+  display: inline-block;
+  margin-right: 10px;
+  font-size: 200%;
+  line-height: 100%;
+  vertical-align: middle;
+}

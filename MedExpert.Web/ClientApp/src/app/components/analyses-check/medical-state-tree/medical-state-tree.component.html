@@ -1,0 +1,49 @@
+<!--TODO rename all css classes to be shorter (omit 'medical-state' parts)-->
+<div class="medical-state">
+  <div class="medical-state-self">
+    <div class="medical-state-numbers">
+      <div class="medical-state-recommended-analyses col-4">
+        <div #toggleContextualPopupButton class="medical-state-recommended-analyses-count" title="Нажмите чтобы увидеть рекомендованные анализы"
+             [ngClass]="hasRecommendedAnalyses ? 'has-value' : 'no-value'"
+             (click)="toggleRecommendedAnalysesList()">
+          <ng-container *ngIf="hasRecommendedAnalyses">
+            {{medicalState.item.recommendedAnalyses.length}}
+          </ng-container>
+        </div>
+        <div #contextualPopup class="medical-state-recommended-analyses-list" [ngClass]="{'d-none': !recommendedAnalysesListShown}">
+          <span class="pointer bi bi-caret-up-fill"></span>
+          <span class="close-button bi-x" (click)="toggleRecommendedAnalysesList()"></span>
+          <ul>
+            <li *ngFor="let recommendedAnalysis of medicalState.item.recommendedAnalyses">
+              {{recommendedAnalysis.shortName}}
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="medical-state-severity col-4" [ngClass]="hasSeverity ? 'has-value' : 'no-value'">
+        {{medicalState.item.severity}}
+      </div>
+      <div class="medical-state-severity col-4" [ngClass]="hasCombinedSubtreeSeverity ? 'has-value' : 'no-value'">
+        {{medicalState.item.combinedSubtreeSeverity}}
+      </div>
+    </div>
+    <div class="medical-state-name">
+      <span class="medical-state-child-line" [ngClass]="{'d-none': nestingLevel == 0}"></span>
+      <span class="toggle-children-button bi"
+            [ngClass]="{'bi-caret-down-fill': isOpen, 'bi-caret-right-fill': !isOpen, 'no-children': !hasChildren}"
+            (click)="toggleChildren()">
+      </span>
+      {{medicalState.item.name}}
+    </div>
+    <div class="medical-state-specialists">
+      Специалист: <span>{{specialistsMap.get(medicalState.item.specialistId)}}</span>
+    </div>
+  </div>
+  <div class="medical-state-children" [ngClass]="{'d-none': !isOpen}">
+    <app-medical-state-tree *ngFor="let medicalStateChild of medicalState.children"
+                            [medicalState]="medicalStateChild" [specialistsMap]="specialistsMap"
+                            [nestingLevel]="nestingLevel + 1">
+    </app-medical-state-tree>
+  </div>
+</div>
+

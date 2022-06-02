@@ -7,7 +7,7 @@ namespace MedExpert.Services.Implementation.ComputedIndicators
     public class SII:IComputedIndicator
     {
         public string ShortName => "SII";
-        public List<string> DependentShortNames => new() {"N", "P", "L"};
+        public List<string> DependentShortNames => new() {"N", "PLT", "L"};
         public decimal Compute(Dictionary<string, decimal> indicatorValues)
         {
             var l = indicatorValues["L"];
@@ -15,7 +15,7 @@ namespace MedExpert.Services.Implementation.ComputedIndicators
             {
                 l = 0.01m;
             }
-            return indicatorValues["N"] * indicatorValues["P"] / l;
+            return indicatorValues["N"] * indicatorValues["PLT"] / l;
         }
     }
 }

@@ -1,0 +1,114 @@
+.medical-state {
+  padding-left: 30px;
+}
+
+.medical-state-name {
+  position: relative;
+  margin-right: 360px;
+}
+
+.medical-state-children {
+  border-left: 1px solid grey;
+  padding-left: 20px;
+}
+
+.medical-state-specialists {
+  color: #b3b1b1;
+  font-size: 90%;
+  margin-right: 360px;
+}
+
+.toggle-children-button {
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  margin-top: -12px;
+  cursor: pointer;
+}
+
+.toggle-children-button.no-children {
+  color: #e3e3e3;
+  cursor: default;
+}
+
+.medical-state-child-line {
+  position: absolute;
+  left: -55px;
+  top: 50%;
+  margin-top: -1px;
+  width: 20px;
+  height: 1px;
+  background-color: grey;
+}
+
+.medical-state-numbers {
+  display: flex;
+  width: 360px;
+  position: absolute;
+  height: 100%;
+  right: 0;
+  top: 0;
+  align-items: center;
+}
+
+.medical-state-recommended-analyses,
+.medical-state-severity {
+  text-align: center;
+}
+
+.medical-state-recommended-analyses {
+  position: relative;
+}
+
+.medical-state-numbers .no-value:before {
+  content: '-';
+  color: grey;
+}
+
+.medical-state-recommended-analyses-count.has-value {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.medical-state-self {
+  position: relative;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  padding: 5px;
+  background-color: #f9f9f9;
+}
+
+.medical-state-recommended-analyses-list {
+  width: 100%;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 5;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid grey;
+  border-radius: 5px;
+}
+
+.medical-state-recommended-analyses-list ul {
+  padding-left: 10px;
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.close-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.pointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  margin-left: -5px;
+  font-size: 10px;
+  color: grey;
+}

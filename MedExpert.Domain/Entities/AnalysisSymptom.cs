@@ -10,6 +10,8 @@ namespace MedExpert.Domain.Entities
         
         public decimal? Severity { get; set; }
         
+        public decimal? CombinedSubtreeSeverity { get; set; }
+        
         public Analysis Analysis { get; set; }
         
         public Symptom Symptom { get; set; }

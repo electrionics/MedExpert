@@ -40,3 +40,103 @@
 .indicators td:first-child {
   width: 100%;
 }
+
+.specialists-input-container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+}
+
+.specialists-input {
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  margin-bottom: 0;
+}
+
+.specialists-select-all-button {
+  display: flex;
+  border: 1px solid #ccc;
+  padding-top: 0;
+  padding-bottom: 0;
+  background-color: #f3f3f3;
+  margin-left: 5px;
+}
+
+.specialists-select-all-button > * {
+  align-self: center;
+}
+
+.medical-states-tree-buttons {
+  display: block;
+  text-align: center;
+}
+
+.medical-states-header {
+  display: flex;
+  position: -webkit-sticky; /* Safari */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 10px 8px 10px 25px;
+  margin-bottom: 15px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  background: #f3f3f3;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+}
+
+.medical-states-header-numbers-titles {
+  width: 360px;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.medical-states-header-numbers-titles div{
+  padding-right: 5px;
+  padding-left: 5px;
+}
+
+.no-data-message {
+  text-align: center;
+  color: #ccc;
+  padding: 20px;
+}
+
+.filter-buttons {
+  width: 100%;
+}
+
+.spinner-container {
+  text-align: center;
+}
+
+.spinners .spinner:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.spinners .spinner:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+.spinner {
+  margin-left: 2px;
+  margin-right: 2px;
+  width: 1rem;
+  height: 1.5rem;
+  border-radius: 5px;
+}
+
+.filtered-results.is-loading {
+  /*
+    hide current results when new results are loading
+    not using display: none here in order to avoid page jumping up when results are loading
+  */
+  opacity: 0;
+}

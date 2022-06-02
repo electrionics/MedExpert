@@ -7,7 +7,7 @@ namespace MedExpert.Services.Implementation.ComputedIndicators
     public class PLR:IComputedIndicator
     {
         public string ShortName => "PLR";
-        public List<string> DependentShortNames => new() {"P", "L"};
+        public List<string> DependentShortNames => new() {"PLT", "L"};
         public decimal Compute(Dictionary<string, decimal> indicatorValues)
         {
             var l = indicatorValues["L"];
@@ -15,7 +15,7 @@ namespace MedExpert.Services.Implementation.ComputedIndicators
             {
                 l = 0.01m;
             }
-            return indicatorValues["P"] / l;
+            return indicatorValues["PLT"] / l;
         }
     }
 }

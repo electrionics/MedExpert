@@ -1,6 +1,8 @@
+using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using MedExpert.Domain;
+using MedExpert.Domain.Identity;
 using MedExpert.Excel;
 using MedExpert.Web.Configuration;
 using MedExpert.Web.Validators;
@@ -14,8 +16,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MedExpert.Services.Implementation;
 using MedExpert.Services.Interfaces;
+using MedExpert.Web.Services;
+using MedExpert.Web.ViewModels.Account;
 using MedExpert.Web.ViewModels.Analysis;
 using MedExpert.Web.ViewModels.Import;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.IdentityModel.Tokens;
+using Z.EntityFramework.Extensions;
 
 namespace MedExpert.Web
 {
@@ -33,13 +42,23 @@ namespace MedExpert.Web
         {
             // In production, the Angular files will be served from this directory
             services.AddSpaStaticFiles(configuration => { configuration.RootPath = "ClientApp/dist"; });
-            
-            services.AddSingleton(Configuration.GetSection("Database").Get<DatabaseConfig>());
+
+            var databaseConfig = Configuration.GetSection("Database").Get<DatabaseConfig>();
+            var authorizationConfig = Configuration.GetSection("Authorization").Get<AuthorizationConfig>();
+            services.AddSingleton(databaseConfig);
+            services.AddSingleton(authorizationConfig);
 
             services.AddDbContext<MedExpertDataContext>(options => 
             {
-                options.UseSqlServer(Configuration.GetSection("Database").Get<DatabaseConfig>().ConnectionString);
+                options.UseSqlServer(databaseConfig.ConnectionString);
             });
+            
+            EntityFrameworkManager.ContextFactory = _ =>
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<MedExpertDataContext>();
+                optionsBuilder.UseSqlServer(databaseConfig.ConnectionString);
+                return new MedExpertDataContext(optionsBuilder.Options);
+            };
 
             services.Configure<CookiePolicyOptions>(options =>
             {
@@ -55,16 +74,57 @@ namespace MedExpert.Web
             {
                 options.AddPolicy("CorsPolicy",
                     bld => bld
-                        .WithOrigins("http://localhost:4200")
+                        .WithOrigins("https://localhost:4200")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials());
             });
+            services.AddScoped<IJwtGenerator, JwtGenerator>();
+            services.AddScoped<UserManager<User>>();
+            services.AddScoped<IEmailSender, EmailSender>();
+
+            services.AddDbContext<IdentityContext>(options =>
+                options.UseSqlServer(databaseConfig.ConnectionString)
+            );
+
+            services.AddIdentity<User, Role>()//options =>
+                // {
+                //     options.Password.RequiredLength = 1;
+                //     options.Password.RequireLowercase = false;
+                //     options.Password.RequireUppercase = false;
+                //     options.Password.RequireNonAlphanumeric = false;
+                //     options.Password.RequireDigit = false;
+                // })
+                .AddEntityFrameworkStores<IdentityContext>()
+                .AddDefaultTokenProviders();
+            
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authorizationConfig.TokenKey));
+            services.AddAuthentication((o) =>
+                {
+                    o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(
+                    opt =>
+                    {
+                        opt.RequireHttpsMetadata = true;
+                        opt.SaveToken = true;
+                        opt.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = key,
+                            ValidateAudience = false,
+                            ValidateIssuer = false
+                        };
+                    });
+            
             
             services.AddTransient<IValidator<ReferenceIntervalModel>, ReferenceIntervalModelValidator>();
             services.AddTransient<IValidator<ImportSymptomForm>, ImportSymptomFormValidator>();
             services.AddTransient<IValidator<AnalysisFormModel>, AnalysisFormModelValidator>();
-            
+            services.AddTransient<IValidator<LoginFormModel>, AccountLoginFormModelValidator>();
+            services.AddTransient<IValidator<RegisterFormModel>, AccountRegisterFormModelValidator>();
+
             services.AddScoped<ISpecialistService, SpecialistService>();
             services.AddScoped<IReferenceIntervalService, ReferenceIntervalService>();
             services.AddScoped<IIndicatorService, IndicatorService>();
@@ -76,7 +136,6 @@ namespace MedExpert.Web
             services.AddScoped<IAnalysisSymptomService, AnalysisSymptomService>();
             services.AddScoped<IAnalysisSymptomIndicatorService, AnalysisSymptomIndicatorService>();
             services.AddScoped<ILookupService, LookupService>();
-            
 
             services.AddScoped<ExcelParser, ExcelParser>();
         }
@@ -108,6 +167,9 @@ namespace MedExpert.Web
             {
                 app.UseCors("CorsPolicy");
             }
+            
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

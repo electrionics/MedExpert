@@ -20,7 +20,9 @@ namespace MedExpert.Web.Controllers
     [ApiController]
     public class AnalysisController:ControllerBase
     {
-        private static readonly List<IComputedIndicator> ComputedIndicators = new() { new ELR(), new EMR(), new LMR(), new MLR(), new NLR(), new PLR(), new SII()};
+        private static readonly List<IComputedIndicator> ComputedIndicators = new() { new ELR(), new EMR(), new LMR(), new MLR(), new NLR(), new PLR(), new PNR(), new BLR(), new SII()};
+        private const string CommonTreatmentSpecialistLookupName = "CommonTreatmentSpecialist";
+        private const string CommonAnalysisSpecialistLookupName = "CommonAnalysisSpecialist";
         
         private readonly IIndicatorService _indicatorService;
         private readonly IReferenceIntervalService _referenceIntervalService;
@@ -91,15 +93,24 @@ namespace MedExpert.Web.Controllers
         
         #endregion
 
-        #region Specialists
+        #region Public Specialists
 
         [HttpPost]
         [ApiRoute("Analysis/Specialists")]
         public async Task<List<LookupModel>> Specialists([FromBody] ProfileModel model)
         {
             var specialists = await _specialistService.GetSpecialistsByCriteria(model.Sex);
+            
+            var lookup1 = await _lookupService.GetByName(CommonTreatmentSpecialistLookupName);
+            var lookup2 = await _lookupService.GetByName(CommonAnalysisSpecialistLookupName);
+            var specialist1 = await _specialistService.GetSpecialistById(int.Parse(lookup1.Value));
+            var specialist2 = await _specialistService.GetSpecialistById(int.Parse(lookup2.Value));
 
-            var result = specialists.Select(x => new LookupModel
+            // ReSharper disable once ConvertToLocalFunction
+            Func<Specialist, bool> excludeCommonSpecialists =
+                x => x.Id != specialist1?.Id && x.Id != specialist2?.Id;
+            
+            var result = specialists.Where(excludeCommonSpecialists).Select(x => new LookupModel
             {
                 Id = x.Id,
                 Name = x.Name
@@ -166,6 +177,11 @@ namespace MedExpert.Web.Controllers
                 throw new ValidationException(validationResult.Errors);
             }
             
+            var lookup1 = await _lookupService.GetByName(CommonTreatmentSpecialistLookupName);
+            var lookup2 = await _lookupService.GetByName(CommonAnalysisSpecialistLookupName);
+            var specialist1 = await _specialistService.GetSpecialistById(int.Parse(lookup1.Value));
+            var specialist2 = await _specialistService.GetSpecialistById(int.Parse(lookup2.Value));
+            
             var now = DateTime.Now;
             var analysis = new Analysis
             {
@@ -202,9 +218,7 @@ namespace MedExpert.Web.Controllers
 
             try
             {
-
-
-                using (var transaction1 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using (var transaction1 = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     await _analysisService.Insert(analysis);
                     await _analysisIndicatorService.InsertBulk(toInsertIndicators);
@@ -213,6 +227,12 @@ namespace MedExpert.Web.Controllers
                     transaction1.Complete();
                 }
 
+                formModel.SpecialistIds.AddRange(new[]
+                {
+                    specialist1?.Id ?? default,
+                    specialist2?.Id ?? default
+                });
+                
                 var symptomsTree = await _analysisService.CalculateNewAnalysis(analysis.Id, formModel.SpecialistIds);
                 var symptomsList = symptomsTree.MakeFlat();
 
@@ -221,7 +241,8 @@ namespace MedExpert.Web.Controllers
                     {
                         AnalysisId = analysis.Id,
                         SymptomId = x.SymptomId,
-                        Severity = x.Severity
+                        Severity = x.Severity,
+                        CombinedSubtreeSeverity = x.CombinedSubtreeSeverity
                     }).ToList();
                 var toInsertMatchedIndicators = symptomsList.SelectMany(x => x.MatchedIndicatorIds.Select(y =>
                     new AnalysisSymptomIndicator
@@ -233,7 +254,7 @@ namespace MedExpert.Web.Controllers
 
                 analysis.Calculated = true;
 
-                using (var transaction2 = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using (var transaction2 = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions{ IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled))
                 {
                     await _analysisService.Update(analysis);
                     await _analysisSymptomService.InsertBulk(toInsertAnalysisSymptoms);
@@ -258,57 +279,68 @@ namespace MedExpert.Web.Controllers
         [ApiRoute("Analysis/FilterResults")]
         public async Task<AnalysisResultModel> FilterResults([FromBody] AnalysisResultFilterModel model)
         {
-            string categoryName;
-            string specialistLookupName = null;
-            switch (model.Filter)
+            try
             {
-                case MedicalStateFilter.Diseases:
-                    categoryName = "Illness";
-                    break;
-                case MedicalStateFilter.CommonAnalysis:
-                    categoryName = "Analysis";
-                    specialistLookupName = "CommonAnalysisSpecialist";
-                    break;
-                case MedicalStateFilter.SpecialAnalysis:
-                    categoryName = "Analysis";
-                    break;
-                case MedicalStateFilter.CommonTreatment:
-                    categoryName = "Treatment";
-                    specialistLookupName = "CommonTreatmentSpecialist";
-                    break;
-                case MedicalStateFilter.SpecialTreatment:
-                    categoryName = "Treatment";
-                    break;
-                default:
-                    throw new ValidationException("Некорректно заданный фильтр.");
+                string categoryName;
+                string specialistLookupName = null;
+                switch (model.Filter)
+                {
+                    case MedicalStateFilter.Diseases:
+                        categoryName = "Illness";
+                        break;
+                    case MedicalStateFilter.CommonAnalysis:
+                        categoryName = "Analysis";
+                        specialistLookupName = CommonAnalysisSpecialistLookupName;
+                        break;
+                    case MedicalStateFilter.SpecialAnalysis:
+                        categoryName = "Analysis";
+                        break;
+                    case MedicalStateFilter.CommonTreatment:
+                        categoryName = "Treatment";
+                        specialistLookupName = CommonTreatmentSpecialistLookupName;
+                        break;
+                    case MedicalStateFilter.SpecialTreatment:
+                        categoryName = "Treatment";
+                        break;
+                    default:
+                        throw new ValidationException("Некорректно заданный фильтр.");
+                }
+
+                if (specialistLookupName != null)
+                {
+                    var lookup = await _lookupService.GetByName(specialistLookupName);
+                    var specialist = await _specialistService.GetSpecialistById(int.Parse(lookup.Value));
+
+                    model.SpecialistIds = new List<int> {specialist.Id};
+                }
+
+                var category = await _symptomCategoryService.GetByName(categoryName);
+
+                var symptomsTree =
+                    await _analysisService.FetchCalculatedAnalysis(model.AnalysisId, model.SpecialistIds, category.Id);
+
+                var commentsList = new List<CommentModel>();
+                var startOrder = 0;
+                var ordersForComments = new Dictionary<int, int>();
+                var toReturn = new AnalysisResultModel
+                {
+                    AnalysisId = model.AnalysisId,
+                    FoundMedicalStates = symptomsTree
+                        .VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList))
+                        .VisitAndConvert(x => SetOrderInResultTree(x, ref startOrder, ordersForComments)),
+                    Comments = commentsList
+                        .OrderBy(x => ordersForComments[x.SymptomId])
+                        .ThenBy(x => x.Type)
+                        .ThenBy(x => x.Name)
+                        .ToList()
+                };
+
+                return toReturn;
             }
-
-            if (specialistLookupName != null)
+            catch (Exception e)
             {
-                var lookup = await _lookupService.GetByName(specialistLookupName);
-                var specialist = await _specialistService.GetSpecialistById(int.Parse(lookup.Value));
-
-                model.SpecialistIds = new List<int> {specialist.Id};
+                throw;
             }
-
-            var category = await _symptomCategoryService.GetByName(categoryName);
-            
-            var symptomsTree = await _analysisService.FetchCalculatedAnalysis(model.AnalysisId, model.SpecialistIds, category.Id);
-            
-            var commentsList = new List<CommentModel>();
-            var toReturn = new AnalysisResultModel
-            {
-                AnalysisId = model.AnalysisId,
-                FoundMedicalStates =
-                    symptomsTree.VisitAndConvert(x => ConvertAnalysisSymptomToModel(x, commentsList)),
-                Comments = commentsList
-                    .OrderBy(x => x.Type)
-                    .ThenBy(x => x.SpecialistId)
-                    .ThenBy(x => x.Name)
-                    .ToList()
-            };
-            
-            return toReturn;
         }
         
         private static MedicalStateModel ConvertAnalysisSymptomToModel(AnalysisSymptom analysisSymptom, List<CommentModel> commentsToFill)
@@ -321,21 +353,27 @@ namespace MedExpert.Web.Controllers
                 .ToList();
 
             var symptomId = analysisSymptom.SymptomId;
+            var symptomName = analysisSymptom.Symptom.Name;
             var specialistId = analysisSymptom.Symptom.SpecialistId;
+
+            if (!string.IsNullOrEmpty(analysisSymptom.Symptom.Comment))
+            {
+                commentsToFill.Add(new CommentModel
+                {
+                    SpecialistId = specialistId,
+                    SymptomId = symptomId,
+                    SymptomName = symptomName,
+                    Name = null,
+                    Text = analysisSymptom.Symptom.Comment,
+                    Type = CommentType.Symptom
+                });
+            }
             
-            commentsToFill.Add(new CommentModel
+            commentsToFill.AddRange(matchedIndicators.Where(x => string.IsNullOrEmpty(x.Comment)).Select(x => new CommentModel
             {
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
-                Name = analysisSymptom.Symptom.Name,
-                Text = analysisSymptom.Symptom.Comment,
-                Type = CommentType.Symptom
-            });
-            
-            commentsToFill.AddRange(matchedIndicators.Select(x => new CommentModel
-            {
-                SpecialistId = specialistId,
-                SymptomId = symptomId,
+                SymptomName = symptomName,
                 Name = x.Indicator.Name,
                 Text = x.Comment,
                 Type = CommentType.MatchedIndicator
@@ -346,6 +384,7 @@ namespace MedExpert.Web.Controllers
             {
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
+                SymptomName = symptomName,
                 Name = x.Indicator.Name,
                 Text = x.Comment,
                 Type = CommentType.RecommendedForAnalysisIndicator
@@ -355,8 +394,9 @@ namespace MedExpert.Web.Controllers
             {
                 SpecialistId = specialistId,
                 SymptomId = symptomId,
-                Name = analysisSymptom.Symptom.Name,
+                Name = symptomName,
                 Severity = analysisSymptom.Severity,
+                CombinedSubtreeSeverity = analysisSymptom.CombinedSubtreeSeverity,
                 RecommendedAnalyses = 
                     recommendedIndicators.Select(x => new IndicatorModel
                     {
@@ -365,6 +405,13 @@ namespace MedExpert.Web.Controllers
                         ShortName = x.Indicator.ShortName
                     }).ToList()
             };
+        }
+
+        private static MedicalStateModel SetOrderInResultTree(MedicalStateModel model, ref int order, IDictionary<int, int> symptomIdsToOrders)
+        {
+            symptomIdsToOrders[model.SymptomId] = order++;
+            
+            return model;
         }
         
         #endregion
