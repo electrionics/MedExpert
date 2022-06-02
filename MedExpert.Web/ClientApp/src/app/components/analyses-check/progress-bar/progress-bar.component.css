@@ -5,6 +5,11 @@
 
 .progress-child {
   height: 100%;
+  width: 0%;
+  -webkit-transition: width 1.5s ease-in-out;
+  -moz-transition: width 1.5s ease-in-out;
+  -o-transition: width 1.5s ease-in-out;
+  transition: width 1.5s ease-in-out;
 }
 
 .good {
@@ -13,7 +18,6 @@
 
 .normal {
   background: #e9e08f;
-;
 }
 
 .bad {
