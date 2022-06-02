@@ -14,4 +14,16 @@ export class ProgressBarComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  get isGood(): boolean {
+    return this.percentage < 33.33
+  }
+
+  get isNormal(): boolean {
+    return this.percentage >= 33.33 && this.percentage < 66.66;
+  }
+
+  get isBad(): boolean {
+    return this.percentage >= 66.66
+  }
+
 }

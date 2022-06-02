@@ -4,6 +4,18 @@
 }
 
 .progress-child {
-  background: #e98f8f;
   height: 100%;
+}
+
+.good {
+  background: #9ae98f;
+}
+
+.normal {
+  background: #e9e08f;
+;
+}
+
+.bad {
+  background: #e98f8f;
 }
