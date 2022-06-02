@@ -51,6 +51,10 @@
   align-items: center;
 }
 
+.medical-state-severity {
+  font-size: 90%;
+}
+
 .medical-state-recommended-analyses,
 .medical-state-severity {
   text-align: center;

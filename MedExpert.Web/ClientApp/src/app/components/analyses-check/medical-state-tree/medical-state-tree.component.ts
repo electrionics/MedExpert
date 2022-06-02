@@ -44,6 +44,18 @@ export class MedicalStateTreeComponent implements OnInit {
     return this.medicalState.item.recommendedAnalyses.length !== 0
   }
 
+  get severityPercentage(): number {
+    if (this.hasSeverity) {
+      return MedicalStateTreeComponent.getPercentageFromFloat(this.medicalState.item.severity);
+    }
+  }
+
+  get combinedSubtreeSeverityPercentage(): number {
+    if (this.hasCombinedSubtreeSeverity) {
+      return MedicalStateTreeComponent.getPercentageFromFloat(this.medicalState.item.combinedSubtreeSeverity);
+    }
+  }
+
   constructor(private renderer: Renderer2) {
     this.isOpen = true;
   }
@@ -100,5 +112,11 @@ export class MedicalStateTreeComponent implements OnInit {
     }
   }
 
+  private static getPercentageFromFloat(floatNumber: number) : number {
+    // returns number with precision of one decimal place, in format like '55,4' from number like '0,554'
+    return parseFloat((floatNumber * 100).toFixed(1));
+    // we need this toFixed hack in order to avoid values like 55.40000000000006 due to computers' floating point drawback
+    // read more: https://floating-point-gui.de/
 
+  }
 }

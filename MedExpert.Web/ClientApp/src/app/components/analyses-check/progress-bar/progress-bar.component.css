@@ -1,0 +1,9 @@
+.progress-parent {
+  background: #e0e0e0;
+  height: 10px;
+}
+
+.progress-child {
+  background: #e98f8f;
+  height: 100%;
+}

@@ -21,10 +21,16 @@
         </div>
       </div>
       <div class="medical-state-severity col-4" [ngClass]="hasSeverity ? 'has-value' : 'no-value'">
-        {{medicalState.item.severity}}
+        <ng-container *ngIf="hasSeverity">
+          <div class="mb-1">{{severityPercentage}}%</div>
+          <app-progress-bar [percentage]="severityPercentage"></app-progress-bar>
+        </ng-container>
       </div>
       <div class="medical-state-severity col-4" [ngClass]="hasCombinedSubtreeSeverity ? 'has-value' : 'no-value'">
-        {{medicalState.item.combinedSubtreeSeverity}}
+        <ng-container *ngIf="hasCombinedSubtreeSeverity">
+          <div class="mb-1">{{combinedSubtreeSeverityPercentage}}%</div>
+          <app-progress-bar [percentage]="combinedSubtreeSeverityPercentage"></app-progress-bar>
+        </ng-container>
       </div>
     </div>
     <div class="medical-state-name">
