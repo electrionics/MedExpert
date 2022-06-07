@@ -11,15 +11,3 @@
   -o-transition: width 1.5s ease-in-out;
   transition: width 1.5s ease-in-out;*/
 }
-
-.good {
-  background: #9ae98f;
-}
-
-.normal {
-  background: #e9e08f;
-}
-
-.bad {
-  background: #e98f8f;
-}

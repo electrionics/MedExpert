@@ -1,4 +1,4 @@
 <div class="progress-parent">
-  <div class="progress-child" [ngStyle]="shouldSetWidth && {'width': percentage + '%'}"
-       [ngClass]="{'good': isGood, 'normal': isNormal, 'bad': isBad}"></div>
+  <div class="progress-child"
+       [ngStyle]="shouldSetWidth && {'width': percentage + '%', 'background-color': backgroundColor}"></div>
 </div>
