@@ -17,9 +17,10 @@ export class ProgressBarComponent implements OnInit {
     // need this in order to make css width animation to actually show
     // if we remove this and remove shouldSetWidth variable entirely, the progress bar will just show as in the end of animation
     // TODO find another solution for this, maybe use Angular animations
-    setTimeout(() => {
+    /*setTimeout(() => {
       this.shouldSetWidth = true;
-    }, 1000);
+    }, 1000);*/
+    this.shouldSetWidth = true;
   }
 
   get isGood(): boolean {
