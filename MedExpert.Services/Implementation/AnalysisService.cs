@@ -53,10 +53,26 @@ namespace MedExpert.Services.Implementation
                 throw new InvalidDataException("Анализ уже рассчитан.");
             }
 
+            const int maxSidlAndAlnalysisLevelDifferenceOnIndicator = 5;
+
             Func<SymptomIndicatorDeviationLevel, bool> matcher = y =>
                 y.Indicator.AnalysisIndicators.Any() &&
                 y.DeviationLevelId * y.Indicator.AnalysisIndicators.First().DeviationLevelId > 0 &&
                 Math.Abs(y.DeviationLevelId) <= Math.Abs(y.Indicator.AnalysisIndicators.First().DeviationLevelId);
+
+            Func<SymptomIndicatorDeviationLevel, bool> highLevel = y =>
+                Math.Abs(y.DeviationLevelId) >= 3;
+            
+            Func<SymptomIndicatorDeviationLevel, bool> highLevelMatcher = y =>
+                matcher.Invoke(y) && highLevel.Invoke(y);
+            
+            Func<SymptomIndicatorDeviationLevel, bool> lowLevelMatcher = y =>
+                matcher.Invoke(y) && Math.Abs(y.DeviationLevelId) < 3;
+
+            Func<SymptomIndicatorDeviationLevel, bool> unmatcher = y =>
+                y.Indicator.AnalysisIndicators.Any() &&
+                Math.Abs(y.DeviationLevelId - y.Indicator.AnalysisIndicators.First().DeviationLevelId) >
+                    maxSidlAndAlnalysisLevelDifferenceOnIndicator;
 
             var sidls = await _dataContext.Set<SymptomIndicatorDeviationLevel>().AsNoTracking()
                 .Include(x => x.Indicator)
@@ -83,7 +99,9 @@ namespace MedExpert.Services.Implementation
             var matchedSymptoms = sidls
                 .GroupBy(x => x.SymptomId)
                 .Where(x =>
-                    x.Count(matcher) >= Math.Min((x.Count() + 1) / 2, 3))
+                    !x.Any(unmatcher) &&
+                    x.Count(highLevelMatcher) + x.Count(lowLevelMatcher) >= Math.Min((x.Count() + 1) / 2, 3) &&
+                    x.Count(highLevel) == x.Count(highLevelMatcher))
                 .Select(x => new
                 {
                     x.Key, 
