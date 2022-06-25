@@ -39,7 +39,7 @@ namespace MedExpert.Core.Helpers
                         ? null : 
                         p.Children.GetMatched(matcher, itemsToMatch)
                 })
-                .Where(x => x.Children == null || x.Children.Any())
+                //.Where(x => x.Children == null || x.Children.Any())
                 .ToList();
         }
 

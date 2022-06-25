@@ -212,6 +212,80 @@ namespace MedExpert.Services.Implementation
             {1, 0.4}, {2, 0.5}, {3, 0.6}, {4, 0.6}, {5, 0.6}, {6, 0.6}, {7, 0.7}, {8, 0.7}, {9, 0.8}
         };
 
+        private static AnalysisSymptom CalculateSeverity2(Symptom symptom,
+            IDictionary<int, int> analysisIndicatorDict, int analysisId,
+            IReadOnlyDictionary<int, List<SymptomIndicatorDeviationLevel>> matchedIndicators)
+        {
+            var symptomIndicators = symptom.SymptomIndicatorDeviationLevels
+                .Select(x => new {x.Indicator, x.DeviationLevelId})
+                .ToList();
+
+            double? severity;
+
+            if (symptomIndicators.Any())
+            {
+                try
+                {
+                    var vectorRequired = new double[symptomIndicators.Count];
+                    var vectorAnalysis = new double[symptomIndicators.Count];
+
+                    for (var i = 0; i < symptomIndicators.Count; i++)
+                    {
+                        var symptomIndicator = symptomIndicators[i];
+
+                        if (!analysisIndicatorDict.ContainsKey(symptomIndicator.Indicator.Id))
+                        {
+                            analysisIndicatorDict[symptomIndicator.Indicator.Id] = 0; //TODO: is it necessary?
+                        }
+
+                        vectorRequired[i] = AbsoluteDeviationLevelMeasure[Math.Abs(symptomIndicator.DeviationLevelId)]
+                                                .MultiplySign(symptomIndicator.DeviationLevelId)
+                                            * Math.Sqrt(
+                                                IndicatorWeightsDict.GetValueOrDefault(
+                                                    symptomIndicator.Indicator.ShortName, 1));
+                        vectorAnalysis[i] =
+                            AbsoluteDeviationLevelMeasure[
+                                    Math.Abs(analysisIndicatorDict[symptomIndicator.Indicator.Id])]
+                                .MultiplySign(analysisIndicatorDict[symptomIndicator.Indicator.Id])
+                            * Math.Sqrt(
+                                IndicatorWeightsDict.GetValueOrDefault(symptomIndicator.Indicator.ShortName, 1));
+                    }
+                    
+                    var vectorAnalysisProjected = vectorRequired.Project(vectorAnalysis);
+                    var vectorResult = vectorAnalysisProjected.Subtract(vectorRequired);
+
+                    var result = new double[vectorResult.Length];
+                    
+                    for (var i = 0; i < vectorResult.Length; i++)
+                    {
+                        result[i] = Math.Pow((double) 2 / 3, vectorResult[i]);
+                    }
+
+                    severity = 0;
+                }
+                catch(OverflowException e)
+                {
+                    severity = null;
+                    //TODO: log as error!
+                }
+            }
+            else
+            {
+                severity = null;
+            }
+            
+            return new AnalysisSymptom 
+            {
+                Symptom = symptom,
+                SymptomId = symptom.Id, 
+                Severity = (decimal?) severity?.RoundTo(3), 
+                AnalysisId = analysisId,
+                MatchedIndicatorIds = matchedIndicators[symptom.Id]
+                    .Select(x => x.IndicatorId)
+                    .ToHashSet()
+            };
+        }
+
         private static AnalysisSymptom CalculateSeverity(Symptom symptom,
             IDictionary<int, int> analysisIndicatorDict, int analysisId,
             IReadOnlyDictionary<int, List<SymptomIndicatorDeviationLevel>> matchedIndicators)
