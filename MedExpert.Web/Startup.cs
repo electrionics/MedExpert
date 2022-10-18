@@ -6,10 +6,8 @@ using MedExpert.Domain.Identity;
 using MedExpert.Excel;
 using MedExpert.Web.Configuration;
 using MedExpert.Web.Validators;
-using MedExpert.Web.ViewModels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +23,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.IdentityModel.Tokens;
 using Z.EntityFramework.Extensions;
+using MedExpert.Services.Interfaces.Common;
+using MedExpert.Services.Implementation.Common;
 
 namespace MedExpert.Web
 {
@@ -136,6 +136,8 @@ namespace MedExpert.Web
             services.AddScoped<IAnalysisSymptomService, AnalysisSymptomService>();
             services.AddScoped<IAnalysisSymptomIndicatorService, AnalysisSymptomIndicatorService>();
             services.AddScoped<ILookupService, LookupService>();
+
+            services.AddScoped(typeof(IRepository<>), typeof(SimpleRepository<>));
 
             services.AddScoped<ExcelParser, ExcelParser>();
         }

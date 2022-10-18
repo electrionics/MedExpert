@@ -7,7 +7,6 @@ using MedExpert.Core;
 using MedExpert.Core.Helpers;
 using MedExpert.Domain;
 using MedExpert.Domain.Entities;
-using MedExpert.Domain.Enums;
 using MedExpert.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -194,24 +193,19 @@ namespace MedExpert.Services.Implementation
             await _dataContext.SaveChangesAsync();
         }
 
-        private static readonly Dictionary<string, double> IndicatorWeightsDict = new()
-        {
-            {"nRBC", 3}, {"WBC", 3}, {"PLT", 3}, {"NLR", 3},
-                
-            {"NRBC", 2}, {"RET", 2}, {"HB", 2}, {"HCT", 2}, {"MCV", 2}, {"RDW", 2}, {"ESR", 2}, {"N", 2}, {"E", 2},
-            {"B", 2}, {"M", 2}, {"L", 2}, {"MPV", 2}, {"PLR", 2}, {"SII", 2}
-        };
+        private static Dictionary<string, double> IndicatorWeightsDict => IndicatorWeightsDictField ??= IndicatorWeightsDictInitField;
 
-        private static readonly Dictionary<int, double> AbsoluteDeviationLevelMeasure = new()
-        {
-            {0, 0}, {1, 1}, {2, 2}, {3, Math.Sqrt(13)}, {4, Math.Sqrt(27)}, {5, Math.Sqrt(40)}
-        };
+        private static Dictionary<int, double> AbsoluteDeviationLevelMeasure => AbsoluteDeviationLevelMeasureField ??= AbsoluteDeviationLevelMeasureInitField;
 
-        private static readonly Dictionary<int, double> BaseSeverityForCountOfIndicators = new()
-        {
-            {1, 0.4}, {2, 0.5}, {3, 0.6}, {4, 0.6}, {5, 0.6}, {6, 0.6}, {7, 0.7}, {8, 0.7}, {9, 0.8}
-        };
+        private static Dictionary<int, double> BaseSeverityForCountOfIndicators => BaseSeverityForCountOfIndicatorsField ??= BaseSeverityForCountOfIndicatorsInitField;
 
+        public void RefreshAnalysisCalculationAlgorithmCache()
+        {
+            IndicatorWeightsDictField = null;
+            AbsoluteDeviationLevelMeasureField = null;
+            BaseSeverityForCountOfIndicatorsField = null;
+        }
+        
         private static AnalysisSymptom CalculateSeverity2(Symptom symptom,
             IDictionary<int, int> analysisIndicatorDict, int analysisId,
             IReadOnlyDictionary<int, List<SymptomIndicatorDeviationLevel>> matchedIndicators)
@@ -416,6 +410,29 @@ namespace MedExpert.Services.Implementation
 
         private static readonly List<decimal?> EmptySeverityList = new(0);
         
+        private static readonly Dictionary<string, double> IndicatorWeightsDictInitField = new()
+        {
+            {"nRBC", 3}, {"WBC", 3}, {"PLT", 3}, {"NLR", 3},
+
+            {"NRBC", 2}, {"RET", 2}, {"HB", 2}, {"HCT", 2}, {"MCV", 2}, {"RDW", 2}, {"ESR", 2}, {"N", 2},
+            {"E", 2},
+            {"B", 2}, {"M", 2}, {"L", 2}, {"MPV", 2}, {"PLR", 2}, {"SII", 2}
+        };
+
+        private static readonly Dictionary<int, double> AbsoluteDeviationLevelMeasureInitField = new()
+        {
+            {0, 0}, {1, 1}, {2, 2}, {3, Math.Sqrt(13)}, {4, Math.Sqrt(27)}, {5, Math.Sqrt(40)}
+        };
+
+        private static readonly Dictionary<int, double> BaseSeverityForCountOfIndicatorsInitField = new()
+        {
+            {1, 0.4}, {2, 0.5}, {3, 0.6}, {4, 0.6}, {5, 0.6}, {6, 0.6}, {7, 0.7}, {8, 0.7}, {9, 0.8}
+        };
+
+        private static Dictionary<string, double> IndicatorWeightsDictField;
+        private static Dictionary<int, double> AbsoluteDeviationLevelMeasureField;
+        private static Dictionary<int, double> BaseSeverityForCountOfIndicatorsField;
+
         private static AnalysisSymptom CalculateCombinedSeverity(AnalysisSymptom analysisSymptom,
             IEnumerable<AnalysisSymptom> children)
         {

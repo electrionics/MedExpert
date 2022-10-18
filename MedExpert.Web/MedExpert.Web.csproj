@@ -9,7 +9,7 @@
 
         <!-- Set this to true if you enable server-side prerendering -->
         <BuildServerSideRenderer>false</BuildServerSideRenderer>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <UserSecretsId>6d05613e-c2b9-411c-91b3-ff0507575f7c</UserSecretsId>
     </PropertyGroup>
 
@@ -101,7 +101,7 @@
 
     <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
         <!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
-        <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
+        <Exec WorkingDirectory="$(SpaRoot)" Command="npm install --force" />
         <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build --prod --aot --outputHashing=all" />
         <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build:ssr -- --prod --aot --outputHashing=all" Condition=" '$(BuildServerSideRenderer)' == 'true' " />
 
