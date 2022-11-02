@@ -22,7 +22,6 @@ using MedExpert.Web.ViewModels;
 using MedExpert.Services.Interfaces;
 using MedExpert.Web.Filters;
 using MedExpert.Web.ViewModels.Import;
-using Microsoft.AspNetCore.Authorization;
 
 // ReSharper disable CommentTypo
 

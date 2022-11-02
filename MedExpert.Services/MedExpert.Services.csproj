@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
@@ -9,7 +9,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="5.13.20" />
+      <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="5.14.2" />
       <PackageReference Include="Z.EntityFramework.Plus.EFCore" Version="5.13.20" />
     </ItemGroup>
 

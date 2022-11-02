@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <UserSecretsId>aspnet-WebApplication-B176E1ED-C7B5-46B2-B2A0-EB3EC42F9F94</UserSecretsId>
     </PropertyGroup>
 

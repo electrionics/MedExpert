@@ -7,6 +7,7 @@ using MedExpert.Core.Helpers;
 using MedExpert.Domain;
 using MedExpert.Domain.Entities;
 using MedExpert.Services.Interfaces;
+using MedExpert.Services.Interfaces.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedExpert.Services.Implementation
@@ -14,10 +15,14 @@ namespace MedExpert.Services.Implementation
     public class SymptomService:ISymptomService
     {
         private readonly MedExpertDataContext _dataContext;
+        private readonly IRepository<Symptom> _repository;
+        private readonly IRepository<SymptomIndicatorDeviationLevel> _sidlRepository;
 
-        public SymptomService(MedExpertDataContext dataContext)
+        public SymptomService(MedExpertDataContext dataContext, IRepository<Symptom> repository, IRepository<SymptomIndicatorDeviationLevel> sidlRepository)
         {
             _dataContext = dataContext;
+            _repository = repository;
+            _sidlRepository = sidlRepository;
         }
         
         public async Task UpdateBulk(List<Symptom> entities)
@@ -28,11 +33,7 @@ namespace MedExpert.Services.Implementation
 
         public async Task InsertBulk(List<Symptom> entities)
         {
-            await _dataContext.BulkInsertAsync(entities,options => 
-            {
-                options.IncludeGraph = true;
-                options.BatchSize = 2000;
-            });
+            await _repository.InsertBulk(entities, 2000, true);
             RefreshSymptomsCache();
         }
 
@@ -45,12 +46,8 @@ namespace MedExpert.Services.Implementation
         {
             var entities = _dataContext.Set<SymptomIndicatorDeviationLevel>()
                 .Where(x => x.Symptom.SpecialistId == specialistId && x.Symptom.CategoryId == symptomCategoryId);
-            
-            await _dataContext.BulkDeleteAsync(entities, options =>
-            {
-                options.IncludeGraph = false;
-                options.BatchSize = 200;
-            });
+
+            await _sidlRepository.DeleteBulk(entities, 200);
         }
 
         public async Task TryDeleteAllSymptoms(int specialistId, int symptomCategoryId)
@@ -94,17 +91,8 @@ namespace MedExpert.Services.Implementation
                 symptom.IsDeleted = true;
             }
 
-            await _dataContext.BulkDeleteAsync(entitiesToRemove, options =>
-            {
-                options.IncludeGraph = false;
-                options.BatchSize = 5000;
-            });
-            
-            await _dataContext.BulkUpdateAsync(entitiesToMark, options =>
-            {
-                options.IncludeGraph = false;
-                options.BatchSize = 5000;
-            });
+            await _repository.DeleteBulk(entitiesToRemove, 5000);
+            await _repository.UpdateBulk(entitiesToMark, 5000);
         }
 
         private static IList<TreeItem<Symptom>> _symptomsCache;
