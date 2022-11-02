@@ -136,6 +136,8 @@ namespace MedExpert.Web
             services.AddScoped<IAnalysisSymptomService, AnalysisSymptomService>();
             services.AddScoped<IAnalysisSymptomIndicatorService, AnalysisSymptomIndicatorService>();
             services.AddScoped<ILookupService, LookupService>();
+            services.AddScoped<ISystemHealthCheckService, SystemHealthCheckService>();
+            
 
             services.AddScoped<ExcelParser, ExcelParser>();
         }

@@ -34,9 +34,10 @@ namespace MedExpert.Web.Controllers
         private readonly IAnalysisSymptomIndicatorService _analysisSymptomIndicatorService;
         private readonly ILookupService _lookupService;
         private readonly ISymptomCategoryService _symptomCategoryService;
+        private readonly ISystemHealthCheckService _systemHealthCheckService;
         private readonly IValidator<AnalysisFormModel> _analysisFormValidator;
         
-        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, IAnalysisIndicatorService analysisIndicatorService, IAnalysisService analysisService, IValidator<AnalysisFormModel> analysisFormValidator, IAnalysisSymptomService analysisSymptomService, IAnalysisSymptomIndicatorService analysisSymptomIndicatorService, ILookupService lookupService, ISymptomCategoryService symptomCategoryService)
+        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, IAnalysisIndicatorService analysisIndicatorService, IAnalysisService analysisService, IValidator<AnalysisFormModel> analysisFormValidator, IAnalysisSymptomService analysisSymptomService, IAnalysisSymptomIndicatorService analysisSymptomIndicatorService, ILookupService lookupService, ISymptomCategoryService symptomCategoryService, ISystemHealthCheckService systemHealthCheckService)
         {
             _indicatorService = indicatorService;
             _referenceIntervalService = referenceIntervalService;
@@ -49,6 +50,7 @@ namespace MedExpert.Web.Controllers
             _analysisSymptomIndicatorService = analysisSymptomIndicatorService;
             _lookupService = lookupService;
             _symptomCategoryService = symptomCategoryService;
+            _systemHealthCheckService = systemHealthCheckService;
         }
 
         #region Indicators
@@ -413,7 +415,18 @@ namespace MedExpert.Web.Controllers
             
             return model;
         }
-        
+
+        #endregion
+
+        #region PerformanceHealthCheck
+
+        [HttpGet]
+        [ApiRoute("Analysis/PerformanceHealthCheck")]
+        public async Task<Dictionary<string, Tuple<int, int>>> PerformanceHealthCheck()
+        {
+            return await _systemHealthCheckService.GetHealthCheckData();
+        }
+
         #endregion
 
         [HttpPost]
