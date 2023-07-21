@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using MedExpert.Core;
 using MedExpert.Core.Helpers;
@@ -95,36 +96,66 @@ namespace MedExpert.Services.Implementation
             await _repository.UpdateBulk(entitiesToMark, 5000);
         }
 
+        #region Cache
+
+        private static SemaphoreSlim _symptomCacheSemaphore = new SemaphoreSlim(1);
         private static IList<TreeItem<Symptom>> _symptomsCache;
         
         public async Task<IList<TreeItem<Symptom>>> GetSymptomsTree()
         {
-            if (_symptomsCache != null) return _symptomsCache;
-            
-            var symptoms = await _dataContext.Set<Symptom>()
-                .Include(x => x.SymptomIndicatorDeviationLevels)
-                .ThenInclude(x => x.Indicator)
-                .Where(x => !x.IsDeleted)
-                .ToListAsync();
+            if (_symptomsCache == null)
+            {
+                try
+                {
+                    await _symptomCacheSemaphore.WaitAsync();
 
-            _symptomsCache = symptoms
-                .GenerateTree(x => x.Id, x => x.ParentSymptomId);
+                    if (_symptomsCache == null)
+                    {
+                        var symptoms = await _dataContext.Set<Symptom>().AsNoTracking()
+                            .Include(x => x.SymptomIndicatorDeviationLevels)
+                            .ThenInclude(x => x.Indicator)
+                            .Where(x => !x.IsDeleted)
+                            .ToListAsync();
+
+                        _symptomsCache = symptoms
+                            .GenerateTree(x => x.Id, x => x.ParentSymptomId);
+                    }
+                }
+                finally
+                {
+                    _symptomCacheSemaphore.Release();
+                }
+            }
 
             return _symptomsCache;
         }
 
+        private static SemaphoreSlim _alwaysMatchedSymptomsSemaphore = new SemaphoreSlim(1);
         private static List<Symptom> _alwaysMatchedSymptoms;
         
         public async Task<List<Symptom>> GetAlwaysMatchedSymptoms()
         {
-            if (_alwaysMatchedSymptoms != null) return _alwaysMatchedSymptoms;
+            if (_alwaysMatchedSymptoms == null)
+            {
+                try
+                {
+                    await _alwaysMatchedSymptomsSemaphore.WaitAsync();
 
-            _alwaysMatchedSymptoms = await _dataContext.Set<Symptom>().AsNoTracking()
-                .Include(x => x.Specialist)
-                .Where(x =>
-                    !x.IsDeleted &&
-                    !x.SymptomIndicatorDeviationLevels.Any(y => y.Indicator.InAnalysis))
-                .ToListAsync();
+                    if (_alwaysMatchedSymptoms == null)
+                    {
+                        _alwaysMatchedSymptoms = await _dataContext.Set<Symptom>().AsNoTracking()
+                            .Include(x => x.Specialist)
+                            .Where(x =>
+                                !x.IsDeleted &&
+                                !x.SymptomIndicatorDeviationLevels.Any(y => y.Indicator.InAnalysis))
+                            .ToListAsync();
+                    }
+                }
+                finally
+                {
+                    _alwaysMatchedSymptomsSemaphore.Release();
+                }
+            }
 
             return _alwaysMatchedSymptoms;
         }
@@ -134,5 +165,7 @@ namespace MedExpert.Services.Implementation
             _symptomsCache = null;
             _alwaysMatchedSymptoms = null;
         }
+
+        #endregion
     }
 }

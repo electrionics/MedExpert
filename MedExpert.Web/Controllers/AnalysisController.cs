@@ -95,7 +95,7 @@ namespace MedExpert.Web.Controllers
         
         #endregion
 
-        #region Public Specialists
+        #region Specialists
 
         [HttpPost]
         [ApiRoute("Analysis/Specialists")]

@@ -1,18 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FluentValidation;
-using MedExpert.Domain.Enums;
-using MedExpert.Excel.Converters.Common;
 using MedExpert.Excel.Converters.Common.Base;
 using MedExpert.Excel.Converters.Common.Default;
-using MedExpert.Excel.Model;
-using MedExpert.Excel.Model.Common;
-using MedExpert.Excel.Model.Symptoms;
 
 // ReSharper disable StringLiteralTypo
 
