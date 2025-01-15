@@ -2,10 +2,9 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+
 using FluentValidation;
-using MedExpert.Domain.Identity;
-using MedExpert.Web.Services;
-using MedExpert.Web.ViewModels.Account;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -13,6 +12,10 @@ using Microsoft.AspNetCore.Identity.UI.V4.Pages.Account.Internal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+
+using MedExpert.Domain.Identity;
+using MedExpert.Web.Services;
+using MedExpert.Web.ViewModels.Account;
 // ReSharper disable StringLiteralTypo
 
 namespace MedExpert.Web.Controllers

@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
+
+using Microsoft.AspNetCore.Mvc;
+
 using FluentValidation;
-using MedExpert.Domain.Entities;
-using MedExpert.Domain.Enums;
+
 using MedExpert.Excel;
 using MedExpert.Excel.Metadata.Analysis;
 using MedExpert.Excel.Metadata.Common;
@@ -17,10 +19,11 @@ using MedExpert.Excel.Model.Analysis;
 using MedExpert.Excel.Model.Indicators;
 using MedExpert.Excel.Model.ReferenceIntervals;
 using MedExpert.Excel.Model.Symptoms;
-using Microsoft.AspNetCore.Mvc;
-using MedExpert.Web.ViewModels;
+using MedExpert.Domain.Entities;
+using MedExpert.Domain.Enums;
 using MedExpert.Services.Interfaces;
 using MedExpert.Web.Filters;
+using MedExpert.Web.ViewModels;
 using MedExpert.Web.ViewModels.Import;
 
 // ReSharper disable CommentTypo

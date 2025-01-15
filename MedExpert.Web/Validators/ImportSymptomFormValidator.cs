@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
+
 using MedExpert.Services.Interfaces;
-using MedExpert.Web.ViewModels;
 using MedExpert.Web.ViewModels.Import;
 
 // ReSharper disable StringLiteralTypo

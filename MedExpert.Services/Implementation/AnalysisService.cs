@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+using Microsoft.EntityFrameworkCore;
+
 using MedExpert.Core;
 using MedExpert.Core.Helpers;
 using MedExpert.Domain;
 using MedExpert.Domain.Entities;
 using MedExpert.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 // ReSharper disable StringLiteralTypo
 // ReSharper disable IdentifierTypo

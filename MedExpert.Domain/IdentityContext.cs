@@ -1,6 +1,7 @@
-using MedExpert.Domain.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+
+using MedExpert.Domain.Identity;
 
 namespace MedExpert.Domain
 {

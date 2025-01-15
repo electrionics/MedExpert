@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+
 using MedExpert.Core;
 
 namespace MedExpert.Web.ViewModels.Analysis

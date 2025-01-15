@@ -1,7 +1,8 @@
-﻿using MedExpert.Domain;
-using MedExpert.Services.Interfaces.Common;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+
+using MedExpert.Domain;
+using MedExpert.Services.Interfaces.Common;
 
 namespace MedExpert.Services.Implementation.Common
 {

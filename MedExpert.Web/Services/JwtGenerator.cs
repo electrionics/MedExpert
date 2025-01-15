@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+
+using Microsoft.IdentityModel.Tokens;
+
 using MedExpert.Domain.Identity;
 using MedExpert.Web.Configuration;
-using Microsoft.IdentityModel.Tokens;
 
 namespace MedExpert.Web.Services
 {

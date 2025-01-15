@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+
 using MedExpert.Excel.Model.Common;
 
 // ReSharper disable StringLiteralTypo

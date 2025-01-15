@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using MedExpert.Excel.Model;
+
 using MedExpert.Excel.Model.ReferenceIntervals;
 using MedExpert.Excel.Validators.Common;
 

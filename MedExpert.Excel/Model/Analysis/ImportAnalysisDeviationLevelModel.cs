@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
 using MedExpert.Domain.Entities;
 
 namespace MedExpert.Excel.Model.Analysis

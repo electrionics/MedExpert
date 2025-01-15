@@ -2,7 +2,9 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.EntityFrameworkCore.Diagnostics;
+
 using DbCommandInterceptor = Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor;
 
 namespace MedExpert.Domain

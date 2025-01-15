@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
+
+using Microsoft.AspNetCore.Mvc;
+
 using FluentValidation;
+
 using MedExpert.Core;
 using MedExpert.Core.Helpers;
 using MedExpert.Domain.Entities;
@@ -12,7 +16,6 @@ using MedExpert.Services.Implementation.ComputedIndicators;
 using MedExpert.Services.Interfaces;
 using MedExpert.Web.ViewModels;
 using MedExpert.Web.ViewModels.Analysis;
-using Microsoft.AspNetCore.Mvc;
 // ReSharper disable StringLiteralTypo
 
 namespace MedExpert.Web.Controllers

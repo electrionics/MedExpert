@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+
 using MedExpert.Web.ViewModels.Account;
 // ReSharper disable StringLiteralTypo
 

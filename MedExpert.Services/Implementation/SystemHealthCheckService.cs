@@ -1,12 +1,13 @@
-﻿using MedExpert.Domain;
-using MedExpert.Domain.Entities;
-using MedExpert.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
+
+using Microsoft.EntityFrameworkCore;
+
+using MedExpert.Domain;
+using MedExpert.Domain.Entities;
+using MedExpert.Services.Interfaces;
 
 namespace MedExpert.Services.Implementation
 {

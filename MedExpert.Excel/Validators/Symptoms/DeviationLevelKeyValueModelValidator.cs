@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+
 using FluentValidation;
-using MedExpert.Excel.Model;
+
 using MedExpert.Excel.Model.Symptoms;
 
 namespace MedExpert.Excel.Validators.Symptoms

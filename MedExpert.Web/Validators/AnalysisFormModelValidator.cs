@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+
 using FluentValidation;
+
 using MedExpert.Web.ViewModels.Analysis;
 // ReSharper disable StringLiteralTypo
 

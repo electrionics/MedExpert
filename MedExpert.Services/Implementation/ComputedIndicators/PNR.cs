@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+
 using MedExpert.Services.Interfaces;
 
 namespace MedExpert.Services.Implementation.ComputedIndicators

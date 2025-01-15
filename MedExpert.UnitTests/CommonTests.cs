@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using NUnit.Framework;
+
 using MedExpert.Core;
 using MedExpert.Core.Helpers;
-using NUnit.Framework;
 
 namespace MedExpert.UnitTests
 {

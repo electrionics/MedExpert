@@ -1,5 +1,4 @@
-﻿using System;
-using MedExpert.Domain.Enums;
+﻿using MedExpert.Domain.Enums;
 
 namespace MedExpert.Excel.Model.Symptoms
 {

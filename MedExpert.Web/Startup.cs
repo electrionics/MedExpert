@@ -1,29 +1,33 @@
 using System.Text;
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Z.EntityFramework.Extensions;
+
 using MedExpert.Domain;
 using MedExpert.Domain.Identity;
 using MedExpert.Excel;
 using MedExpert.Web.Configuration;
 using MedExpert.Web.Validators;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using MedExpert.Services.Implementation;
-using MedExpert.Services.Interfaces;
 using MedExpert.Web.Services;
 using MedExpert.Web.ViewModels.Account;
 using MedExpert.Web.ViewModels.Analysis;
 using MedExpert.Web.ViewModels.Import;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.IdentityModel.Tokens;
-using Z.EntityFramework.Extensions;
+using MedExpert.Services.Interfaces;
 using MedExpert.Services.Interfaces.Common;
+using MedExpert.Services.Implementation;
 using MedExpert.Services.Implementation.Common;
 
 namespace MedExpert.Web
@@ -74,7 +78,7 @@ namespace MedExpert.Web
             {
                 options.AddPolicy("CorsPolicy",
                     bld => bld
-                        .WithOrigins("https://localhost:4200")
+                        .WithOrigins("https://localhost:6001")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials());

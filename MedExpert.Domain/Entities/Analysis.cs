@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using MedExpert.Domain.Enums;
 
 namespace MedExpert.Domain.Entities

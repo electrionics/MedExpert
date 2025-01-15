@@ -1,5 +1,4 @@
 ﻿using MedExpert.Excel.Metadata.Common;
-using MedExpert.Excel.Model;
 using MedExpert.Excel.Model.Analysis;
 using MedExpert.Excel.Validators.Analysis;
 using MedExpert.Excel.Validators.Common;

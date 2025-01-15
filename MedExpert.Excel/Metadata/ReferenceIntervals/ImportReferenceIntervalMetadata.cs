@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using MedExpert.Excel.Converters;
+
 using MedExpert.Excel.Converters.Common;
 using MedExpert.Excel.Converters.Common.Base;
 using MedExpert.Excel.Metadata.Common;
-using MedExpert.Excel.Model;
 using MedExpert.Excel.Model.ReferenceIntervals;
 using MedExpert.Excel.Validators.Common;
 using MedExpert.Excel.Validators.ReferenceIntervals;

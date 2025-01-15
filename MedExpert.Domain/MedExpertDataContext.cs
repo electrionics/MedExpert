@@ -1,5 +1,6 @@
-﻿using MedExpert.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+
+using MedExpert.Domain.Entities;
 
 namespace MedExpert.Domain
 {

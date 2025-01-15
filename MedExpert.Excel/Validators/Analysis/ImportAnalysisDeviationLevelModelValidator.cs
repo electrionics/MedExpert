@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+
 using FluentValidation;
+
 using MedExpert.Excel.Model.Analysis;
 
 namespace MedExpert.Excel.Validators.Analysis
