@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -51,6 +52,11 @@ namespace MedExpert.Web
             var authorizationConfig = Configuration.GetSection("Authorization").Get<AuthorizationConfig>();
             services.AddSingleton(databaseConfig);
             services.AddSingleton(authorizationConfig);
+
+            services.AddLogging(builder =>
+            {
+                builder.AddConfiguration(Configuration).AddFile("log.txt");
+            });
 
             services.AddDbContext<MedExpertDataContext>(options => 
             {
@@ -149,7 +155,7 @@ namespace MedExpert.Web
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
@@ -179,18 +185,10 @@ namespace MedExpert.Web
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-                // endpoints.MapControllerRoute(
-                //     name: "First",
-                //     pattern: "Api/WeatherForecast/Get",
-                //     defaults: new { controller = "WeatherForecast", action = "Get"});
-
-                // endpoints.MapControllerRoute(
-                //     name: "default",
-                //     pattern: "Api/{controller}/{action}/{id?}");
-            });
+            //app.UseEndpoints(endpoints =>
+            //{
+            //    endpoints.MapControllers();
+            //});
 
             if (!env.IsDevelopment()){
                 app.UseSpa(spa =>

@@ -353,3 +353,4 @@ NiceNumber.Web/ClientApp/.angular/
 MedExpert.Web/ClientApp/.angular/
 MedExpert.Web/ClientApp/src/environments/environment.dev.ts
 MedExpert.Web/appsettings.Development.json
+/MedExpert.Web/log.txt

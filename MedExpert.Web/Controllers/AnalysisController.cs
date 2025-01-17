@@ -16,6 +16,7 @@ using MedExpert.Services.Implementation.ComputedIndicators;
 using MedExpert.Services.Interfaces;
 using MedExpert.Web.ViewModels;
 using MedExpert.Web.ViewModels.Analysis;
+using Microsoft.Extensions.Logging;
 // ReSharper disable StringLiteralTypo
 
 namespace MedExpert.Web.Controllers
@@ -39,8 +40,9 @@ namespace MedExpert.Web.Controllers
         private readonly ISymptomCategoryService _symptomCategoryService;
         private readonly ISystemHealthCheckService _systemHealthCheckService;
         private readonly IValidator<AnalysisFormModel> _analysisFormValidator;
+        private readonly ILogger<AnalysisController> _logger;
         
-        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, IAnalysisIndicatorService analysisIndicatorService, IAnalysisService analysisService, IValidator<AnalysisFormModel> analysisFormValidator, IAnalysisSymptomService analysisSymptomService, IAnalysisSymptomIndicatorService analysisSymptomIndicatorService, ILookupService lookupService, ISymptomCategoryService symptomCategoryService, ISystemHealthCheckService systemHealthCheckService)
+        public AnalysisController(IIndicatorService indicatorService, IReferenceIntervalService referenceIntervalService, ISpecialistService specialistService, IDeviationLevelService deviationLevelService, IAnalysisIndicatorService analysisIndicatorService, IAnalysisService analysisService, IValidator<AnalysisFormModel> analysisFormValidator, IAnalysisSymptomService analysisSymptomService, IAnalysisSymptomIndicatorService analysisSymptomIndicatorService, ILookupService lookupService, ISymptomCategoryService symptomCategoryService, ISystemHealthCheckService systemHealthCheckService, ILogger<AnalysisController> logger)
         {
             _indicatorService = indicatorService;
             _referenceIntervalService = referenceIntervalService;
@@ -54,6 +56,7 @@ namespace MedExpert.Web.Controllers
             _lookupService = lookupService;
             _symptomCategoryService = symptomCategoryService;
             _systemHealthCheckService = systemHealthCheckService;
+            _logger = logger;
         }
 
         #region Indicators
@@ -62,38 +65,45 @@ namespace MedExpert.Web.Controllers
         [ApiRoute("Analysis/Indicators")]
         public async Task<List<IndicatorValueDependencyModel>> Indicators([FromBody] ProfileModel model)
         {
-            var indicators = await _indicatorService.GetAnalysisIndicators();
-            var referenceIntervals =
-                await _referenceIntervalService.GetReferenceIntervalsByCriteria(model.Sex, model.Age);
-            
-            var indicatorNamesDict = indicators
-                .ToDictionary(x => x.ShortName, x => x.Id);
-            var referenceIntervalsDict = referenceIntervals
-                .ToDictionary(x => x.IndicatorId, x => x);
-            
-            var result = indicators.Select(x =>
+            try
             {
-                var referenceExists = referenceIntervalsDict.TryGetValue(x.Id, out var referenceInterval);
-                return new IndicatorValueDependencyModel
+                var indicators = await _indicatorService.GetAnalysisIndicators();
+                var referenceIntervals =
+                    await _referenceIntervalService.GetReferenceIntervalsByCriteria(model.Sex, model.Age);
+
+                var indicatorNamesDict = indicators
+                    .ToDictionary(x => x.ShortName, x => x.Id);
+                var referenceIntervalsDict = referenceIntervals
+                    .ToDictionary(x => x.IndicatorId, x => x);
+
+                var result = indicators.Select(x =>
                 {
-                    Id = x.Id,
-                    Name = x.Name,
-                    ShortName = x.ShortName,
-                    Value = null,
-                    ReferenceIntervalMin = referenceExists ? referenceInterval.ValueMin : null,
-                    ReferenceIntervalMax = referenceExists ? referenceInterval.ValueMax : null,
-                    DependencyIndicatorIds = ComputedIndicators
-                        .FirstOrDefault(y => y.ShortName == x.ShortName)?.DependentShortNames
-                        .Select(y => indicatorNamesDict.ContainsKey(y) ? indicatorNamesDict[y] : (int?)null)
-                        .Where(y => y.HasValue)
-                        .Select(y => y.Value)
-                        .ToList()
-                };
-            }).ToList();
+                    var referenceExists = referenceIntervalsDict.TryGetValue(x.Id, out var referenceInterval);
+                    return new IndicatorValueDependencyModel
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        ShortName = x.ShortName,
+                        Value = null,
+                        ReferenceIntervalMin = referenceExists ? referenceInterval.ValueMin : null,
+                        ReferenceIntervalMax = referenceExists ? referenceInterval.ValueMax : null,
+                        DependencyIndicatorIds = ComputedIndicators
+                            .FirstOrDefault(y => y.ShortName == x.ShortName)?.DependentShortNames
+                            .Select(y => indicatorNamesDict.ContainsKey(y) ? indicatorNamesDict[y] : (int?)null)
+                            .Where(y => y.HasValue)
+                            .Select(y => y.Value)
+                            .ToList()
+                    };
+                }).ToList();
 
-            return result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting indicators");
 
-            return GetStubIndicators();
+                return GetStubIndicators();
+            }
         }
         
         #endregion
@@ -104,26 +114,33 @@ namespace MedExpert.Web.Controllers
         [ApiRoute("Analysis/Specialists")]
         public async Task<List<LookupModel>> Specialists([FromBody] ProfileModel model)
         {
-            var specialists = await _specialistService.GetSpecialistsByCriteria(model.Sex);
-            
-            var lookup1 = await _lookupService.GetByName(CommonTreatmentSpecialistLookupName);
-            var lookup2 = await _lookupService.GetByName(CommonAnalysisSpecialistLookupName);
-            var specialist1 = await _specialistService.GetSpecialistById(int.Parse(lookup1.Value));
-            var specialist2 = await _specialistService.GetSpecialistById(int.Parse(lookup2.Value));
-
-            // ReSharper disable once ConvertToLocalFunction
-            Func<Specialist, bool> excludeCommonSpecialists =
-                x => x.Id != specialist1?.Id && x.Id != specialist2?.Id;
-            
-            var result = specialists.Where(excludeCommonSpecialists).Select(x => new LookupModel
+            try
             {
-                Id = x.Id,
-                Name = x.Name
-            }).ToList();
+                var specialists = await _specialistService.GetSpecialistsByCriteria(model.Sex);
 
-            return result;
+                var lookup1 = await _lookupService.GetByName(CommonTreatmentSpecialistLookupName);
+                var lookup2 = await _lookupService.GetByName(CommonAnalysisSpecialistLookupName);
+                var specialist1 = await _specialistService.GetSpecialistById(int.Parse(lookup1.Value));
+                var specialist2 = await _specialistService.GetSpecialistById(int.Parse(lookup2.Value));
 
-            return GetStubSpecialists(model);
+                // ReSharper disable once ConvertToLocalFunction
+                Func<Specialist, bool> excludeCommonSpecialists =
+                    x => x.Id != specialist1?.Id && x.Id != specialist2?.Id;
+
+                var result = specialists.Where(excludeCommonSpecialists).Select(x => new LookupModel
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                }).ToList();
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting specialists");
+
+                return GetStubSpecialists(model);
+            }
         }
         
         #endregion
@@ -134,38 +151,47 @@ namespace MedExpert.Web.Controllers
         [ApiRoute("Analysis/ComputeIndicators")]
         public async Task<Dictionary<int, decimal>> ComputeIndicators([FromBody] List<IdValueModel> idValues)
         {
-            var indicators = await _indicatorService.GetAnalysisIndicators();
-            var idValuesDict = idValues
-                .ToDictionary(x => x.Id, x => x);
-            
-            var nameValuesDict = new Dictionary<string, decimal>();
-            foreach (var indicator in indicators)
+            try
             {
-                if (idValuesDict.TryGetValue(indicator.Id, out var idValue) && idValue.Value.HasValue)
+                var indicators = await _indicatorService.GetAnalysisIndicators();
+                var idValuesDict = idValues
+                    .ToDictionary(x => x.Id, x => x);
+
+                var nameValuesDict = new Dictionary<string, decimal>();
+                foreach (var indicator in indicators)
                 {
-                    nameValuesDict[indicator.ShortName] = idValue.Value.Value;
+                    if (idValuesDict.TryGetValue(indicator.Id, out var idValue) && idValue.Value.HasValue)
+                    {
+                        nameValuesDict[indicator.ShortName] = idValue.Value.Value;
+                    }
                 }
-            }
 
-            var nameValuesComputedDict = new Dictionary<string, decimal>();
-            foreach (var computedIndicator in ComputedIndicators
-                .Where(computedIndicator => computedIndicator.DependentShortNames
-                    .All(n => nameValuesDict.ContainsKey(n))))
-            {
-                nameValuesComputedDict[computedIndicator.ShortName] = computedIndicator.Compute(nameValuesDict);
-            }
-
-            var result = new Dictionary<int, decimal>();
-
-            foreach (var indicator in indicators)
-            {
-                if (nameValuesComputedDict.TryGetValue(indicator.ShortName, out var value))
+                var nameValuesComputedDict = new Dictionary<string, decimal>();
+                foreach (var computedIndicator in ComputedIndicators
+                    .Where(computedIndicator => computedIndicator.DependentShortNames
+                        .All(n => nameValuesDict.ContainsKey(n))))
                 {
-                    result[indicator.Id] = value;
+                    nameValuesComputedDict[computedIndicator.ShortName] = computedIndicator.Compute(nameValuesDict);
                 }
-            }
 
-            return result;
+                var result = new Dictionary<int, decimal>();
+
+                foreach (var indicator in indicators)
+                {
+                    if (nameValuesComputedDict.TryGetValue(indicator.ShortName, out var value))
+                    {
+                        result[indicator.Id] = value;
+                    }
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error computing indicators");
+
+                return new Dictionary<int, decimal>();
+            }
         }
         
         #endregion
@@ -270,9 +296,11 @@ namespace MedExpert.Web.Controllers
 
                 return analysis.Id;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error calculating analysis results");
+
+                return 0;
             }
         }
         
@@ -342,9 +370,11 @@ namespace MedExpert.Web.Controllers
 
                 return toReturn;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                throw;
+                _logger.LogError(ex, "Error filtering analysis results");
+
+                return GetStubAnalysisResult();
             }
         }
         
